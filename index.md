@@ -19,30 +19,26 @@ features:
     details: 记录学习笔记与零散思考，持续更新。
     link: /posts/
     linkText: 查看全部
-  - icon: '🧰'
-    title: 技术栈
-    details:
-      - 待补充：常用语言
-      - 待补充：框架与库
-      - 待补充：开发工具
   - icon: '🚀'
-    title: 精选项目
-    details:
-      - 待补充：项目名称 —— 一句话说明
-      - 待补充：项目名称 —— 一句话说明
-  - icon: '📮'
-    title: 联系
-    details: 待补充：邮箱等联系方式
+    title: 项目
+    details: 做过和在做的东西，另附日常在用的技术栈。
+    link: /projects
+    linkText: 查看详情
+  - icon: '🗂️'
+    title: 归档
+    details: 按时间倒序浏览全部文章，适合顺着翻。
+    link: /archive
+    linkText: 查看归档
+  - icon: '🌱'
+    title: Now
+    details: 最近在做、在学、在看的东西，更新不勤但保证真实。
+    link: /now
+    linkText: 查看近况
 ---
 
 <script setup>
 import { data as posts } from './posts/posts.data.ts'
 </script>
-
-## 关于我
-
-<!-- 把下面这段替换成你自己的介绍：目前在做什么、关注哪些方向、为什么写这个博客 -->
-这里是占位文字。请替换为个人介绍——你现在的工作或研究方向、感兴趣的技术话题，以及建立这个站点想记录什么。
 
 ## 最新文章
 

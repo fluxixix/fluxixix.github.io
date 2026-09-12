@@ -1,6 +1,7 @@
 ---
 title: Markdown 全格式示例
 date: 2026-09-12
+description: 集中演示 Markdown 的常见语法，方便写作时随时对照查阅。
 ---
 
 # Markdown 全格式示例
