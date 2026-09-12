@@ -42,10 +42,16 @@ import { data as posts } from './posts/posts.data.ts'
 
 ## 最新文章
 
-<ul v-if="posts.length">
-  <li v-for="post in posts.slice(0, 5)" :key="post.url">
-    <a :href="post.url">{{ post.title }}</a>
-    <span v-if="post.date"> · {{ post.date }}</span>
+<p v-if="!posts.length">暂无文章。</p>
+
+<ul v-else class="post-list">
+  <li v-for="post in posts.slice(0, 5)" :key="post.url" class="post-item">
+    <a class="post-entry" :href="post.url">
+      <time v-if="post.date" class="post-date">{{ post.date }}</time>
+      <span class="post-main">
+        <span class="post-title">{{ post.title }}</span>
+        <span v-if="post.description" class="post-desc">{{ post.description }}</span>
+      </span>
+    </a>
   </li>
 </ul>
-<p v-else>暂无文章。</p>

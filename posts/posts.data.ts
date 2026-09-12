@@ -4,6 +4,7 @@ export interface Post {
   title: string
   url: string
   date: string
+  description: string
 }
 
 declare const data: Post[]
@@ -17,7 +18,8 @@ export default createContentLoader('posts/**/*.md', {
       .map((page) => ({
         title: page.frontmatter.title ?? page.url,
         url: page.url,
-        date: formatDate(page.frontmatter.date)
+        date: formatDate(page.frontmatter.date),
+        description: page.frontmatter.description ?? ''
       }))
       .sort((a, b) => (a.date < b.date ? 1 : -1))
   }
