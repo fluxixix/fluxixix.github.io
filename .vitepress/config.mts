@@ -1,5 +1,13 @@
-import { defineConfig } from 'vitepress'
+import { defineConfig, type HeadConfig } from 'vitepress'
 import { generateRssFeed } from './rss.ts'
+
+// 本地 dev 请求 /_vercel/insights/script.js 会被 SPA 兜底成 HTML 返回，浏览器按 JS
+// 解析就会报 "SyntaxError: Unexpected token '<'"。这个脚本只有 Vercel 上有，所以只在
+// 构建时注入——VitePress 构建会先把 NODE_ENV 置为 production 再读配置。
+// （项目没装 @types/node，process 只能从 globalThis 上取）
+const isBuild =
+  (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV ===
+  'production'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -13,9 +21,11 @@ export default defineConfig({
   head: [
     // 让阅读器和浏览器能发现 RSS
     ['link', { rel: 'alternate', type: 'application/rss+xml', title: 'fluxixix', href: '/feed.xml' }],
-    // Vercel Web Analytics：先声明队列函数，再异步加载统计脚本（部署在 Vercel 上才会生效）
+    // Vercel Web Analytics：先声明队列函数，再异步加载统计脚本
     ['script', {}, 'window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); }'],
-    ['script', { defer: '', src: '/_vercel/insights/script.js' }]
+    ...(isBuild
+      ? ([['script', { defer: '', src: '/_vercel/insights/script.js' }]] as HeadConfig[])
+      : [])
   ],
   buildEnd: generateRssFeed,
   themeConfig: {
