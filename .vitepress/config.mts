@@ -32,6 +32,8 @@ export default defineConfig({
     // 默认主题的界面文案是写死的英文，这几处会显示给读者，单独覆盖
     outline: { label: '本页目录' },
     returnToTopLabel: '回到顶部',
+    // 窄屏下打开侧边栏的那个按钮
+    sidebarMenuLabel: '菜单',
     docFooter: { prev: '上一篇', next: '下一篇' },
 
     // 只在文章区显示侧边栏，按目录分主题；base 用来省掉组内链接的重复前缀
