@@ -1,0 +1,5 @@
+/* 首页 hero 标题（name）使用渐变色，取值与 vitepress.dev 一致 */
+:root {
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
+}
