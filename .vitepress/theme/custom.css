@@ -30,7 +30,10 @@
   /* 跟随鼠标：--vp-hero-glow-x/y 与 --vp-hero-glow-scale 由主题脚本写入 */
   transform: translate3d(var(--vp-hero-glow-x, 0px), calc(-50% + var(--vp-hero-glow-y, 0px)), 0)
     scale(var(--vp-hero-glow-scale, 1));
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  /* 这里刻意不加 transition。跟随值每帧都在变，过渡就会每帧被重启一次
+     （实测 120 帧里触发了 118 次 transitionrun / 117 次 transitioncancel），
+     合成器永远接不过去，动画只能挂在主线程上——首页整页都会跟着迟钝。
+     直接写 transform 反而是纯粹的合成层更新，更跟手也更省 */
   animation: vp-hero-glow-breathe 9s ease-in-out infinite;
   will-change: transform, opacity;
 }
@@ -69,7 +72,6 @@
 @media (prefers-reduced-motion: reduce) {
   .VPHero .container::before {
     animation: none;
-    transition: none;
   }
 }
 
