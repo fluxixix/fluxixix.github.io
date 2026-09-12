@@ -317,6 +317,12 @@ html :is(input, textarea, select, [contenteditable='true']) {
   opacity: 0;
   /* 只过渡透明度：transform 每帧都在写，过渡会让光标拖后腿 */
   transition: opacity 0.18s ease;
+  /* 保证元素从首屏起就是独立的合成层。
+     没有它的话，第一次透明度过渡之前元素没有被提升，每改一次 transform 都要重绘
+     元素本身（含 ::before 的 mask-composite 和 ::after 的阴影），拖动就会卡；
+     有了它后续移动只做图层合成。初始 transform 同样是为此——让图层一开始就存在 */
+  will-change: transform;
+  transform: translate3d(-100px, -100px, 0);
   /* 玻璃质感全靠背景渐变，不用 backdrop-filter：
      后者会让元素每移动一帧就重新采样一次背后的内容，正是卡顿的来源。
      第一个渐变是中心的定位点（原生光标隐藏后靠它判断精确落点），
