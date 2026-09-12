@@ -252,42 +252,28 @@
   }
 }
 
-/* ---------------- 光标粒子层 + 玻璃圆环 ---------------- */
+/* ---------------- 光标粒子层 + 自定义光标 ---------------- */
 :root {
-  /* 沿用首页 hero 的紫青渐变，改这两处即可换掉粒子配色 */
+  /* 沿用首页 hero 的紫青渐变，改这两处即可换掉粒子与光标的配色 */
   --vp-cursor-glow: #bd34fe;
   --vp-cursor-glow-2: #41d1ff;
-  /* 圆环直径。cursor.ts 从这里读，改这一处即可 */
-  --vp-cursor-ring-size: 34px;
-
-  /* 亮色主题：白色描边在浅背景上看不见，受光面必须反过来用深色 */
-  --vp-cursor-ring-rim-hi: rgba(0, 0, 0, 0.5);
-  --vp-cursor-ring-rim-lo: rgba(0, 0, 0, 0.05);
-  --vp-cursor-ring-sheen: rgba(0, 0, 0, 0.045);
-  --vp-cursor-ring-bevel: rgba(255, 255, 255, 0.7);
-  --vp-cursor-ring-shade: rgba(0, 0, 0, 0.14);
 }
 
-/* 暗色主题：VitePress 会在 <html> 上挂 dark 类 */
-html.dark {
-  --vp-cursor-ring-rim-hi: rgba(255, 255, 255, 0.85);
-  --vp-cursor-ring-rim-lo: rgba(255, 255, 255, 0.06);
-  --vp-cursor-ring-sheen: rgba(255, 255, 255, 0.2);
-  --vp-cursor-ring-bevel: rgba(255, 255, 255, 0.7);
-  --vp-cursor-ring-shade: rgba(0, 0, 0, 0.25);
+/* 自定义光标：形状沿用系统箭头的惯例，只把填充换成站点渐变、加一圈白描边
+   （深色背景上也能看清）。末尾的 auto 是兜底，浏览器不认 SVG 光标时会退回原生箭头。
+   数字 `1 1` 是热点，必须落在箭尖上，否则点击位置会和看到的位置差一截。
+   这里只覆盖默认光标，不碰 pointer / text 这些语义光标——链接、按钮、输入框
+   仍然拿浏览器自己的原生反馈 */
+html {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23bd34fe'/%3E%3Cstop offset='1' stop-color='%2341d1ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M1 1 L1 19.5 L5.6 15 L8.9 22 L11.6 20.7 L8.4 14 L14.5 13.6 Z' fill='url(%23g)' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+      1 1,
+    auto;
 }
 
-/* 隐藏原生光标。默认主题有 6 处组件级 cursor 声明（无 @layer、特异性高于 *），
-   必须用 !important 才压得住 */
-html,
-html * {
-  cursor: none !important;
-}
-
-/* 输入类控件恢复原生光标：auto 会按元素类型给出正确的默认值
-   （文本框是 I 形、复选框是箭头），选字和输入的手感不变 */
+/* 可编辑控件要显式还原：cursor: auto 会按元素类型解析成 I 形光标。
+   少了这条，它们会从 html 继承到上面那张箭头图，选字时的光标就没了 */
 html :is(input, textarea, select, [contenteditable='true']) {
-  cursor: auto !important;
+  cursor: auto;
 }
 
 .vp-cursor-canvas {
@@ -296,90 +282,15 @@ html :is(input, textarea, select, [contenteditable='true']) {
   left: 0;
   /* 尺寸由 cursor.ts 按视口大小写入，这里不设 width/height：
      canvas 是替换元素，inset: 0 拉伸不了它，反而会退回固有尺寸 */
-  /* 与透镜同层，透镜在 DOM 里排在后面所以盖在粒子之上 */
+  /* 高于本地搜索弹窗(100)，弹窗打开时拖尾不会被压掉 */
   z-index: 150;
   /* 必须为 none，否则全站点击都会被这层吞掉 */
   pointer-events: none;
 }
 
-.vp-cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--vp-cursor-ring-size);
-  height: var(--vp-cursor-ring-size);
-  /* 让 transform 落在圆心而不是左上角 */
-  margin-left: calc(var(--vp-cursor-ring-size) / -2);
-  margin-top: calc(var(--vp-cursor-ring-size) / -2);
-  border-radius: 50%;
-  /* 高于本地搜索弹窗(100)、低于 SkipLink(999)。
-     圆环是光标本体，被弹窗压住就会出现「屏幕上没有光标」的情况 */
-  z-index: 150;
-  pointer-events: none;
-  opacity: 0;
-  /* 只过渡透明度：transform 每帧都在写，过渡会让光标拖后腿 */
-  transition: opacity 0.18s ease;
-  /* 保证元素从首屏起就是独立的合成层。
-     没有它的话，第一次透明度过渡之前元素没有被提升，每改一次 transform 都要重绘
-     元素本身（含 ::before 的 mask-composite 和 ::after 的阴影），拖动就会卡；
-     有了它后续移动只做图层合成。初始 transform 同样是为此——让图层一开始就存在 */
-  will-change: transform;
-  transform: translate3d(-100px, -100px, 0);
-  /* 玻璃质感全靠背景渐变，不用 backdrop-filter：
-     后者会让元素每移动一帧就重新采样一次背后的内容，正是卡顿的来源。
-     第一个渐变是中心的定位点（原生光标隐藏后靠它判断精确落点），
-     第二个是从左上打进来的那道高光斜面 */
-  background-image:
-    radial-gradient(circle, var(--vp-c-text-1) 0 0.75px, transparent 1px),
-    radial-gradient(circle at 34% 28%, var(--vp-cursor-ring-sheen) 0%, transparent 62%);
-}
-
-.vp-cursor-ring.is-visible {
-  opacity: 1;
-}
-
-/* 1px 渐变描边：用 mask-composite 把中间掏空，边框沿光来的方向由亮到暗 */
-.vp-cursor-ring::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    160deg,
-    var(--vp-cursor-ring-rim-hi) 0%,
-    var(--vp-cursor-ring-rim-lo) 38%,
-    var(--vp-cursor-ring-rim-lo) 62%,
-    var(--vp-cursor-ring-rim-hi) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-}
-
-/* 内侧斜面：上缘吃光、下缘落影，再加一圈外投影把圆环从背景里托起来 */
-.vp-cursor-ring::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow:
-    inset 0 1px 2px var(--vp-cursor-ring-bevel),
-    inset 0 -2px 4px var(--vp-cursor-ring-shade),
-    0 2px 10px var(--vp-cursor-ring-shade);
-}
-
 /* JS 侧在 reduced-motion 下已经直接 return，这里是双保险 */
 @media (prefers-reduced-motion: reduce) {
-  .vp-cursor-canvas,
-  .vp-cursor-ring {
+  .vp-cursor-canvas {
     display: none;
-  }
-
-  /* 特效关掉了就必须把原生光标还回来，否则用户会没有光标可用 */
-  html,
-  html * {
-    cursor: auto !important;
   }
 }
