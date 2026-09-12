@@ -39,25 +39,39 @@ function escapeXml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
-async function collectItems(srcDir: string): Promise<FeedItem[]> {
-  const postsDir = path.join(srcDir, 'posts')
-  const entries = await readdir(postsDir).catch(() => [] as string[])
-  const items: FeedItem[] = []
+/** 递归收集 posts/ 下的文章，子目录同样计入；index.md 属于列表页，排除 */
+async function collectMarkdownFiles(dir: string): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
+  const files: string[] = []
 
   for (const entry of entries) {
-    if (!entry.endsWith('.md') || entry === 'index.md') continue
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...(await collectMarkdownFiles(fullPath)))
+    } else if (entry.name.endsWith('.md') && entry.name !== 'index.md') {
+      files.push(fullPath)
+    }
+  }
 
-    const fields = readFrontmatter(await readFile(path.join(postsDir, entry), 'utf-8'))
+  return files
+}
+
+async function collectItems(srcDir: string): Promise<FeedItem[]> {
+  const files = await collectMarkdownFiles(path.join(srcDir, 'posts'))
+  const items: FeedItem[] = []
+
+  for (const file of files) {
+    const fields = readFrontmatter(await readFile(file, 'utf-8'))
     const date = new Date(fields.date)
     if (Number.isNaN(date.getTime())) continue
 
     // 统一取当天中午，避免时区让日期前后跳一天
     date.setUTCHours(12)
-    const slug = entry.replace(/\.md$/, '')
+    const slug = path.relative(srcDir, file).replace(/\.md$/, '')
 
     items.push({
       title: fields.title || slug,
-      link: `${SITE_URL}/posts/${slug}.html`,
+      link: `${SITE_URL}/${slug}.html`,
       date,
       description: fields.description || ''
     })

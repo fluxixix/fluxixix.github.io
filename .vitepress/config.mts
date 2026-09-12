@@ -26,13 +26,32 @@ export default defineConfig({
       { text: '关于', link: '/about' }
     ],
 
-    // 只在文章区显示侧边栏，避免出现在独立页面上
+    // 默认主题的界面文案是写死的英文，这几处会显示给读者，单独覆盖
+    outline: { label: '本页目录' },
+    returnToTopLabel: '回到顶部',
+    docFooter: { prev: '上一篇', next: '下一篇' },
+
+    // 只在文章区显示侧边栏，按目录分主题；base 用来省掉组内链接的重复前缀
     sidebar: {
       '/posts/': [
         {
-          text: '博客',
+          text: '技术',
+          base: '/posts/tech/',
           items: [
-            { text: '文章列表', link: '/posts/' }
+            { text: 'Markdown 全格式示例', link: 'markdown-guide' },
+            { text: 'VitePress 使用笔记', link: 'vitepress-notes' },
+            { text: 'Git 常用命令速查', link: 'git-cheatsheet' },
+            { text: 'CSS 自定义属性入门', link: 'css-variables' }
+          ]
+        },
+        {
+          text: '随笔',
+          base: '/posts/notes/',
+          items: [
+            { text: '你好，世界', link: 'hello' },
+            { text: '关于「less is more」', link: 'less-is-more' },
+            { text: '笔记是写给未来的自己的', link: 'note-taking' },
+            { text: '写下来才算想清楚', link: 'writing' }
           ]
         }
       ]
