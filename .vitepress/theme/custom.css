@@ -336,3 +336,38 @@ html :is(input, textarea, select, [contenteditable='true']) {
     display: none;
   }
 }
+
+/* ---------------- 明暗切换的圆形扩散 ---------------- */
+
+/* View Transitions 默认让新旧两张整页快照交叉淡入淡出。
+   这里把两个动画都关掉（并把混合模式从 plus-lighter 改回 normal，避免叠色发白），
+   改成只让新快照带着一圈 clip-path 圆，从切换按钮处向外扩满整屏。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 旧快照留在下层当底，新快照盖在上面负责扩散 */
+::view-transition-old(root) {
+  z-index: 0;
+}
+
+::view-transition-new(root) {
+  z-index: 1;
+  animation: vp-theme-reveal 0.5s ease-out both;
+}
+
+/* 圆心和半径由 index.ts 在点击切换按钮时写到 <html> 上：
+   圆心正对按钮中心，半径取到视口最远角的距离，动画结束时圆必定盖满整屏 */
+@keyframes vp-theme-reveal {
+  from {
+    clip-path: circle(0% at var(--vp-theme-x, 50%) var(--vp-theme-y, 50%));
+  }
+
+  to {
+    clip-path: circle(
+      var(--vp-theme-r, 150vmax) at var(--vp-theme-x, 50%) var(--vp-theme-y, 50%)
+    );
+  }
+}
