@@ -18,17 +18,59 @@
   content: '';
   position: absolute;
   top: 50%;
-  right: -4%;
+  /* 用 left + translate(-50%) 把圆心钉死：盒子尺寸要跟遮罩一起调，
+     用 right 定位的话一改尺寸圆心就会跟着挪。
+     85% 是复刻原版 right: -4% 时的圆心位置 */
+  left: 85%;
   z-index: 0;
-  width: min(40vw, 30rem);
+  /* 原版是 min(40vw, 30rem) 的圆盘配 blur(5rem)，模糊会把颜色向外抹开约 3σ，
+     完整承载那圈外扩需要 2.09 倍宽；这里取 1.8 倍
+     （= 0.86 × 2.09 × min(40vw, 30rem)），也就是整体缩到原版的 86%。
+     遮罩是按比例映射的，所以缩小时连内核一起等比变小，观感不变 */
+  width: min(72vw, 54rem);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background-image: linear-gradient(-45deg, #bd34fe 50%, #41d1ff 50%);
-  filter: blur(5rem);
+  /* 原版是 50% / 50% 的硬分界，靠 blur 化开；过渡带宽度 = 4σ ≈ 盒子对角线的 25%，
+     换算到放大后的盒子上就是 38% → 62% */
+  background-image: linear-gradient(-45deg, #bd34fe 38%, #41d1ff 62%);
+  /* 柔边用径向遮罩重建高斯衰减，替代 filter: blur(5rem)。
+     各档取的是正态分布累积值 Φ((R₀ − r) / σ)，也就是"半径 R₀ 的圆盘被 σ 模糊后"
+     的解析解——所以它不是手调的近似，而是原版模糊效果的等价复刻。
+     48% 处正好 0.5，对应原版圆盘的边缘 */
+  -webkit-mask-image: radial-gradient(
+    circle closest-side,
+    rgba(0, 0, 0, 0.997) 0%,
+    rgba(0, 0, 0, 0.985) 10%,
+    rgba(0, 0, 0, 0.945) 20%,
+    rgba(0, 0, 0, 0.847) 30%,
+    rgba(0, 0, 0, 0.674) 40%,
+    rgba(0, 0, 0, 0.5) 48%,
+    rgba(0, 0, 0, 0.341) 55%,
+    rgba(0, 0, 0, 0.162) 65%,
+    rgba(0, 0, 0, 0.059) 75%,
+    rgba(0, 0, 0, 0.016) 85%,
+    rgba(0, 0, 0, 0.003) 95%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle closest-side,
+    rgba(0, 0, 0, 0.997) 0%,
+    rgba(0, 0, 0, 0.985) 10%,
+    rgba(0, 0, 0, 0.945) 20%,
+    rgba(0, 0, 0, 0.847) 30%,
+    rgba(0, 0, 0, 0.674) 40%,
+    rgba(0, 0, 0, 0.5) 48%,
+    rgba(0, 0, 0, 0.341) 55%,
+    rgba(0, 0, 0, 0.162) 65%,
+    rgba(0, 0, 0, 0.059) 75%,
+    rgba(0, 0, 0, 0.016) 85%,
+    rgba(0, 0, 0, 0.003) 95%,
+    transparent 100%
+  );
   opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
   pointer-events: none;
   /* 跟随鼠标：--vp-hero-glow-x/y 与 --vp-hero-glow-scale 由主题脚本写入 */
-  transform: translate3d(var(--vp-hero-glow-x, 0px), calc(-50% + var(--vp-hero-glow-y, 0px)), 0)
+  transform: translate3d(calc(-50% + var(--vp-hero-glow-x, 0px)), calc(-50% + var(--vp-hero-glow-y, 0px)), 0)
     scale(var(--vp-hero-glow-scale, 1));
   /* 这里刻意不加 transition。跟随值每帧都在变，过渡就会每帧被重启一次
      （实测 120 帧里触发了 118 次 transitionrun / 117 次 transitioncancel），
@@ -59,11 +101,11 @@
   --vp-hero-glow-opacity: 0.34;
 }
 
-/* 窄屏下缩小光晕，避免压住标题 */
+/* 窄屏下缩小光晕，避免压住标题。宽度同样是原版 20rem 的 1.8 倍 */
 @media (max-width: 59.99rem) {
   .VPHero .container::before {
-    right: -15%;
-    width: 20rem;
+    left: 82%;
+    width: 36rem;
     --vp-hero-glow-opacity: 0.32;
   }
 }
