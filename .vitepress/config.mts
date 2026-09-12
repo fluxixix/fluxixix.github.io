@@ -12,7 +12,10 @@ export default defineConfig({
   },
   head: [
     // 让阅读器和浏览器能发现 RSS
-    ['link', { rel: 'alternate', type: 'application/rss+xml', title: 'fluxixix', href: '/feed.xml' }]
+    ['link', { rel: 'alternate', type: 'application/rss+xml', title: 'fluxixix', href: '/feed.xml' }],
+    // Vercel Web Analytics：先声明队列函数，再异步加载统计脚本（部署在 Vercel 上才会生效）
+    ['script', {}, 'window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); }'],
+    ['script', { defer: '', src: '/_vercel/insights/script.js' }]
   ],
   buildEnd: generateRssFeed,
   themeConfig: {
