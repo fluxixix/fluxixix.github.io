@@ -3,3 +3,72 @@
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
 }
+
+/* 首页 hero 右侧的渐变光晕（配色参考 vitepress.dev，但不放图案） */
+.VPHero {
+  /* 只裁剪横向溢出，避免出现横向滚动条；纵向留出光晕的柔和边缘 */
+  overflow-x: clip;
+}
+
+.VPHero .container {
+  position: relative;
+}
+
+.VPHero .container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -4%;
+  z-index: 0;
+  width: min(40vw, 30rem);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background-image: linear-gradient(-45deg, #bd34fe 50%, #41d1ff 50%);
+  filter: blur(5rem);
+  opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
+  pointer-events: none;
+  /* 跟随鼠标：--vp-hero-glow-x/y 与 --vp-hero-glow-scale 由主题脚本写入 */
+  transform: translate3d(var(--vp-hero-glow-x, 0px), calc(-50% + var(--vp-hero-glow-y, 0px)), 0)
+    scale(var(--vp-hero-glow-scale, 1));
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: vp-hero-glow-breathe 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* 鼠标移到 hero 区域时，光晕轻微放大 */
+.VPHero:hover .container::before {
+  --vp-hero-glow-scale: 1.12;
+}
+
+@keyframes vp-hero-glow-breathe {
+  0%,
+  100% {
+    opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
+  }
+
+  50% {
+    opacity: var(--vp-hero-glow-opacity, 0.5);
+  }
+}
+
+/* 浅色模式背景更亮，光晕收敛一些 */
+:root:not(.dark) .VPHero .container::before {
+  --vp-hero-glow-opacity: 0.34;
+}
+
+/* 窄屏下缩小光晕，避免压住标题 */
+@media (max-width: 59.99rem) {
+  .VPHero .container::before {
+    right: -15%;
+    width: 20rem;
+    --vp-hero-glow-opacity: 0.32;
+  }
+}
+
+/* 尊重系统的减少动效设置 */
+@media (prefers-reduced-motion: reduce) {
+  .VPHero .container::before {
+    animation: none;
+    transition: none;
+  }
+}
