@@ -250,13 +250,29 @@
   }
 }
 
-/* ---------------- 光标粒子层 + 液态玻璃透镜 ---------------- */
+/* ---------------- 光标粒子层 + 玻璃圆环 ---------------- */
 :root {
-  /* 沿用首页 hero 的紫青渐变，改这两处即可换掉整个特效的配色 */
+  /* 沿用首页 hero 的紫青渐变，改这两处即可换掉粒子配色 */
   --vp-cursor-glow: #bd34fe;
   --vp-cursor-glow-2: #41d1ff;
-  /* 透镜直径。cursor.ts 与 liquid-glass.ts 都从这里读，改这一处即可 */
-  --vp-cursor-lens-size: 34px;
+  /* 圆环直径。cursor.ts 从这里读，改这一处即可 */
+  --vp-cursor-ring-size: 34px;
+
+  /* 亮色主题：白色描边在浅背景上看不见，受光面必须反过来用深色 */
+  --vp-cursor-ring-rim-hi: rgba(0, 0, 0, 0.5);
+  --vp-cursor-ring-rim-lo: rgba(0, 0, 0, 0.05);
+  --vp-cursor-ring-sheen: rgba(0, 0, 0, 0.045);
+  --vp-cursor-ring-bevel: rgba(255, 255, 255, 0.7);
+  --vp-cursor-ring-shade: rgba(0, 0, 0, 0.14);
+}
+
+/* 暗色主题：VitePress 会在 <html> 上挂 dark 类 */
+html.dark {
+  --vp-cursor-ring-rim-hi: rgba(255, 255, 255, 0.85);
+  --vp-cursor-ring-rim-lo: rgba(255, 255, 255, 0.06);
+  --vp-cursor-ring-sheen: rgba(255, 255, 255, 0.2);
+  --vp-cursor-ring-bevel: rgba(255, 255, 255, 0.7);
+  --vp-cursor-ring-shade: rgba(0, 0, 0, 0.25);
 }
 
 /* 隐藏原生光标。默认主题有 6 处组件级 cursor 声明（无 @layer、特异性高于 *），
@@ -284,54 +300,38 @@ html :is(input, textarea, select, [contenteditable='true']) {
   pointer-events: none;
 }
 
-/* 位移贴图用的隐藏滤镜。width/height 归零但绝不能 display: none，
-   否则 url(#id) 引用会失效 */
-.vp-cursor-lens-filter {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-.vp-cursor-lens {
+.vp-cursor-ring {
   position: fixed;
   top: 0;
   left: 0;
-  width: var(--vp-cursor-lens-size);
-  height: var(--vp-cursor-lens-size);
+  width: var(--vp-cursor-ring-size);
+  height: var(--vp-cursor-ring-size);
   /* 让 transform 落在圆心而不是左上角 */
-  margin-left: calc(var(--vp-cursor-lens-size) / -2);
-  margin-top: calc(var(--vp-cursor-lens-size) / -2);
+  margin-left: calc(var(--vp-cursor-ring-size) / -2);
+  margin-top: calc(var(--vp-cursor-ring-size) / -2);
   border-radius: 50%;
   /* 高于本地搜索弹窗(100)、低于 SkipLink(999)。
-     透镜是光标本体，被弹窗压住就会出现「屏幕上没有光标」的情况 */
+     圆环是光标本体，被弹窗压住就会出现「屏幕上没有光标」的情况 */
   z-index: 150;
   pointer-events: none;
   opacity: 0;
   /* 只过渡透明度：transform 每帧都在写，过渡会让光标拖后腿 */
   transition: opacity 0.18s ease;
-  /* 中心的定位点。原生光标隐藏后，没有它就判断不出精确的点击落点 */
-  background-image: radial-gradient(circle, var(--vp-c-text-1) 0 0.75px, transparent 1px);
-  /* 兜底：全引擎可用。含 url() 的那条声明一旦不被支持会整条失效，
-     所以必须用一条独立的、不含 url() 的声明打底。
-     注意顺序：标准属性必须写在 -webkit- 之后。构建时的 lightningcss 会把
-     两者当成同一个属性的重复声明，只保留最后一条——写在前面会被整个丢掉 */
-  -webkit-backdrop-filter: blur(0.5px) saturate(130%) brightness(1.02);
-  backdrop-filter: blur(0.5px) saturate(130%) brightness(1.02);
+  /* 玻璃质感全靠背景渐变，不用 backdrop-filter：
+     后者会让元素每移动一帧就重新采样一次背后的内容，正是卡顿的来源。
+     第一个渐变是中心的定位点（原生光标隐藏后靠它判断精确落点），
+     第二个是从左上打进来的那道高光斜面 */
+  background-image:
+    radial-gradient(circle, var(--vp-c-text-1) 0 0.75px, transparent 1px),
+    radial-gradient(circle at 34% 28%, var(--vp-cursor-ring-sheen) 0%, transparent 62%);
 }
 
-.vp-cursor-lens.is-visible {
+.vp-cursor-ring.is-visible {
   opacity: 1;
 }
 
-/* 只有引擎判定通过时才会加上这个类，Chromium 下得到真折射 + 色散 */
-.vp-cursor-lens--refract {
-  -webkit-backdrop-filter: url(#vp-cursor-lens-filter) blur(0.5px) saturate(130%) brightness(1.02);
-  backdrop-filter: url(#vp-cursor-lens-filter) blur(0.5px) saturate(130%) brightness(1.02);
-}
-
 /* 1px 渐变描边：用 mask-composite 把中间掏空，边框沿光来的方向由亮到暗 */
-.vp-cursor-lens::before {
+.vp-cursor-ring::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -339,10 +339,10 @@ html :is(input, textarea, select, [contenteditable='true']) {
   padding: 1px;
   background: linear-gradient(
     160deg,
-    rgba(255, 255, 255, 0.85) 0%,
-    rgba(255, 255, 255, 0.15) 35%,
-    rgba(255, 255, 255, 0.05) 65%,
-    rgba(255, 255, 255, 0.5) 100%
+    var(--vp-cursor-ring-rim-hi) 0%,
+    var(--vp-cursor-ring-rim-lo) 38%,
+    var(--vp-cursor-ring-rim-lo) 62%,
+    var(--vp-cursor-ring-rim-hi) 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -350,22 +350,22 @@ html :is(input, textarea, select, [contenteditable='true']) {
   mask-composite: exclude;
 }
 
-/* 内侧斜面：上缘吃光、下缘落影，再加一圈外投影把透镜从背景里托起来 */
-.vp-cursor-lens::after {
+/* 内侧斜面：上缘吃光、下缘落影，再加一圈外投影把圆环从背景里托起来 */
+.vp-cursor-ring::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.6),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.18),
-    0 2px 10px rgba(0, 0, 0, 0.16);
+    inset 0 1px 2px var(--vp-cursor-ring-bevel),
+    inset 0 -2px 4px var(--vp-cursor-ring-shade),
+    0 2px 10px var(--vp-cursor-ring-shade);
 }
 
 /* JS 侧在 reduced-motion 下已经直接 return，这里是双保险 */
 @media (prefers-reduced-motion: reduce) {
   .vp-cursor-canvas,
-  .vp-cursor-lens {
+  .vp-cursor-ring {
     display: none;
   }
 

@@ -1,13 +1,40 @@
 /**
- * 光标特效：液态玻璃透镜 + 粒子拖尾 + 点击波纹。
+ * 光标特效：玻璃圆环 + 粒子拖尾 + 点击波纹。
  *
- * 透镜是 DOM 元素（要 backdrop-filter 才能对身后内容做折射），粒子与波纹逐帧绘制，
- * 没法用 CSS transition 表达，所以留在 canvas 上。
- * 整站只挂一个 canvas、一个透镜、一个 rAF 循环，空闲时会把循环彻底停掉。
- * 原生光标已在 custom.css 里隐藏，透镜就是光标本体。
+ * 圆环是一个纯 CSS 的 DOM 元素，质感全部来自 custom.css 的渐变，不使用任何滤镜——
+ * 移动时只有一次 transform 合成。粒子与波纹逐帧绘制，没法用 CSS transition 表达，
+ * 所以留在 canvas 上。整站只挂一个 canvas、一个圆环、一个 rAF 循环，空闲时会把循环彻底停掉。
+ * 原生光标已在 custom.css 里隐藏，圆环就是光标本体。
  */
 
-import { createLiquidLens } from './liquid-glass'
+/**
+ * 光标外形：一个纯 CSS 的玻璃圆环。
+ * 这里只负责建元素和搬位置，质感全部在 custom.css 里。
+ */
+interface Ring {
+  moveTo(x: number, y: number): void
+  show(): void
+  hide(): void
+}
+
+function createRing(): Ring {
+  const element = document.createElement('div')
+  element.className = 'vp-cursor-ring'
+  element.setAttribute('aria-hidden', 'true')
+  document.body.appendChild(element)
+
+  return {
+    moveTo(x, y) {
+      element.style.transform = `translate3d(${x}px, ${y}px, 0)`
+    },
+    show() {
+      element.classList.add('is-visible')
+    },
+    hide() {
+      element.classList.remove('is-visible')
+    }
+  }
+}
 
 const CONSTANTS = {
   /** 粒子池上限，超出时丢弃最旧的 */
@@ -71,8 +98,8 @@ export function setupCursorFx() {
   }
   resize()
 
-  // 透镜挂在 canvas 之后，DOM 顺序保证它画在粒子之上
-  const lens = createLiquidLens()
+  // 圆环挂在 canvas 之后，DOM 顺序保证它画在粒子之上
+  const ring = createRing()
 
   // 颜色留在 CSS 里，这里只读取
   const readColors = () => {
@@ -97,22 +124,21 @@ export function setupCursorFx() {
   let rafId = 0
   let last = 0
 
-  // 透镜位置的写入按帧合并。pointermove 在高刷新率指针设备上每秒可触发上千次，
-  // 每写一次 transform 都会让 backdrop-filter 重新采样背景并重跑三遍位移滤镜，
-  // 这是拖动卡顿的主因。合并到每帧一次后再交给 CSS 合成。
-  let lensX = 0
-  let lensY = 0
-  let lensFrame = 0
+  // 圆环位置的写入按帧合并。pointermove 在高刷新率指针设备上每秒可触发上千次，
+  // 逐个事件写 style 会造成大量无谓的样式重算。合并到每帧一次后再交给 CSS 合成。
+  let ringX = 0
+  let ringY = 0
+  let ringFrame = 0
 
-  const flushLens = () => {
-    lensFrame = 0
-    lens.moveTo(lensX, lensY)
+  const flushRing = () => {
+    ringFrame = 0
+    ring.moveTo(ringX, ringY)
   }
 
-  const queueLens = (x: number, y: number) => {
-    lensX = x
-    lensY = y
-    if (!lensFrame) lensFrame = requestAnimationFrame(flushLens)
+  const queueRing = (x: number, y: number) => {
+    ringX = x
+    ringY = y
+    if (!ringFrame) ringFrame = requestAnimationFrame(flushRing)
   }
 
   const spawn = (x: number, y: number, vx: number, vy: number, r: number) => {
@@ -224,12 +250,12 @@ export function setupCursorFx() {
         hasPointer = true
         lastTrail.x = pointer.x
         lastTrail.y = pointer.y
-        lens.show()
+        ring.show()
       }
 
-      // 透镜是光标本体，不能有缓动，否则可见指针与实际热点错位。
-      // 但写入要按帧合并，见 queueLens 的说明。
-      queueLens(pointer.x, pointer.y)
+      // 圆环是光标本体，不能有缓动，否则可见指针与实际热点错位。
+      // 但写入要按帧合并，见 queueRing 的说明。
+      queueRing(pointer.x, pointer.y)
 
       const dx = pointer.x - lastTrail.x
       const dy = pointer.y - lastTrail.y
@@ -259,18 +285,18 @@ export function setupCursorFx() {
     pointer.x = event.clientX
     pointer.y = event.clientY
 
-    // 未经 pointermove 就点击时兜底，否则透镜还是 opacity: 0
+    // 未经 pointermove 就点击时兜底，否则圆环还是 opacity: 0
     if (!hasPointer) {
       hasPointer = true
-      lens.show()
+      ring.show()
     }
-    // 点击时要求立即对齐，否则点击处的爆发粒子与透镜会差一帧。
+    // 点击时要求立即对齐，否则点击处的爆发粒子与圆环会差一帧。
     // 先撤掉挂起的合并帧，避免这一帧稍后又用旧坐标写一次。
-    if (lensFrame) {
-      cancelAnimationFrame(lensFrame)
-      lensFrame = 0
+    if (ringFrame) {
+      cancelAnimationFrame(ringFrame)
+      ringFrame = 0
     }
-    lens.moveTo(pointer.x, pointer.y)
+    ring.moveTo(pointer.x, pointer.y)
 
     // 均匀铺开一圈再加随机扰动，比纯随机更像一次爆发
     for (let i = 0; i < CONSTANTS.BURST_PER_CLICK; i++) {
@@ -288,10 +314,10 @@ export function setupCursorFx() {
     start()
   })
 
-  // 指针移出窗口时收掉透镜，不留一个冻结的圆停在屏幕边缘
+  // 指针移出窗口时收掉圆环，不留一个冻结的圆停在屏幕边缘
   document.documentElement.addEventListener('pointerleave', () => {
     hasPointer = false
-    lens.hide()
+    ring.hide()
   })
 
   document.addEventListener('visibilitychange', () => {
