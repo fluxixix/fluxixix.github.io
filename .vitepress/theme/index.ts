@@ -1,5 +1,6 @@
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import { setupCursorFx } from './cursor'
 import './custom.css'
 
 /** 光晕跟随鼠标的最大位移（px） */
@@ -60,5 +61,6 @@ export default {
   extends: DefaultTheme,
   enhanceApp() {
     setupHeroGlow()
+    setupCursorFx()
   }
 } satisfies Theme
