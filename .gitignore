@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# VitePress
+.vitepress/dist/
+.vitepress/cache/
+
+# Obsidian
+.obsidian/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

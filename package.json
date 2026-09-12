@@ -1,0 +1,12 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@iconify-json/mdi": "^1.2.3",
+    "vitepress": "^2.0.0-alpha.20"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  }
+}
