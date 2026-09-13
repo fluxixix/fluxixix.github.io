@@ -67,7 +67,6 @@ export default defineConfig({
           text: '随笔',
           base: '/posts/notes/',
           items: [
-            { text: '你好，世界', link: 'hello' },
             { text: '关于「less is more」', link: 'less-is-more' },
             { text: '笔记是写给未来的自己的', link: 'note-taking' },
             { text: '写下来才算想清楚', link: 'writing' }
