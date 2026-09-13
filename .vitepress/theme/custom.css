@@ -1,10 +1,245 @@
-/* 首页 hero 标题（name）使用渐变色，取值与 vitepress.dev 一致 */
+/* ==========================================================================
+   fluxixix —— 自定义主题
+   --------------------------------------------------------------------------
+   章节顺序即层叠顺序，越靠后越具体：
+
+     1. 设计令牌      颜色 / 字号 / 间距 / 动效曲线，全站唯一取值来源
+     2. 导航栏
+     3. 首页 hero（含渐变光晕）
+     4. 首页 features
+     5. 正文排版
+     6. 文章列表
+     7. 归档时间轴
+     8. 页脚与目录
+     9. 入场与滚动揭示
+    10. 光标粒子层、明暗切换扩散
+
+   两个必须记住的前提：
+
+   - 默认主题的组件样式都写在 <style scoped> 里，编译后选择器会带上
+     [data-v-xxxx]，特异性比裸类名高一级。要覆盖组件的**属性**（不是变量），
+     选择器至少要凑够两个类名，例如 .VPFeatures.VPHomeFeatures。
+     全局的 .vp-doc 样式来自普通 css 文件，没有这个问题。
+   - VitePress 的默认样式分两层：base.css 在 @layer 里，vars.css 和组件样式
+     不在。本项目所有样式都不在 layer 里，且 custom.css 最后加载，所以同特异性
+     下总是本项目生效。
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 设计令牌
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* 品牌渐变：全站唯一的高饱和信号。hero 标题、光晕、光标拖尾、引用条
+     都取自这两端，改这两行就能整体换色 */
+  --fx-brand-a: #bd34fe;
+  --fx-brand-b: #41d1ff;
+
+  /* 由渐变两端推导出的功能色。链接和按钮要长期停留在屏幕上，
+     不能直接用 #bd34fe —— 它在白底上对比度只有 2.3:1，
+     所以按同色相压暗到下面这组（链接色 6.3:1，按钮底 5.2:1） */
+  --vp-c-brand-1: #8b2bd1;
+  --vp-c-brand-2: #a53ce4;
+  --vp-c-brand-3: #9c33d8;
+  --vp-c-brand-soft: rgba(155, 51, 216, 0.12);
+  --vp-c-brand: var(--vp-c-brand-1);
+
+  /* tip 容器改用渐变另一端的青色。品牌色变成紫之后，tip 如果继续跟着品牌走，
+     就和正文里的链接同色了，提示框也就失去了辨识度 */
+  --vp-c-tip-1: #0e7490;
+  --vp-c-tip-2: #0891b2;
+  --vp-c-tip-3: #06b6d4;
+  --vp-c-tip-soft: rgba(14, 165, 233, 0.12);
+  --vp-custom-block-tip-bg: var(--vp-c-tip-soft);
+  --vp-custom-block-tip-code-bg: var(--vp-c-tip-soft);
+
+  /* 次要按钮做成描边幽灵按钮：hero 上两块实心色块会互相抢注意力 */
+  --vp-button-alt-border: var(--vp-c-border);
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-text: var(--vp-c-text-1);
+  --vp-button-alt-hover-border: var(--vp-c-brand-1);
+  --vp-button-alt-hover-bg: var(--vp-c-brand-soft);
+  --vp-button-alt-hover-text: var(--vp-c-brand-1);
+  --vp-button-alt-active-border: var(--vp-c-brand-1);
+  --vp-button-alt-active-bg: var(--vp-c-brand-soft);
+  --vp-button-alt-active-text: var(--vp-c-brand-1);
+
+  /* 字号阶梯：1.25 倍率。正文锁在 1rem —— 中文在 16px / 1.8 行高下最稳 */
+  --fx-text-sm: 0.8125rem;
+  --fx-text-md: 0.875rem;
+  --fx-text-lg: 1.125rem;
+  --fx-text-xl: 1.375rem;
+  --fx-text-2xl: 1.625rem;
+  --fx-text-3xl: 2.25rem;
+  /* 品牌名专用：视口宽时封顶，窄屏回到 3rem，避免中文/长词换行 */
+  --fx-text-display: clamp(3rem, 7vw, 4.5rem);
+
+  /* 间距：4px 基准 */
+  --fx-space-1: 0.25rem;
+  --fx-space-3: 0.75rem;
+  --fx-space-4: 1rem;
+  --fx-space-5: 1.5rem;
+  --fx-space-6: 2rem;
+  --fx-space-7: 3rem;
+
+  /* 动效曲线：快进慢出，全站统一，避免每个组件各调一条 */
+  --fx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fx-dur-base: 0.25s;
+  --fx-dur-slow: 0.55s;
+}
+
+.dark {
+  /* 深色下链接要往亮的方向走，白底那组压暗的取值在 #1b1b1f 上会糊掉 */
+  --vp-c-brand-1: #c98cfb;
+  --vp-c-brand-2: #d9a6ff;
+  --vp-c-brand-3: #9b3ae8;
+  --vp-c-brand-soft: rgba(168, 85, 240, 0.16);
+
+  --vp-c-tip-1: #38bdf8;
+  --vp-c-tip-2: #0ea5e9;
+  --vp-c-tip-3: #0284c7;
+  --vp-c-tip-soft: rgba(56, 189, 248, 0.14);
+  --vp-custom-block-tip-bg: var(--vp-c-tip-soft);
+  --vp-custom-block-tip-code-bg: var(--vp-c-tip-soft);
+
+  /* 实心按钮底上的白字同样要够对比度，hover 态也不能掉到 4.5:1 以下 */
+  --vp-button-brand-bg: #9b3ae8;
+  --vp-button-brand-hover-bg: #a049ea;
+  --vp-button-brand-active-bg: #8b2bd1;
+}
+
+/* --------------------------------------------------------------------------
+   2. 导航栏
+   -------------------------------------------------------------------------- */
+
+/* 默认主题的顶栏是一块不透明的实色，滚过长文章时上半屏会显得很硬。
+   这里换成半透明 + 毛玻璃。
+
+   做法是改主题自己的两个变量，而不是往 .VPNavBar::before 上写属性：
+   顶栏的每个形态（首页未滚动、移动端菜单展开、60~80rem 下由 local nav
+   接管那一整块）都由主题按变量算出各自的取值，其中几处还显式覆盖成
+   transparent / none。自己写选择器去盖，等于和这套状态机打架，
+   而且那几个例外规则特异性更高，盖不动。 */
+:root {
+  --vp-nav-bg-color: rgba(255, 255, 255, 0.76);
+  --vp-nav-backdrop-filter: saturate(160%) blur(12px);
+}
+
+.dark {
+  --vp-nav-bg-color: rgba(27, 27, 31, 0.72);
+}
+
+/* --------------------------------------------------------------------------
+   3. 首页 hero
+   -------------------------------------------------------------------------- */
+
+/* 品牌名用渐变填充，取值与 vitepress.dev 一致 */
 :root {
   --vp-home-hero-name-color: transparent;
   --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
 }
 
-/* 首页 hero 右侧的渐变光晕（配色参考 vitepress.dev，但不放图案） */
+/* 首屏按海报排：整块留白更多，文字列仍然靠左停在光晕之外的安静区域。
+   加 -layout-top-height 是为了不挡住布局顶部的插槽（默认 0） */
+.VPHero.VPHomeHero {
+  padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 3.5rem);
+  padding-bottom: 3.5rem;
+}
+
+@media (min-width: 40rem) {
+  .VPHero.VPHomeHero {
+    padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 6rem);
+    padding-bottom: 5rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  .VPHero.VPHomeHero {
+    padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 7rem);
+    padding-bottom: 6rem;
+  }
+}
+
+.VPHero.VPHomeHero .heading {
+  gap: 0.75rem;
+}
+
+/* 品牌名：首屏最大声的一行。默认主题里 name 和 text 同字号同字重，
+   读起来分不出主次，这里明确拉开 */
+.VPHero.VPHomeHero .name {
+  max-width: none;
+  font-size: var(--fx-text-display);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+/* 主张：降一整级，宽度收窄到一行左右 */
+.VPHero.VPHomeHero .text {
+  max-width: 26rem;
+  font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--vp-c-text-1);
+}
+
+/* 尾注：再降一级，做成一枚安静的元信息行，前面用品牌渐变短线收口 */
+.VPHero.VPHomeHero .tagline {
+  padding-top: var(--fx-space-5);
+  max-width: 24rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.VPHero.VPHomeHero .tagline::before {
+  content: '';
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-bottom: var(--fx-space-4);
+  border-radius: 1px;
+  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+}
+
+.VPHero.VPHomeHero .actions {
+  padding-top: var(--fx-space-6);
+}
+
+/* 圆角从胶囊改成 10px 的圆角矩形，并加大点击面积。
+   默认 .VPButton.medium 是 38px 高，触屏上偏小 */
+.VPHero.VPHomeHero .actions .VPButton.medium {
+  padding: 0 1.5rem;
+  border-radius: 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 2.8;
+  letter-spacing: 0.01em;
+}
+
+/* 主按钮靠一层很淡的品牌色投影从背景里浮起来，悬停再抬 1px */
+.VPHero.VPHomeHero .actions .VPButton.brand {
+  box-shadow:
+    0 1px 2px rgba(139, 43, 209, 0.24),
+    0 6px 18px -6px rgba(139, 43, 209, 0.5);
+}
+
+.VPHero.VPHomeHero .actions .VPButton.brand:hover {
+  box-shadow:
+    0 2px 4px rgba(139, 43, 209, 0.26),
+    0 10px 24px -6px rgba(139, 43, 209, 0.55);
+  transform: translateY(-1px);
+}
+
+.VPHero.VPHomeHero .actions .VPButton.brand:active {
+  box-shadow: 0 1px 2px rgba(139, 43, 209, 0.24);
+  transform: translateY(0);
+}
+
+/* 首页 hero 右侧的渐变光晕（配色参考 vitepress.dev，但不放图案）。
+   几何参数是推导出来的，不要随手改；下面只补了入场淡入 */
 .VPHero {
   /* 只裁剪横向溢出，避免出现横向滚动条；纵向留出光晕的柔和边缘 */
   overflow-x: clip;
@@ -76,7 +311,11 @@
      （实测 120 帧里触发了 118 次 transitionrun / 117 次 transitioncancel），
      合成器永远接不过去，动画只能挂在主线程上——首页整页都会跟着迟钝。
      直接写 transform 反而是纯粹的合成层更新，更跟手也更省 */
-  animation: vp-hero-glow-breathe 9s ease-in-out infinite;
+  /* 用 backwards 而不是 both：延时期间要停在 from（全透明），
+     动画结束后又没有残留的填充态，元素不会一直挂着合成层和层叠上下文 */
+  animation:
+    vp-hero-glow-in 0.9s var(--fx-ease) backwards,
+    vp-hero-glow-breathe 9s ease-in-out 0.9s infinite;
   will-change: transform, opacity;
 }
 
@@ -93,6 +332,18 @@
 
   50% {
     opacity: var(--vp-hero-glow-opacity, 0.5);
+  }
+}
+
+/* 入场时从无到有。呼吸动画带 0.9s 延迟，两者同时在动画列表里时
+   后声明的那个接管 opacity，所以延时期间由这条负责 */
+@keyframes vp-hero-glow-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
   }
 }
 
@@ -117,12 +368,474 @@
   }
 }
 
-/* ---------------- 归档页时间轴 ---------------- */
+/* --------------------------------------------------------------------------
+   4. 首页 features
+   -------------------------------------------------------------------------- */
+
+/* 默认主题把 features 渲染成四张带底色的圆角卡片，和首屏的气质是两套路子。
+   这里去掉卡片，改成用顶部细线分隔的四列 —— 视线落在标题上而不是框上 */
+.VPFeatures.VPHomeFeatures {
+  padding-top: var(--fx-space-4);
+}
+
+.VPFeatures.VPHomeFeatures .items {
+  margin: 0;
+}
+
+.VPFeatures.VPHomeFeatures .item {
+  padding: 0;
+}
+
+@media (min-width: 40rem) {
+  .VPFeatures.VPHomeFeatures .item {
+    padding: 0 var(--fx-space-5) 0 0;
+    margin-bottom: var(--fx-space-5);
+  }
+}
+
+.VPFeatures.VPHomeFeatures .VPFeature {
+  height: 100%;
+  border: 0;
+  border-top: 1px solid var(--vp-c-divider);
+  border-radius: 0;
+  padding-top: var(--fx-space-4);
+  background-color: transparent;
+  transition: border-color var(--fx-dur-base);
+}
+
+.VPFeatures.VPHomeFeatures .VPFeature:hover {
+  border-top-color: var(--vp-c-brand-1);
+}
+
+.VPFeatures.VPHomeFeatures .box {
+  padding: 0;
+}
+
+/* emoji 图标默认去色，悬停时才亮起来：既压住了四块彩色带来的噪声，
+   又留了一个廉价的反馈点 */
+.VPFeatures.VPHomeFeatures .icon {
+  justify-content: flex-start;
+  margin-bottom: var(--fx-space-3);
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  font-size: 1.375rem;
+  line-height: 1;
+  background-color: transparent;
+  filter: grayscale(1) opacity(0.65);
+  transition: filter var(--fx-dur-base);
+}
+
+.VPFeatures.VPHomeFeatures .VPFeature:hover .icon {
+  filter: grayscale(0) opacity(1);
+}
+
+.VPFeatures.VPHomeFeatures .title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.VPFeatures.VPHomeFeatures .details {
+  padding-top: var(--fx-space-1);
+  font-size: var(--fx-text-md);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+.VPFeatures.VPHomeFeatures .link-text {
+  padding-top: var(--fx-space-3);
+}
+
+.VPFeatures.VPHomeFeatures .link-text-value {
+  font-size: var(--fx-text-sm);
+  font-weight: 500;
+  color: var(--vp-c-brand-1);
+}
+
+/* 箭头悬停时向右滑出 3px，和文章列表的反馈保持同一套语言 */
+.VPFeatures.VPHomeFeatures .link-text-icon {
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.VPFeatures.VPHomeFeatures .VPFeature:hover .link-text-icon {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .VPFeatures.VPHomeFeatures .link-text-icon {
+    transition: none;
+  }
+
+  .VPFeatures.VPHomeFeatures .VPFeature:hover .link-text-icon {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. 正文排版
+   -------------------------------------------------------------------------- */
+
+/* 阅读区宽度交给默认的 43rem（≈688px，中文一行 40 字上下），
+   这里只调字号阶梯、行高和分隔方式 */
+
+.vp-doc h1 {
+  font-size: var(--fx-text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.vp-doc h2 {
+  position: relative;
+  margin: var(--fx-space-7) 0 var(--fx-space-4);
+  border-top: 0;
+  padding-top: 1.75rem;
+  font-size: var(--fx-text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+/* 用一条向右淡出的细线代替默认贯穿整行的分隔线：
+   起点清晰、末端消失，比一条等宽的线更像「新章节开始」而不是「上一节结束」 */
+.vp-doc h2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    var(--vp-c-divider) 0%,
+    var(--vp-c-divider) 30%,
+    transparent 100%
+  );
+}
+
+/* 锚点的位置跟着 h2 新的 padding-top 走，否则悬停时 # 会飘在半空 */
+.vp-doc h2 .header-anchor {
+  top: 1.75rem;
+}
+
+.vp-doc h3 {
+  margin: var(--fx-space-5) 0 0;
+  font-size: var(--fx-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.vp-doc h4 {
+  font-size: var(--fx-text-lg);
+}
+
+/* 标题旁的 # 沿用品牌色，和正文链接同一套色 */
+.vp-doc .header-anchor {
+  color: var(--vp-c-brand-1);
+}
+
+/* 中文正文的行高比默认的 1.75 再松一点，长段落才不会挤成一片 */
+.vp-doc p {
+  margin: var(--fx-space-4) 0;
+  line-height: 1.8;
+}
+
+.vp-doc li {
+  line-height: 1.75;
+}
+
+/* 引用：默认的灰竖条辨识度太低，换成品牌渐变竖条 */
+.vp-doc blockquote {
+  position: relative;
+  margin: var(--fx-space-5) 0;
+  border-left: 0;
+  padding: var(--fx-space-1) 0 var(--fx-space-1) 1.25rem;
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc blockquote::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background-image: linear-gradient(180deg, var(--fx-brand-a), var(--fx-brand-b));
+}
+
+.vp-doc blockquote > p {
+  line-height: 1.8;
+}
+
+/* 行内代码：收紧内边距、加大圆角，读起来更像一段代码而不是一个色块 */
+.vp-doc :not(pre) > code {
+  border-radius: 0.375rem;
+  padding: 0.15em 0.4em;
+}
+
+/* 代码块：加一圈很淡的描边和大一点的圆角，和页面背景分开 */
+@media (min-width: 40rem) {
+  .vp-doc div[class*='language-'] {
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 0.75rem;
+  }
+}
+
+/* 默认主题让相邻代码块上移 0.5rem 拼在一起。加了描边之后拼接处会出现
+   双线，改成正常间距 */
+.vp-doc div[class*='language-'] + div[class*='language-'] {
+  margin-top: 0.75rem;
+}
+
+/* 表格：去掉竖线和斑马纹，只留横向分隔。默认把每格都框起来，
+   在窄栏里噪点太多 */
+.vp-doc table {
+  margin: var(--fx-space-5) 0;
+}
+
+.vp-doc tr {
+  border-top: 0;
+  background-color: transparent;
+}
+
+.vp-doc tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding: 0.625rem 1rem;
+}
+
+.vp-doc thead th {
+  border-bottom-color: var(--vp-c-border);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  background-color: transparent;
+}
+
+.vp-doc tbody tr:hover {
+  background-color: var(--vp-c-bg-soft);
+}
+
+/* 自定义容器：左侧补一条类型色竖条，比整块淡淡铺色更能一眼看出是哪一类 */
+.vp-doc .custom-block {
+  border-left: 3px solid transparent;
+  border-radius: 0.625rem;
+  padding: 0.875rem 1.125rem;
+}
+
+.vp-doc .custom-block.tip {
+  border-left-color: var(--vp-c-tip-1);
+}
+
+.vp-doc .custom-block.info,
+.vp-doc .custom-block.details {
+  border-left-color: var(--vp-c-default-1);
+}
+
+.vp-doc .custom-block.warning {
+  border-left-color: var(--vp-c-warning-1);
+}
+
+.vp-doc .custom-block.danger {
+  border-left-color: var(--vp-c-danger-1);
+}
+
+.vp-doc .custom-block.caution {
+  border-left-color: var(--vp-c-caution-1);
+}
+
+.vp-doc .custom-block.important {
+  border-left-color: var(--vp-c-important-1);
+}
+
+.vp-doc .custom-block-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* 图片：圆角 + 一像素描边，避免深色背景下白底图直接糊在页面上；
+   图文块统一宽度，视觉上更稳 */
+.vp-doc img {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.625rem;
+}
+
+.vp-doc hr {
+  margin: var(--fx-space-6) 0;
+}
+
+/* 键盘按键：默认没有任何样式，补一个实心底 */
+.vp-doc kbd {
+  border: 1px solid var(--vp-c-border);
+  border-bottom-width: 2px;
+  border-radius: 0.375rem;
+  padding: 0.1em 0.4em;
+  font-size: 0.8125em;
+  color: var(--vp-c-text-1);
+  background-color: var(--vp-c-bg-soft);
+}
+
+/* --------------------------------------------------------------------------
+   6. 文章列表（首页「最新文章」与 /posts/ 共用）
+   -------------------------------------------------------------------------- */
+/* 这里的规则统一带 .vp-doc 前缀，是为了盖过 .vp-doc ul / .vp-doc li 自带的
+   圆点、缩进和间距（那些选择器权重比裸类名高） */
+.vp-doc .post-list {
+  margin: var(--fx-space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vp-doc .post-list .post-item {
+  margin: 0;
+}
+
+/* 用分隔线代替圆点，条目之间才有分组感 */
+.vp-doc .post-list .post-item + .post-item {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc .post-entry {
+  position: relative;
+  display: grid;
+  /* 日期列固定宽度，标题与摘要的左边缘才能对齐成一条竖线 */
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.3rem 1.25rem;
+  /* 左侧留出品牌色竖条的位置 */
+  padding: 0.9rem 0.75rem 0.9rem 1rem;
+  border-radius: 8px;
+  transition:
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+/* 悬停时从左侧滑出的品牌色竖条：常驻占位、只做 scaleY，
+   既不会触发重排，动画也留在合成层上 */
+.vp-doc .post-entry::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 1.6rem;
+  border-radius: 2px;
+  background: var(--vp-c-brand-1);
+  transform: translateY(-50%) scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.vp-doc .post-entry:hover::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.vp-doc .post-entry:hover {
+  background-color: var(--vp-c-bg-soft);
+  transform: translateX(3px);
+}
+
+/* 覆盖 .vp-doc a:hover 给整条链接加的下划线——条目整体已有反馈，不需要它 */
+.vp-doc a.post-entry,
+.vp-doc a.post-entry:hover {
+  text-decoration: none;
+}
+
+.vp-doc .post-date {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  /* 用 text-2 而不是 text-3：日期是有信息量的正文内容，
+     text-3 在白底/深底上分别只有 3.0:1 和 3.2:1，过不了 AA。
+     靠更小的字号和等宽字体把它和摘要区分开，而不是靠降低对比度 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fx-dur-base);
+}
+
+.vp-doc .post-main {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.vp-doc .post-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--vp-c-text-1);
+  transition: color var(--fx-dur-base);
+}
+
+/* 摘要压到最多两行：条目高度接近，列表节奏更整齐 */
+.vp-doc .post-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--fx-text-md);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc .post-entry:hover .post-title,
+.vp-doc .post-entry:hover .post-date {
+  color: var(--vp-c-brand-1);
+}
+
+/* 窄屏下日期换到标题上方，否则固定列宽会把标题挤成一条 */
+@media (max-width: 40rem) {
+  .vp-doc .post-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .vp-doc .post-date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vp-doc .post-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-doc .post-entry,
+  .vp-doc .post-entry::before,
+  .vp-doc .post-date,
+  .vp-doc .post-title {
+    transition: none;
+  }
+
+  .vp-doc .post-entry:hover {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. 归档页时间轴
+   -------------------------------------------------------------------------- */
 .archive-timeline {
   /* 内容相对轨道缩进，圆点的负偏移也由它推导 */
   --indent: 1.75rem;
   position: relative;
-  margin-top: 1.5rem;
+  margin-top: var(--fx-space-5);
 }
 
 /* 贯穿整条的轨道，两端渐隐，避免生硬的起止 */
@@ -171,7 +884,7 @@
   transform: translateY(-50%);
 }
 
-/* 覆盖 .vp-doc h2 自带的上下边框和大间距 */
+/* 覆盖 .vp-doc h2 自带的上下边框、大间距和上面那条渐变分隔线 */
 .archive-timeline .timeline-year-text {
   margin: 0;
   border: 0;
@@ -180,6 +893,10 @@
   line-height: 2;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
+}
+
+.archive-timeline .timeline-year-text::before {
+  content: none;
 }
 
 .archive-timeline .timeline-list {
@@ -207,7 +924,10 @@
   background-color: var(--vp-c-bg);
   box-sizing: border-box;
   transform: translateY(-50%);
-  transition: border-color 0.25s, background-color 0.25s, transform 0.25s;
+  transition:
+    border-color var(--fx-dur-base),
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base);
 }
 
 .archive-timeline .timeline-item:hover::after {
@@ -223,7 +943,7 @@
   padding: 0.5rem 0.75rem 0.5rem 0;
   border-radius: 6px;
   text-decoration: none;
-  transition: transform 0.25s ease;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
 }
 
 .archive-timeline .timeline-entry:hover {
@@ -233,15 +953,15 @@
 .archive-timeline .timeline-day {
   flex: none;
   font-family: var(--vp-font-family-mono);
-  font-size: 0.8rem;
-  color: var(--vp-c-text-3);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-2);
   font-variant-numeric: tabular-nums;
-  transition: color 0.25s;
+  transition: color var(--fx-dur-base);
 }
 
 .archive-timeline .timeline-title {
   color: var(--vp-c-text-1);
-  transition: color 0.25s;
+  transition: color var(--fx-dur-base);
 }
 
 /* 悬停时在标题后滑出一个箭头；常驻占位，避免触发时发生重排 */
@@ -252,7 +972,9 @@
   color: var(--vp-c-brand-1);
   opacity: 0;
   transform: translateX(-4px);
-  transition: opacity 0.25s, transform 0.25s;
+  transition:
+    opacity var(--fx-dur-base),
+    transform var(--fx-dur-base);
 }
 
 .archive-timeline .timeline-entry:hover::after {
@@ -294,147 +1016,140 @@
   }
 }
 
-/* ---------------- 文章列表（首页「最新文章」与 /posts/ 共用） ---------------- */
-/* 这里的规则统一带 .vp-doc 前缀，是为了盖过 .vp-doc ul / .vp-doc li 自带的
-   圆点、缩进和间距（那些选择器权重比裸类名高） */
-.vp-doc .post-list {
-  margin: 1.5rem 0 0;
-  padding: 0;
-  list-style: none;
+/* --------------------------------------------------------------------------
+   8. 页脚与目录
+   -------------------------------------------------------------------------- */
+
+/* 目录：激活项染色并加粗，比默认的「只是变浅一点」更容易扫到 */
+.VPDocAsideOutline .outline-link {
+  line-height: 2.1;
+  transition: color var(--fx-dur-base);
 }
 
-.vp-doc .post-list .post-item {
-  margin: 0;
-}
-
-/* 用分隔线代替圆点，条目之间才有分组感 */
-.vp-doc .post-list .post-item + .post-item {
-  border-top: 1px solid var(--vp-c-divider);
-}
-
-.vp-doc .post-entry {
-  position: relative;
-  display: grid;
-  /* 日期列固定宽度，标题与摘要的左边缘才能对齐成一条竖线 */
-  grid-template-columns: 6rem minmax(0, 1fr);
-  align-items: baseline;
-  gap: 0.3rem 1.25rem;
-  /* 左侧留出品牌色竖条的位置 */
-  padding: 0.85rem 0.75rem 0.85rem 1rem;
-  border-radius: 8px;
-  transition: background-color 0.25s, transform 0.25s ease;
-}
-
-/* 悬停时从左侧滑出的品牌色竖条：常驻占位、只做 scaleY，
-   既不会触发重排，动画也留在合成层上 */
-.vp-doc .post-entry::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 3px;
-  height: 1.6rem;
-  border-radius: 2px;
-  background: var(--vp-c-brand-1);
-  transform: translateY(-50%) scaleY(0);
-  transition: transform 0.25s ease;
-}
-
-.vp-doc .post-entry:hover::before {
-  transform: translateY(-50%) scaleY(1);
-}
-
-.vp-doc .post-entry:hover {
-  background-color: var(--vp-c-bg-soft);
-  transform: translateX(3px);
-}
-
-/* 覆盖 .vp-doc a:hover 给整条链接加的下划线——卡片整体已有反馈，不需要它 */
-.vp-doc a.post-entry,
-.vp-doc a.post-entry:hover {
-  text-decoration: none;
-}
-
-.vp-doc .post-date {
-  grid-column: 1;
-  grid-row: 1;
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: var(--vp-c-text-3);
-  font-variant-numeric: tabular-nums;
-  transition: color 0.25s;
-}
-
-.vp-doc .post-main {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.vp-doc .post-title {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-  transition: color 0.25s;
-}
-
-/* 摘要压到最多两行：条目高度接近，列表节奏更整齐 */
-.vp-doc .post-desc {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: var(--vp-c-text-2);
-}
-
-.vp-doc .post-entry:hover .post-title,
-.vp-doc .post-entry:hover .post-date {
+.VPDocAsideOutline .outline-link:hover,
+.VPDocAsideOutline .outline-link.active {
   color: var(--vp-c-brand-1);
 }
 
-/* 窄屏下日期换到标题上方，否则固定列宽会把标题挤成一条 */
-@media (max-width: 40rem) {
-  .vp-doc .post-entry {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.35rem;
-  }
+.VPDocAsideOutline .outline-link.active {
+  font-weight: 500;
+}
 
-  .vp-doc .post-date {
-    grid-column: 1;
-    grid-row: 1;
-  }
+/* 目录左侧那条 1px 轨道压淡一点，让品牌色游标成为唯一的重点 */
+.VPDocAsideOutline .content {
+  border-left-color: var(--vp-c-divider);
+}
 
-  .vp-doc .post-main {
-    grid-column: 1;
-    grid-row: 2;
-  }
+/* 上下篇：去掉描边改成浅底，悬停时补一道品牌色描边并从一侧浮起 */
+.VPDocFooter .pager-link {
+  border-color: transparent;
+  border-radius: 0.625rem;
+  background-color: var(--vp-c-bg-soft);
+  transition:
+    background-color var(--fx-dur-base),
+    box-shadow var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.VPDocFooter .pager-link:hover {
+  box-shadow: inset 0 0 0 1px var(--vp-c-brand-1);
+  transform: translateY(-1px);
+}
+
+.VPDocFooter .pager-link .title {
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vp-doc .post-entry,
-  .vp-doc .post-entry::before,
-  .vp-doc .post-date,
-  .vp-doc .post-title {
-    transition: none;
-  }
-
-  .vp-doc .post-entry:hover {
+  .VPDocFooter .pager-link:hover {
     transform: none;
   }
 }
 
-/* ---------------- 光标粒子层 + 自定义光标 ---------------- */
+/* --------------------------------------------------------------------------
+   9. 入场与滚动揭示
+   -------------------------------------------------------------------------- */
+
+@keyframes fx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 首屏入场：品牌名 → 主张 → 尾注 → 按钮，逐级落下，80ms 一档。
+   填充模式用 backwards 而不是 both：延时期间停在 from（不可见），
+   动画结束后不留填充态，元素不会一直挂着层叠上下文 */
+@media (prefers-reduced-motion: no-preference) {
+  .VPHero.VPHomeHero .name {
+    animation: fx-rise 0.7s var(--fx-ease) 0.05s backwards;
+  }
+
+  .VPHero.VPHomeHero .text {
+    animation: fx-rise 0.7s var(--fx-ease) 0.13s backwards;
+  }
+
+  .VPHero.VPHomeHero .tagline {
+    animation: fx-rise 0.7s var(--fx-ease) 0.21s backwards;
+  }
+
+  .VPHero.VPHomeHero .actions {
+    animation: fx-rise 0.7s var(--fx-ease) 0.29s backwards;
+  }
+}
+
+/* 滚动揭示：列表与卡片进入视口时分批淡入。
+   初始的隐藏态挂在 html.fx-reveal-ready 上，由脚本决定何时打开——
+   脚本没跑（禁用 JS / 太老的浏览器）时页面就是普通的静态内容。
+   过渡只写在 .fx-in 上，所以隐藏这一步是瞬时的，不会先闪一下再淡出 */
+html.fx-reveal-ready .vp-doc .post-list .post-item,
+html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+html.fx-reveal-ready .vp-doc .post-list .post-item.fx-in,
+html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item.fx-in,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item.fx-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms),
+    transform var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms);
+}
+
+/* 键盘 Tab 到还没揭示的条目时立刻放出来。
+   少了这条，用键盘的人会聚焦到一个看不见的链接上 */
+html.fx-reveal-ready .vp-doc .post-list .post-item:focus-within,
+html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item:focus-within,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item:focus-within {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.fx-reveal-ready .vp-doc .post-list .post-item,
+  html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item,
+  html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. 光标粒子层、明暗切换扩散
+   -------------------------------------------------------------------------- */
+
 :root {
-  /* 沿用首页 hero 的紫青渐变，改这两处即可换掉粒子与光标的配色 */
-  --vp-cursor-glow: #bd34fe;
-  --vp-cursor-glow-2: #41d1ff;
+  /* 光标拖尾与自定义光标沿用品牌渐变，改 --fx-brand-a/b 即可一起换掉 */
+  --vp-cursor-glow: var(--fx-brand-a);
+  --vp-cursor-glow-2: var(--fx-brand-b);
 }
 
 /* 自定义光标：形状沿用系统箭头的惯例，只把填充换成站点渐变、加一圈白描边
@@ -473,7 +1188,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
   }
 }
 
-/* ---------------- 明暗切换的圆形扩散 ---------------- */
+/* 明暗切换的圆形扩散 ---------------------------------------------------- */
 
 /* View Transitions 默认让新旧两张整页快照交叉淡入淡出。
    这里把两个动画都关掉（并把混合模式从 plus-lighter 改回 normal，避免叠色发白），
@@ -491,7 +1206,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 ::view-transition-new(root) {
   z-index: 1;
-  animation: vp-theme-reveal 0.5s ease-out both;
+  animation: vp-theme-reveal 0.5s var(--fx-ease) both;
 }
 
 /* 圆心和半径由 index.ts 在点击切换按钮时写到 <html> 上：

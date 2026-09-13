@@ -1,5 +1,5 @@
 import { nextTick, type App, type Ref } from 'vue'
-import { useData, type EnhanceAppContext, type Theme } from 'vitepress'
+import { onContentUpdated, useData, type EnhanceAppContext, type Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { setupCursorFx } from './cursor'
 import './custom.css'
@@ -154,11 +154,87 @@ function setupThemeTransition(app: App) {
   })
 }
 
+/** 做滚动揭示的元素。都是列表项——正文段落不参与，否则阅读时视线总在动 */
+const REVEAL_SELECTOR = [
+  '.vp-doc .post-list .post-item',
+  '.VPFeatures.VPHomeFeatures .item',
+  '.archive-timeline .timeline-year .timeline-item'
+].join(',')
+
+/** 同一批里相邻两项的揭示间隔，形成自上而下的阶梯 */
+const REVEAL_STAGGER_MS = 45
+
+/** 阶梯最多累计到第几档。列表很长时最后一项也不至于要等一秒 */
+const REVEAL_STAGGER_CAP = 6
+
+/** 同一个父容器里的兄弟按顺序排队，跨容器不互相累积 */
+function revealDelay(el: HTMLElement): number {
+  const parent = el.parentElement
+  if (!parent) return 0
+  const index = Array.prototype.indexOf.call(parent.children, el)
+  return Math.min(Math.max(index, 0), REVEAL_STAGGER_CAP) * REVEAL_STAGGER_MS
+}
+
+/**
+ * 列表进入视口时淡入并轻微上移。
+ *
+ * 隐藏态写在 custom.css 的 html.fx-reveal-ready 下，由这里决定何时打开：
+ * 脚本没跑（禁用 JS、老浏览器、reduced-motion）时页面就是普通内容，不会白屏。
+ * 过渡只声明在被放出来的 .fx-in 上，所以"隐藏"这一步是瞬时的，不会先闪一下再淡出。
+ *
+ * 注意第 9 节里还配了 :focus-within —— 键盘 Tab 进来时立刻显示，
+ * 不然用键盘的人会聚焦到看不见的链接上。
+ */
+function setupReveal() {
+  if (typeof window === 'undefined') return
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  if (!('IntersectionObserver' in window)) return
+
+  let observer: IntersectionObserver | undefined
+
+  const collect = () => {
+    observer?.disconnect()
+    observer = undefined
+
+    const targets = Array.from(document.querySelectorAll<HTMLElement>(REVEAL_SELECTOR))
+    if (!targets.length) return
+
+    document.documentElement.classList.add('fx-reveal-ready')
+
+    const delays = new Map<Element, number>()
+
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const el = entry.target as HTMLElement
+          el.style.setProperty('--fx-reveal-delay', `${delays.get(el) ?? 0}ms`)
+          el.classList.add('fx-in')
+          // 揭示过就不再观察：往回滚动时不该重演一遍
+          observer?.unobserve(el)
+        }
+      },
+      // 下边界收 8%：元素要真的进到视野里才算数，不至于刚露个头就触发
+      { rootMargin: '0px 0px -8% 0px' }
+    )
+
+    for (const el of targets) {
+      delays.set(el, revealDelay(el))
+      observer.observe(el)
+    }
+  }
+
+  // Content 组件在 vnode mount / update / unmount 时都会回调，
+  // 一次路由切换可能来好几趟。推到下一帧再收集，拿到的才是最终的 DOM
+  onContentUpdated(() => requestAnimationFrame(collect))
+}
+
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }: EnhanceAppContext) {
     setupHeroGlow()
     setupCursorFx()
     setupThemeTransition(app)
+    setupReveal()
   }
 } satisfies Theme
