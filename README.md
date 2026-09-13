@@ -1,9 +1,6 @@
 <div align="center">
 
-<!-- 这里用绝对地址而不是相对路径：相对路径 GitHub 会直连
-     raw.githubusercontent.com（国内经常连不上），绝对地址才会被套上
-     camo 代理。改动这个 svg 之后记得把 v= 递增，否则 camo 的缓存会继续吐旧图。 -->
-<img src="https://raw.githubusercontent.com/fluxixix/fluxixix.github.io/main/public/fluxixix.svg?v=1" width="267" height="63" alt="fluxixix" />
+<img src="public/fluxixix.svg" width="267" height="63" alt="fluxixix" />
 
 <p>个人博客，VitePress 起底，主题是手搓的。</p>
 
