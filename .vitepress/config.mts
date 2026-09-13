@@ -44,6 +44,8 @@ export default defineConfig({
     returnToTopLabel: '回到顶部',
     // 窄屏下打开侧边栏的那个按钮
     sidebarMenuLabel: '菜单',
+    // 窄屏菜单里的亮暗主题切换
+    darkModeSwitchLabel: '外观',
     docFooter: { prev: '上一篇', next: '下一篇' },
 
     // 只在文章区显示侧边栏，按目录分主题；base 用来省掉组内链接的重复前缀
