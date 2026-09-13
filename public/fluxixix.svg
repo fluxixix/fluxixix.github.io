@@ -15,32 +15,45 @@
       font-family: 'Silkscreen', monospace;
       font-weight: 700;
       font-size: 40px;
-      fill: url(#flux);
+      text-anchor: middle;
     }
 
-    /* 关掉动效时退回纯色。SMIL 本身感知不到 prefers-reduced-motion，
-       但把 fill 从渐变换掉，动画就画不出来，效果上等于停住 */
+    /* 流动的做法：渐变本身是静止的，被放进 mask 里当"油墨"的是一块
+       铺满渐变的矩形，动的是这块矩形的 transform。
+       这么写是因为 Safari 不重绘被动画的渐变属性——直接动
+       gradientTransform 在 Safari 里是静止的，实测过。
+       只动矩形、不动字形，像素网格始终压在整像素上。 */
+    .flow { animation: none; }
+    .plain { display: none; }
+
+    /* 关掉动效时退回纯色 */
     @media (prefers-reduced-motion: reduce) {
-      .mark { fill: #bd34fe; }
+      .flow { display: none; }
+      .plain { display: inline; }
     }
   </style>
 
   <defs>
-    <!-- 流动的来源。渐变向量正好占一个 bbox，spreadMethod="repeat" 把它平铺出去，
-         再把 gradientTransform 平移一个 bbox —— 一个周期后画面与起点完全相同，
-         所以循环是无缝的。只动颜色、不动字形，像素网格始终压在整像素上。 -->
-    <linearGradient id="flux" x1="-1" y1="0" x2="0" y2="0" spreadMethod="repeat">
+    <!-- spreadMethod="repeat" 让渐变按 267 的周期平铺出去，
+         矩形正好每周期平移 267，所以一个循环结束时画面与起点完全相同。 -->
+    <linearGradient id="flux" gradientUnits="userSpaceOnUse"
+                    x1="0" y1="0" x2="267" y2="0" spreadMethod="repeat">
       <stop offset="0" stop-color="#bd34fe"/>
       <stop offset="0.5" stop-color="#41d1ff"/>
       <stop offset="1" stop-color="#bd34fe"/>
-      <animateTransform
-        attributeName="gradientTransform"
-        type="translate"
-        from="-1 0" to="0 0"
-        dur="6s"
-        repeatCount="indefinite"/>
     </linearGradient>
+
+    <mask id="wordmark">
+      <text class="mark" x="133.5" y="47" fill="#fff">fluxixix</text>
+    </mask>
   </defs>
 
-  <text class="mark" x="133.5" y="47" text-anchor="middle">fluxixix</text>
+  <g class="flow" mask="url(#wordmark)">
+    <rect x="-267" y="0" width="801" height="63" fill="url(#flux)">
+      <animateTransform attributeName="transform" type="translate"
+                        from="0 0" to="267 0" dur="6s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+
+  <text class="mark plain" x="133.5" y="47" fill="#bd34fe">fluxixix</text>
 </svg>
