@@ -55,10 +55,7 @@ export default defineConfig({
           text: '技术',
           base: '/posts/tech/',
           items: [
-            { text: 'Markdown 全格式示例', link: 'markdown-guide' },
             { text: 'VitePress 使用笔记', link: 'vitepress-notes' },
-            { text: 'Git 常用命令速查', link: 'git-cheatsheet' },
-            { text: 'CSS 自定义属性入门', link: 'css-variables' },
             { text: '从零搭建个人站（Pages + Vercel）', link: 'vitepress-blog-experience' },
             { text: 'dotfiles 操作指南', link: 'dotfiles-setup-guide' }
           ]
