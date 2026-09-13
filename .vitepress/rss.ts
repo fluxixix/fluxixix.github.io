@@ -77,7 +77,14 @@ async function collectItems(srcDir: string): Promise<FeedItem[]> {
     })
   }
 
-  return items.sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, MAX_ITEMS)
+  // 日期倒序；同一天时按链接升序，与文章列表页的排序保持一致
+  return items
+    .sort((a, b) => {
+      const diff = b.date.getTime() - a.date.getTime()
+      if (diff !== 0) return diff
+      return a.link < b.link ? -1 : a.link > b.link ? 1 : 0
+    })
+    .slice(0, MAX_ITEMS)
 }
 
 function renderFeed(items: FeedItem[]): string {
