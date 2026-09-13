@@ -23,7 +23,6 @@
        这么写是因为 Safari 不重绘被动画的渐变属性——直接动
        gradientTransform 在 Safari 里是静止的，实测过。
        只动矩形、不动字形，像素网格始终压在整像素上。 */
-    .flow { animation: none; }
     .plain { display: none; }
 
     /* 关掉动效时退回纯色 */
