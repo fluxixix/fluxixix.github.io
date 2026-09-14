@@ -1537,10 +1537,39 @@ html :is(input, textarea, select, [contenteditable='true']) {
    清零后上下各 0.875rem，线才落在两行正中（与第 6 节 .post-item 的处理一致） */
 .now-index .now-item {
   margin: 0;
+  /* hover / 键盘聚焦时整行右移，让位给左侧那条品牌色竖线 */
+  position: relative;
+  padding-left: 0;
+  transition: padding-left var(--fx-dur-base) var(--fx-ease);
 }
 
 .now-index .now-item + .now-item {
   border-top: 1px solid var(--vp-c-divider);
+}
+
+/* 选中某一期时行首亮起一条品牌色竖线——和当月页「每月一句话」左侧那条
+   3px 竖线是同一套语言，不是新造一种高亮。:focus-within 让键盘 Tab 到
+   这一期时也有和鼠标一样的反馈（颜色对辅助技术无效，位置变化则通用） */
+.now-index .now-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.875rem;
+  bottom: 0.875rem;
+  width: 3px;
+  background: var(--vp-c-brand-1);
+  transform: scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.now-index .now-item:hover,
+.now-index .now-item:focus-within {
+  padding-left: var(--fx-space-3);
+}
+
+.now-index .now-item:hover::before,
+.now-index .now-item:focus-within::before {
+  transform: scaleY(1);
 }
 
 .now-index .now-entry {
@@ -1552,10 +1581,6 @@ html :is(input, textarea, select, [contenteditable='true']) {
   /* .vp-doc a 默认带下划线和 500 字重，整条行已经是可点区域，不需要它们 */
   text-decoration: none;
   font-weight: 400;
-}
-
-.now-index .now-entry:hover {
-  text-decoration: none;
 }
 
 .now-index .now-num {
@@ -1620,5 +1645,14 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
   .now-month .vp-doc > div > h2:not(:first-child) {
     margin-top: var(--fx-space-5);
+  }
+}
+
+/* 关掉本次的位移动画：竖线直接亮、行不再缓动位移。
+   状态反馈（竖线 + 右移 + 月份变色）都保留，只去掉运动过程 */
+@media (prefers-reduced-motion: reduce) {
+  .now-index .now-item,
+  .now-index .now-item::before {
+    transition: none;
   }
 }
