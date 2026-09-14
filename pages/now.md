@@ -3,7 +3,8 @@ title: Now
 pageClass: now-index
 ---
 
-<script setup>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
 import { data as entries } from './now/now.data.ts'
 
 // 按年份分组：month 形如 2026-09，切出前四位即可；分组顺序跟着 entries 的倒序
@@ -17,11 +18,64 @@ for (const entry of entries) {
   }
   group.entries.push(entry)
 }
+
+// 引言：优先显示一言（抖机灵），请求失败或还在加载时退回下面这句固定的，
+// 不让这一行空着。SSR 阶段不跑 onMounted，输出的是这句兜底文案。
+const HITOKOTO_FALLBACK = '人不能两次踏入同一条河，但我每个月给自己截张图，看看这回又漂到哪儿了。'
+const hitokoto = ref('') // 完整句子
+const typed = ref(0) // 打字机已打出的字数
+const typing = ref(false) // 是否在打字（控制光标）
+
+// 打字中逐字切片，非打字时给完整句；还没取到一言时给兜底
+const leadText = computed(() => {
+  if (typing.value) return hitokoto.value.slice(0, typed.value)
+  return hitokoto.value || HITOKOTO_FALLBACK
+})
+
+let typeTimer = 0
+
+// 把一句完整的话逐字打出来；用户系统开了「减少动效」就直接整句显示
+function typewrite(text: string) {
+  clearInterval(typeTimer)
+  hitokoto.value = text
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    typed.value = text.length
+    typing.value = false
+    return
+  }
+  typed.value = 0
+  typing.value = true
+  let i = 0
+  typeTimer = window.setInterval(() => {
+    i += 1
+    typed.value = i
+    if (i >= text.length) {
+      clearInterval(typeTimer)
+      typing.value = false
+    }
+  }, 45)
+}
+
+// 首次挂载取一句，之后点击「换一句」也走这里
+async function loadHitokoto() {
+  try {
+    const res = await fetch('https://v1.hitokoto.cn/?c=l')
+    if (!res.ok) return
+    const data = await res.json()
+    if (data?.hitokoto) typewrite(data.hitokoto)
+  } catch {
+    // 断网、跨域被拦或接口变动时保留当前文案（首次失败则显示兜底）
+  }
+}
+
+onMounted(loadHitokoto)
 </script>
 
 # Now
 
-人不能两次踏入同一条河，但我每个月给自己截张图，看看这回又漂到哪儿了。
+<button type="button" class="now-lead" @click="loadHitokoto">
+  <span class="now-lead-text" :class="{ 'is-typing': typing }">{{ leadText }}</span>
+</button>
 
 <div v-if="!entries.length" class="now-empty">还没有留档。</div>
 
@@ -47,5 +101,3 @@ for (const entry of entries) {
     </ul>
   </section>
 </div>
-
-<p class="now-note">与其维护一份永远滞后的自我介绍，不如留一张诚实的当下快照。</p>
