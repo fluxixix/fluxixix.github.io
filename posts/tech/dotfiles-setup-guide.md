@@ -8,7 +8,7 @@ description: 一份 macOS dotfiles 的落地流程：从裸机到可用环境的
 
 这个仓库想解决的问题只有一个：**换一台 Mac，两条命令把环境搬回来**。
 
-- 仓库：`git@github.com:fluxixix/dotfiles.git`
+- 仓库：`https://github.com/fluxixix/dotfiles`
 - 面向 Apple Silicon macOS：终端 Ghostty、Shell Fish、编辑器 Neovim（AstroNvim v5）、提示符 Starship，软件统一由 Homebrew 管理。
 - 组织方式：**一个工具一个目录**，手写配置进仓库，插件、主题、补全交给各自的包管理器。
 
