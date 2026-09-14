@@ -4,10 +4,6 @@ title: 项目
 
 # 项目
 
-::: warning 示例内容
-除 dotfiles 外，以下项目均为虚构，仅用于预览排版。替换成自己的真实项目后，把这段提示一并删掉。
-:::
-
 做过和在做的东西，末尾附上日常在用的技术栈。
 
 ## 精选项目
@@ -16,7 +12,7 @@ title: 项目
 
 macOS 个人配置仓库。手写配置进仓库，插件、主题和补全交给各自的包管理器恢复；部署时每个工具目录软链接到 `~/.config`，换新电脑两条命令搬完。
 
-- 技术栈：Bash + Fish + Homebrew（Brewfile）+ GitHub Actions
+- 技术栈：Fish + Lua + Bash + Homebrew（Brewfile）+ GitHub Actions
 - 状态：长期维护
 - 链接：[github.com/fluxixix/dotfiles](https://github.com/fluxixix/dotfiles)
 
