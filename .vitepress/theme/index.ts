@@ -2,6 +2,7 @@ import { nextTick, type App, type Ref } from 'vue'
 import { onContentUpdated, useData, type EnhanceAppContext, type Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { setupCursorFx } from './cursor'
+import Layout from './Layout.vue'
 import './custom.css'
 
 /** 光晕跟随鼠标的最大位移（px） */
@@ -231,6 +232,7 @@ function setupReveal() {
 
 export default {
   extends: DefaultTheme,
+  Layout,
   enhanceApp({ app }: EnhanceAppContext) {
     setupHeroGlow()
     setupCursorFx()

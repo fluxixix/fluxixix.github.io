@@ -16,7 +16,9 @@ export default defineConfig({
   srcExclude: ['**/README.md'],
   // 独立页面统一放在 pages/ 下，通过 rewrite 去掉 URL 里的目录前缀
   rewrites: {
-    'pages/:page': ':page'
+    'pages/:page': ':page',
+    // 月度留档是嵌套目录，上面那条只匹配一段路径，这里单独写一条
+    'pages/now/:month': 'now/:month'
   },
   head: [
     // 让阅读器和浏览器能发现 RSS

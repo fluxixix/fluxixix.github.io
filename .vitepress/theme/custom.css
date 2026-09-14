@@ -1348,3 +1348,277 @@ html :is(input, textarea, select, [contenteditable='true']) {
     );
   }
 }
+
+/* --------------------------------------------------------------------------
+   11. Now 页（/now 索引页与 /now/YYYY-MM 当月页）
+   -------------------------------------------------------------------------- */
+
+/* ---- 当月页页头：结构来自 theme/now/NowHeader.vue ---- */
+
+.now-head {
+  margin-bottom: var(--fx-space-5);
+}
+
+.now-head-num {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.now-head-year {
+  font-size: 3.625rem;
+  font-weight: 800;
+}
+
+/* 月份跟着年份走，比年份小两档，靠基线对齐而不是猜偏移 */
+.now-head-month {
+  font-size: var(--fx-text-xl);
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+}
+
+.now-head-tag {
+  margin: 0.75rem 0 0;
+  font-size: 0.65625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  /* 用 text-2 而不是更淡的 text-3：10.5px 不是大字号，text-3 只有 3.1:1，
+     达不到 AA 的 4.5:1（第 1 节的注释里也按这条线取过值） */
+  color: var(--vp-c-text-2);
+}
+
+/* 通栏实线压住页头，用正文色而不是分隔线色，才有"压住"的分量 */
+.now-head-rule {
+  margin-top: 0.75rem;
+  border-top: 2px solid var(--vp-c-text-1);
+}
+
+/* 每月一句话：左侧粗竖线 + 比正文略大的字号 */
+.now-head-line {
+  margin: 1.25rem 0 0;
+  padding-left: 0.875rem;
+  border-left: 3px solid var(--vp-c-brand-1);
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+/* ---- 当月页正文：两列网格，h2 做左栏标签 ----
+
+   VitePress 2 把整篇 Markdown 编译成 .vp-doc 里的单个 div（已核对产物：
+   <div class="vp-doc _now_2026-09"><div><h2>…），所以网格要挂在这个内层 div 上。
+   挂 .vp-doc 自己会让整篇正文被当成一个网格项挤进第二列，左边空出一条死列。
+
+   网格按行自动放置，所以每个 h2 会和它下面第一个内容块落在同一行，
+   左栏标签后方的空列不做填充。写作仍然是最普通的 Markdown。 */
+
+.now-month .vp-doc > div {
+  /* 标签与内容首行共用的纵向偏移：两处必须相等，否则左栏标签会与内容错开 */
+  --now-row-pad: 0.9rem;
+  display: grid;
+  grid-template-columns: 5.75rem minmax(0, 1fr);
+  column-gap: var(--fx-space-5);
+  row-gap: var(--fx-space-5);
+  align-items: start;
+}
+
+/* 覆盖 .vp-doc h2 自带的边框、大间距和那条渐变分隔线 */
+.now-month .vp-doc > div > h2 {
+  grid-column: 1;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  /* 同 .now-head-tag：13px 的小字不用 text-3，那个对比度不够 AA */
+  color: var(--vp-c-text-2);
+}
+
+.now-month .vp-doc > div > h2::before {
+  content: none;
+}
+
+.now-month .vp-doc > div > :not(h2) {
+  grid-column: 2;
+}
+
+.now-month .vp-doc > div > ul {
+  margin: 0;
+}
+
+/* 板块之间的点线：只压在内容列，不横穿左栏标签 */
+.now-month .vp-doc > div > h2 + * {
+  border-top: 1px dotted var(--vp-c-divider);
+  padding-top: var(--now-row-pad);
+}
+
+/* 第一节上面是页头那条实线，不再重复画线 */
+.now-month .vp-doc > div > h2:first-child + * {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* 标签跟着首行的内边距走，两者视觉对齐。
+
+   这里用 margin 而不是 padding：第 5 节把锚点 # 定位在 h2 的 top: 1.75rem，
+   那是按 h2 自带 padding-top 算的。标签的上下内外边距清零后锚点会掉到标签下方，
+   改用 margin 推开标签、锚点就能用 top: 0 归位（见下一条）。 */
+.now-month .vp-doc > div > h2:not(:first-child) {
+  margin-top: var(--now-row-pad);
+}
+
+/* 锚点跟标签的首行对齐（覆盖第 5 节按 padding-top 算的 1.75rem） */
+.now-month .vp-doc > div > h2 .header-anchor {
+  top: 0;
+}
+
+/* 嵌套层级用左侧细线表达，不靠字号 */
+.now-month .vp-doc > div ul ul {
+  margin: 0.5rem 0 0;
+  padding-left: 0.875rem;
+  border-left: 2px solid var(--vp-c-divider);
+  list-style: none;
+}
+
+/* ---- 索引页：年份分组 + 目次式月份行 ---- */
+
+/* 这里必须带上 .vp-doc：pageClass 是挂在 .Layout 根元素上的（VitePress 2 的行为），
+   裸 .now-index 会连整页根节点一起命中，给 /now 全页多加一份外边距。
+   下面的 `.now-index X` 是后代选择器，不受影响。 */
+.vp-doc .now-index {
+  margin-top: var(--fx-space-5);
+}
+
+.now-index .now-year + .now-year {
+  margin-top: 2.25rem;
+}
+
+/* 年份标题：覆盖 .vp-doc h2 自带的上边框、渐变分隔线与大间距 */
+.now-index .now-year-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.25rem;
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-text-1);
+  padding: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.now-index .now-year-head::before {
+  content: none;
+}
+
+.now-index .now-year-count {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  /* 小字用 text-2：text-3 只有 3.1:1，达不到 AA */
+  color: var(--vp-c-text-2);
+}
+
+.now-index .now-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* .vp-doc li + li 会给第二条起加 0.5rem 上边距，那会让分隔线偏贴下面一行；
+   清零后上下各 0.875rem，线才落在两行正中（与第 6 节 .post-item 的处理一致） */
+.now-index .now-item {
+  margin: 0;
+}
+
+.now-index .now-item + .now-item {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.now-index .now-entry {
+  display: grid;
+  grid-template-columns: 4.625rem minmax(0, 1fr) auto;
+  gap: 0 1.25rem;
+  align-items: baseline;
+  padding: 0.875rem 0;
+  /* .vp-doc a 默认带下划线和 500 字重，整条行已经是可点区域，不需要它们 */
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.now-index .now-entry:hover {
+  text-decoration: none;
+}
+
+.now-index .now-num {
+  font-size: 1.8125rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  /* 29px 粗体算大字号，text-3 的 3.1:1 满足 AA 对大字的 3:1 */
+  color: var(--vp-c-text-3);
+  transition: color var(--fx-dur-base) var(--fx-ease);
+}
+
+.now-index .now-entry:hover .now-num,
+.now-index .now-entry.is-current .now-num {
+  color: var(--vp-c-brand-1);
+}
+
+.now-index .now-line {
+  font-size: var(--fx-text-md);
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+.now-index .now-current {
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-brand-1);
+}
+
+/* 这两个用页面级 class 包一层：第 5 节的 .vp-doc p 也会给它们设 margin，
+   裸 class 选择器的特异性比 .vp-doc p 低一级，margin-top 会被盖掉 */
+.now-index .now-empty {
+  color: var(--vp-c-text-2);
+}
+
+.now-index .now-note {
+  margin-top: var(--fx-space-6);
+  font-size: var(--fx-text-md);
+  color: var(--vp-c-text-2);
+}
+
+/* 窄屏：退成单列，标签变成内容上方的小字。
+   断点用 rem 跟着用户根字号走，与文件里其它断点一致 */
+@media (max-width: 48rem) {
+  .now-month .vp-doc > div {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .now-month .vp-doc > div > h2,
+  .now-month .vp-doc > div > :not(h2) {
+    grid-column: 1;
+  }
+
+  /* 单列下标签紧挨着下一条点线，会读成「标签的下划线」而不是分隔线，
+     所以给标签留出下边距把它推离那条线 */
+  .now-month .vp-doc > div > h2 {
+    margin-bottom: var(--fx-space-3);
+  }
+
+  .now-month .vp-doc > div > h2:not(:first-child) {
+    margin-top: var(--fx-space-5);
+  }
+}

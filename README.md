@@ -54,21 +54,30 @@ Node 24，与 CI 保持一致。
 │   ├── posts.data.ts         列表数据源（构建期读取各篇 frontmatter）
 │   ├── tech/                 技术
 │   └── notes/                随笔
-├── pages/                    独立页面：about / archive / now / projects
+├── pages/                    独立页面：about / archive / projects
+│   ├── now.md                Now 索引页（按年分组，数据来自 now/）
+│   └── now/
+│       ├── now.data.ts       月度留档的数据源（构建期读取各期 frontmatter）
+│       └── 2026-09.md        当月一页
 ├── public/robots.txt
+├── tsconfig.json             只给编辑器做类型检查（noEmit，不参与构建）
 ├── .vitepress/
 │   ├── config.mts            站点配置
 │   ├── rss.ts                构建结束后生成 feed.xml
 │   └── theme/
 │       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示
+│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now 页头
 │       ├── cursor.ts         光标粒子拖尾与点击波纹
-│       └── custom.css        全站样式，按 10 个章节分层
+│       ├── now/NowHeader.vue Now 当月页的页头
+│       ├── vue-shim.d.ts     让 TS 认识 .vue 单文件组件
+│       └── custom.css        全站样式，按 11 个章节分层
 ├── vercel.json
 └── .github/workflows/deploy.yml
 ```
 
 `pages/` 下的页面通过 `rewrites` 去掉了 URL 前缀：`pages/about.md` 对应 `/about`，
-不是 `/pages/about`。加新页面时不用管这一步。
+不是 `/pages/about`；嵌套目录同理，`pages/now/2026-09.md` 对应 `/now/2026-09`。
+加新页面时不用管这一步。
 
 ## 写一篇新文章
 
@@ -86,6 +95,31 @@ Node 24，与 CI 保持一致。
 
 RSS 和文章列表都不用管，它们分别由 `rss.ts` 和 `posts.data.ts` 在构建期扫 `posts/` 自动生成。
 日期会被统一归一到 UTC 中午，避免时区把「今天」推前一天。
+
+## 写一页 Now
+
+每月在 `pages/now/` 下新建 `YYYY-MM.md`，frontmatter 只有这五个字段：
+
+```yaml
+---
+month: 2026-09        # 必填，排序与分组的唯一依据
+title: 2026 年 9 月    # 建议填写，决定浏览器标签与搜索结果里的标题
+now: true             # 必填，标记这是当月页（决定是否注入页头）
+pageClass: now-month  # 必填，样式作用域
+line: 这个月想说的话   # 可选，渲染在页头下方
+---
+```
+
+正文只写板块与清单（`## 在做` / `## 在学` / `## 在读 / 在看` / `## 在玩`）：
+页头（大月份数字 + 每月一句话）由 `theme/now/NowHeader.vue` 按 frontmatter 生成，
+不用手写；`/now` 的索引（年份分组、期数、当前标记）由 `pages/now/now.data.ts`
+在构建期扫各期生成，不用改导航或侧边栏。
+
+三条硬约定（数据加载器只在构建期警告、不会报错，所以靠这里兜住）：
+
+- `pages/now/` 下只放 `YYYY-MM.md`，别在这个目录里放别的 Markdown（比如 README）；
+- 文件名与 `month` 必须一致 —— 复制上一期改文件名时最容易忘改 `month`，那会让索引里出现两行同月；
+- `line` 写纯文本，它按原样渲染（写 Markdown 语法会原样显示出来）。
 
 ## 主题里做了什么
 
