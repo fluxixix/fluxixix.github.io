@@ -23,3 +23,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# 本地草稿与设计文档（不入库）
+.superpowers/
