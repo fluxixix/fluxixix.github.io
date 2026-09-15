@@ -30,7 +30,7 @@ Admin 管理后台 + Portal 用户门户两套前端共用一个后端。软件�
 - 一键安装：按资产类型与目标 AI Agent 动态生成 PowerShell 安装脚本
 - 状态机与跨域联动是最费脑子的部分：AI 条目 9 个状态、技能项 4 个状态，审核通过要同步改技能项状态，取消认领要级联删掉关联条目及其全部版本与审核记录
 - 前端是 Next.js 15 App Router 的双端单体：自建 12 个 UI 原语，暗色切换用 View Transitions 做圆形揭示；技能树是一张 D3 力导向图，节点可缩放拖拽、点开抽屉走认领与攻坚；另有 three.js 星空背景与 canvas 光标
-- 一处 docker compose 起 7 个容器（nginx、前端、后端、worker、beat、PostgreSQL 16、Redis），nginx 统一入口并给静态资源长缓存；启动脚本自动生成随机密钥，备份脚本 pg_dump + 压缩 + 异地同步
+- 一个 docker compose 起七个服务（nginx、前端、后端、worker、beat、PostgreSQL 16、Redis）：nginx 统一入口并给静态资源长缓存；启动脚本自动生成随机密钥，备份脚本 pg_dump + 压缩 + 异地同步
 
 ## 工具链
 
