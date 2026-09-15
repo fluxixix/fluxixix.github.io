@@ -1563,6 +1563,32 @@ html :is(input, textarea, select, [contenteditable='true']) {
   text-underline-offset: 0.3em;
 }
 
+/* 出处：换行挂在句子下方，等打字机打完才出现（模板里用 !typing 控制），
+   没有出处的条目这一行直接不渲染。字号和颜色都比句子低一档，
+   品牌渐变只作用在 .now-lead-text 上，这里用普通文字色 */
+.now-lead .now-lead-from {
+  display: block;
+  margin-top: var(--fx-space-1);
+  color: var(--vp-c-text-3);
+  font-size: var(--fx-text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  animation: now-from-in var(--fx-dur-slow) var(--fx-ease) both;
+}
+
+@keyframes now-from-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-lead .now-lead-from {
+    animation: none;
+  }
+}
+
 /* ---- 索引页：年份分组 + 目次式月份行 ---- */
 
 /* 这里必须带上 .vp-doc：pageClass 是挂在 .Layout 根元素上的（VitePress 2 的行为），

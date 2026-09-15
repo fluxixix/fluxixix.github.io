@@ -19,10 +19,17 @@ for (const entry of entries) {
   group.entries.push(entry)
 }
 
-// 引言：优先显示一言（抖机灵），请求失败或还在加载时退回下面这句固定的，
+// 引言：优先显示一言，请求失败或还在加载时退回下面这句固定的，
 // 不让这一行空着。SSR 阶段不跑 onMounted，输出的是这句兜底文案。
 const HITOKOTO_FALLBACK = '人不能两次踏入同一条河，但我每个月给自己截张图，看看这回又漂到哪儿了。'
+
+// 一言的分类：a 动画 b 漫画 c 游戏 d 文学 e 原创 f 来自网络 g 其他 h 影视
+// i 诗词 j 网易云 k 哲学 l 抖机灵，十二类全取
+const HITOKOTO_CATEGORIES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']
+// 多个分类要写成重复的 c= 参数，逗号分隔会被接口当成非法值
+const HITOKOTO_URL = `https://v1.hitokoto.cn/?${HITOKOTO_CATEGORIES.map(c => `c=${c}`).join('&')}`
 const hitokoto = ref('') // 完整句子
+const hitokotoFrom = ref('') // 出处（作者 + 作品），没有就留空、整行不显示
 const typed = ref(0) // 打字机已打出的字数
 const typing = ref(false) // 是否在打字（控制光标）
 
@@ -56,15 +63,40 @@ function typewrite(text: string) {
   }, 45)
 }
 
+// from 有时不是作品名，而是来源或字面的「原创」——这类不加书名号，免得出现《网络》《网易云热评》。
+// 这类名字常带后缀（网易云 / 网易云热评），所以按关键词匹配；以后撞见别的平台名往这里加
+const SOURCE_KEYWORDS = ['原创', '网络', 'B站', 'bilibili', '网易云']
+
+// 组装出处：有作品就「作者《作品》」；只有来源就写来源，两者都有就用「 · 」隔开
+function formatSource(data: { from?: string | null; from_who?: string | null }) {
+  const from = data.from?.trim() ?? ''
+  const who = data.from_who?.trim() ?? ''
+  if (!from) return who
+  const isWork = !SOURCE_KEYWORDS.some(k => from.includes(k))
+  if (!who) return isWork ? `《${from}》` : from
+  if (who === from) return who
+  return isWork ? `${who}《${from}》` : `${who} · ${from}`
+}
+
 // 首次挂载取一句，之后点击「换一句」也走这里
 async function loadHitokoto() {
-  try {
-    const res = await fetch('https://v1.hitokoto.cn/?c=l')
-    if (!res.ok) return
-    const data = await res.json()
-    if (data?.hitokoto) typewrite(data.hitokoto)
-  } catch {
-    // 断网、跨域被拦或接口变动时保留当前文案（首次失败则显示兜底）
+  // 接口前面有 Cloudflare 边缘缓存，连点两下会拿到同一份响应，所以每次带个时间戳绕开它。
+  // 绕开之后仍有概率随机到同一条（池子就这么大），撞上就再取一次，最多三跳
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const res = await fetch(`${HITOKOTO_URL}&_=${Date.now()}`)
+      if (!res.ok) return
+      const data = await res.json()
+      const text = data?.hitokoto
+      if (!text) return
+      if (text === hitokoto.value) continue
+      hitokotoFrom.value = formatSource(data)
+      typewrite(text)
+      return
+    } catch {
+      // 断网、跨域被拦或接口变动时保留当前文案（首次失败则显示兜底）
+      return
+    }
   }
 }
 
@@ -75,6 +107,7 @@ onMounted(loadHitokoto)
 
 <button type="button" class="now-lead" @click="loadHitokoto">
   <span class="now-lead-text" :class="{ 'is-typing': typing }">{{ leadText }}</span>
+  <span v-if="!typing && hitokotoFrom" class="now-lead-from">—— {{ hitokotoFrom }}</span>
 </button>
 
 <div v-if="!entries.length" class="now-empty">还没有留档。</div>
