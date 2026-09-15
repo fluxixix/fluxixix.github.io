@@ -1841,51 +1841,87 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 /* --------------------------------------------------------------------------
-   13. 关于页页头与经历时间线
+   13. 页头、经历时间线与邮箱复制按钮
    -------------------------------------------------------------------------- */
 
-/* ---- 页头：结构来自 theme/about/AboutHeader.vue ----
-   与 Now 页页头（第 11 节）同一套语言：大标题 → 等宽小标签 → 细分隔线 →
-   等宽元信息。刻度不同只因为下面接的是正文而不是数据网格 */
+/* ---- 页头：结构来自 theme/head/PageMasthead.vue ----
+   与 Now 页页头（第 11 节）同一套语言：大标题 → 等宽小标签 → 渐变细线 → 等宽元信息。
+   关于页与项目页共用同一个组件，差别只在 frontmatter 里的文案。
+   进场是一次性的四步：名字 → 标签 → 细线 → 元信息，一步比一步晚一点点 */
 
-.about-head {
+.masthead {
   margin-bottom: var(--fx-space-6);
 }
 
-.about-head-name {
+.masthead-name {
   margin: 0;
-  font-size: clamp(2.25rem, 5vw, 3rem);
+  font-size: clamp(2.5rem, 6vw, 3.5rem);
   font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  animation: masthead-rise 0.6s var(--fx-ease) both;
 }
 
-.about-head-tag {
-  margin: 0.75rem 0 0;
+.masthead-tag {
+  margin: 0.9rem 0 0;
   font-size: 0.65625rem;
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   /* 同 .now-head-tag：10.5px 不是大字号，text-3 只有 3.1:1，达不到 AA 的 4.5:1 */
   color: var(--vp-c-text-2);
+  animation: masthead-rise 0.6s var(--fx-ease) 0.08s both;
 }
 
-/* 品牌渐变细线：全站的渐变信号在这一页只出现这一次 */
-.about-head-rule {
+/* 品牌渐变细线：全站的渐变信号在这两页各只出现一次，进场方式是「从左画到右」 */
+.masthead-rule {
   width: 4rem;
   height: 2px;
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
   border-radius: 1px;
+  transform-origin: left center;
   background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+  animation: masthead-draw 0.5s var(--fx-ease) 0.16s both;
 }
 
-.about-head-meta {
-  margin: 0.75rem 0 0;
+.masthead-meta {
+  margin: 0.9rem 0 0;
   font-family: var(--vp-font-family-mono);
   font-size: var(--fx-text-sm);
   line-height: 1.7;
   /* 同 .entry-meta：13px 的小字用 text-2 才够 AA 的 4.5:1 */
   color: var(--vp-c-text-2);
   font-variant-numeric: tabular-nums;
+  animation: masthead-rise 0.6s var(--fx-ease) 0.24s both;
+}
+
+@keyframes masthead-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes masthead-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 减少动效：页头直接到位，四步入场全部取消 */
+@media (prefers-reduced-motion: reduce) {
+  .masthead-name,
+  .masthead-tag,
+  .masthead-rule,
+  .masthead-meta {
+    animation: none;
+  }
 }
 
 /* ---- 经历时间线 ----
@@ -2002,13 +2038,14 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 /* ---- 条目悬停微交互 ----
-   只作用于「**标签** ——描述」这种行（现在、经历里的工具链都是这个形状，
-   技能那张表碰巧同构，一并获得同样的反馈）。反馈语言与文章列表、归档页一致：
-   整行轻微右移、底色变浅，加上短横线标记染色（见第 12 节） */
+   只作用于「**标签** ——描述」这种行（经历的「工具链」、关于页的技能表、项目页的
+   技术栈表都是这个形状）。反馈语言与文章列表、归档页一致：整行轻微右移、底色变浅，
+   加上圆环标记被填满（见第 12 节） */
 
-.about .vp-doc li:has(> strong:first-child) {
+.about .vp-doc li:has(> strong:first-child),
+.projects .vp-doc li:has(> strong:first-child) {
   /* 背景块往左溢出一点、文字位置不动：负外边距与左内边距相抵。
-     左内边距里还要再让出标记那一列（标记的负缩进由第 12 节统一给），
+     左内边距里还要再让出标记那一列（标记自己绝对定位在 left: 0），
      圆环才会和其它列表落在同一列 */
   margin-left: calc(-1 * var(--fx-space-3));
   padding: var(--fx-space-1) var(--fx-space-3) var(--fx-space-1)
@@ -2021,19 +2058,22 @@ html :is(input, textarea, select, [contenteditable='true']) {
     transform var(--fx-dur-base) var(--fx-ease);
 }
 
-.about .vp-doc li:has(> strong:first-child) > strong {
+.about .vp-doc li:has(> strong:first-child) > strong,
+.projects .vp-doc li:has(> strong:first-child) > strong {
   color: var(--vp-c-text-1);
 }
 
 /* 这类行比别的行多了一层内边距，标记要跟着挪：横向挪回被负外边距带走的距离，
    纵向加上这层的上内边距——否则圆环会浮在文字上半行 */
-.about .vp-doc li:has(> strong:first-child)::before {
+.about .vp-doc li:has(> strong:first-child)::before,
+.projects .vp-doc li:has(> strong:first-child)::before {
   left: var(--fx-space-3);
   top: calc(var(--fx-space-1) + 0.875em - var(--fx-mark-size) / 2);
   top: calc(var(--fx-space-1) + 0.5lh - var(--fx-mark-size) / 2);
 }
 
-.about .vp-doc li:has(> strong:first-child):hover {
+.about .vp-doc li:has(> strong:first-child):hover,
+.projects .vp-doc li:has(> strong:first-child):hover {
   background-color: var(--vp-c-bg-soft);
   transform: translateX(3px);
 }
@@ -2079,11 +2119,232 @@ html :is(input, textarea, select, [contenteditable='true']) {
   .about .vp-doc ul > li::before,
   .projects .vp-doc ul > li::before,
   .about .vp-doc li:has(> strong:first-child),
+  .projects .vp-doc li:has(> strong:first-child),
   .about .about-copy {
     transition: none;
   }
 
-  .about .vp-doc li:has(> strong:first-child):hover {
+  .about .vp-doc li:has(> strong:first-child):hover,
+  .projects .vp-doc li:has(> strong:first-child):hover {
     transform: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   14. 作品集排版（关于页与项目页）
+
+   这两页按「编辑体」的规矩来：靠尺度差、留白和发丝线建立层级，不加卡片、不用图。
+   章节标题上方一条发丝线，随滚动画出来；正文压到中文舒服的行宽；元信息一律等宽字。
+   动效只做三件：页头四步入场（第 13 节）、章节线画出、索引行的悬停与当前态。
+
+   约定与第 9 节一致：隐藏态挂在 html.fx-reveal-ready 下，由脚本决定何时打开；
+   脚本没跑（禁用 JS、报错、减少动效）时页面就是普通的静态文档。
+   -------------------------------------------------------------------------- */
+
+.about .vp-doc,
+.projects .vp-doc {
+  /* 正文行宽：用满整列。这两页的正文列本身就有上限（VitePress 给的 688px），
+     再往里压一截，右边就会空出一大片、离目录很远。想收窄只改这一个值即可 */
+  --fx-measure: 100%;
+  /* 作品索引：编号那一列的宽度 */
+  --fx-folio-num: 2.5rem;
+}
+
+/* ---- 章节：一条发丝线 ----
+   线用 background-size 画而不是 border：这样才能「从左画到右」 */
+
+.about .vp-doc h2,
+.projects .vp-doc h2 {
+  /* 兜底值：脚本没跑时线是实打实画好的 */
+  --fx-rule: 100%;
+  /* 线上方的留白。锚点 # 的落点也要跟这条走（见下面 .header-anchor 规则），
+     所以留个变量，改一处就够 */
+  --fx-h2-pad: 0.9rem;
+  margin-top: 4.5rem;
+  padding-top: var(--fx-h2-pad);
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  background-image: linear-gradient(var(--vp-c-divider), var(--vp-c-divider));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: var(--fx-rule) 1px;
+  transition: background-size var(--fx-dur-slow) var(--fx-ease);
+}
+
+/* VitePress 把 h2 的 # 钉在 top: 1.5rem —— 那是它自己给 h2 的上内边距。这里的
+   留白更薄，锚点不跟着挪就会落到标题文字下面 */
+.about .vp-doc h2 .header-anchor,
+.projects .vp-doc h2 .header-anchor {
+  top: var(--fx-h2-pad);
+}
+
+/* ---- 标题尺度 ----
+   关于页的 h3 是机构名；项目页里只有「后面跟着一行元信息」的 h3 才是作品名
+   （技术栈那节的 h3 是分组名，不吃作品的尺度） */
+
+.about .vp-doc h3,
+.projects .vp-doc h3 {
+  margin-top: 3rem;
+  font-size: 1.3125rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.projects .vp-doc h3:has(+ .entry-meta) {
+  margin-top: 3.5rem;
+  font-size: 1.4375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ---- 正文尺度 ----
+   页头下面那段是导语，比正文大一档、行距再放开一点，并且比正文短两字——用来把
+   导语和正文的块区分开。
+   注意正文外面还有一层 VitePress 编出来的 div（第 13 节量轨道时记过同一件事），
+   所以取首段要用 .vp-doc > div > p */
+
+.about .vp-doc p,
+.about .vp-doc ul,
+.projects .vp-doc p,
+.projects .vp-doc ul {
+  max-width: var(--fx-measure);
+}
+
+.about .vp-doc > div > p:first-of-type,
+.projects .vp-doc > div > p:first-of-type {
+  max-width: calc(var(--fx-measure) - 2em);
+  margin-bottom: var(--fx-space-6);
+  font-size: 1.125rem;
+  line-height: 1.9;
+}
+
+/* ---- 作品索引：编号 / 标题 / 元信息 ----
+   元素由 index.ts 的 setupWorksIndex() 从正文的 h3 生成，正文里不重复写一遍：
+   加一个作品，索引自己就多一行。它只在脚本跑过之后存在，样式不必再挂 ready 类 */
+
+.folio {
+  margin: var(--fx-space-6) 0 var(--fx-space-7);
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* 一行一件作品：编号与标题同一行，技术栈作注脚缩在标题下面。
+   技术栈那串元信息又长又是等宽字，跟标题抢同一行会把标题挤到换行，
+   所以让它独立占一行——顺带窄屏也不用再换布局。
+   行间不画分隔线：整块只由开头那条长横线起头，行与行靠留白分开 */
+.folio-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--fx-folio-num) minmax(0, 1fr);
+  gap: 0.15rem var(--fx-space-4);
+  align-items: baseline;
+  padding: 0.7rem 0 0.7rem var(--fx-space-3);
+  /* 进场用动画而不是「隐藏态 + 放出来」：动画自己会跑完，不依赖脚本再补一次
+     样式写入——页面在后台标签页里加载时 rAF 会被节流，那种情况下索引不能一直藏着。
+     动画只碰 opacity，不碰 transform：hover 的位移本身就是个 transform */
+  animation: folio-in var(--fx-dur-slow) var(--fx-ease) both;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+/* 整行是链接，但标题不该是链接色，也不该有下划线——一列紫字、几道横线都太吵。
+   选择器要压过 .vp-doc a（它带下划线），所以这里必须凑够三个类。
+   可点这件事交给光标、悬停位移、行首那条竖线和编号的颜色来说 */
+.projects .vp-doc .folio-row,
+.projects .vp-doc .folio-row:hover {
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+}
+
+/* 行首那条品牌色竖线：悬停时出现；滚到某个作品时，它也是「当前这一行」的记号
+   （和归档页选中某一期是同一个记号） */
+.folio-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  width: 2px;
+  border-radius: 1px;
+  background-color: var(--vp-c-brand-1);
+  transform: scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.folio-row:hover {
+  transform: translateX(3px);
+}
+
+.folio-row:hover::before,
+.folio-row.is-current::before {
+  transform: scaleY(1);
+}
+
+.folio-row:hover .folio-num,
+.folio-row.is-current .folio-num {
+  color: var(--vp-c-brand-1);
+}
+
+.folio-num {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.folio-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.folio-meta {
+  grid-column: 2;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 滚动揭示：章节标题的发丝线 ----
+   与第 9 节同一套开关。注意标题本身不做透明度/位移——它是结构（读屏、锚点、
+   页内目录都靠它），万一观察者没跑起来，标题必须还在。所以这里只让线画出来 */
+
+html.fx-reveal-ready .about .vp-doc h2,
+html.fx-reveal-ready .projects .vp-doc h2 {
+  --fx-rule: 0%;
+}
+
+html.fx-reveal-ready .about .vp-doc h2.fx-in,
+html.fx-reveal-ready .projects .vp-doc h2.fx-in {
+  --fx-rule: 100%;
+  transition: background-size var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms);
+}
+
+@keyframes folio-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc h2,
+  .projects .vp-doc h2,
+  .folio-row,
+  .folio-row::before {
+    transition: none;
+  }
+
+  .folio-row {
+    animation: none;
+  }
+
+  html.fx-reveal-ready .about .vp-doc h2,
+  html.fx-reveal-ready .projects .vp-doc h2 {
+    --fx-rule: 100%;
+  }
+}
+

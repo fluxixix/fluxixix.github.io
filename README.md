@@ -65,13 +65,13 @@ Node 24，与 CI 保持一致。
 │   ├── config.mts            站点配置
 │   ├── rss.ts                构建结束后生成 feed.xml
 │   └── theme/
-│       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示、关于页时间线
-│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now / 关于页页头
+│       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示、经历时间线、作品索引
+│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now 页头与编辑体页头
 │       ├── cursor.ts         光标粒子拖尾与点击波纹
 │       ├── now/NowHeader.vue Now 当月页的页头
-│       ├── about/AboutHeader.vue  关于页页头
+│       ├── head/PageMasthead.vue  编辑体页头（关于页、项目页共用）
 │       ├── vue-shim.d.ts     让 TS 认识 .vue 单文件组件
-│       └── custom.css        全站样式，按 13 个章节分层
+│       └── custom.css        全站样式，按 14 个章节分层
 ├── vercel.json
 └── .github/workflows/deploy.yml
 ```
@@ -124,7 +124,7 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 
 ## 主题里做了什么
 
-`.vitepress/theme/index.ts` 里四个交互，都做了降级：
+`.vitepress/theme/index.ts` 里六个交互，都做了降级：
 
 - **hero 光晕跟随指针** — 只写 CSS 变量，平滑交给 transition。盒子的位置按需重测，
   不是每帧 `getBoundingClientRect()`（那会强制同步布局，表现出来是整页迟钝）。
@@ -136,6 +136,12 @@ line: 这个月想说的话   # 可选，渲染在页头下方
   所以禁用 JS 时页面就是普通内容，不会白屏。
 - **关于页的经历时间线** — 轨道几何量由脚本量测后写进 CSS 变量，滚动时推进已读段并
   点亮节点；离开视口即摘掉滚动监听。减少动效时整条静态点亮，禁用 JS 时只剩普通 Markdown。
+- **项目页的作品索引** — 整块从正文里生成：取「后面紧跟一行元信息」的 h3 当条目，
+  标题做链接、元信息做注脚，滚到哪个作品就点亮哪一行。加一个作品，索引自己多一行，
+  正文一个字都不用补；禁用 JS 时只是没有这块索引。
+
+`custom.css` 第 14 节是这两页的「作品集排版」：章节标题上方那条发丝线在标题进入视口时
+从左画出，正文用满整列（VitePress 给的上限），页头下面那段按导语放大一档。
 
 另外两处不在这个文件里：
 

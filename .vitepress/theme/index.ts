@@ -159,7 +159,10 @@ function setupThemeTransition(app: App) {
 const REVEAL_SELECTOR = [
   '.vp-doc .post-list .post-item',
   '.VPFeatures.VPHomeFeatures .item',
-  '.archive-timeline .timeline-year .timeline-item'
+  '.archive-timeline .timeline-year .timeline-item',
+  // 关于页与项目页的章节标题：标题淡入的同时，它上面那条发丝线从左画出来
+  '.about .vp-doc h2',
+  '.projects .vp-doc h2'
 ].join(',')
 
 /** 同一批里相邻两项的揭示间隔，形成自上而下的阶梯 */
@@ -207,7 +210,10 @@ function setupReveal() {
     observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue
+          // 已经在视口上方的不等它"进入"，直接放出来：锚点跳转、带 hash 刷新、
+          // 或是快速滚动，都会一次跨过好几屏，跨过的块如果一直藏着就永远不出现
+          const passed = entry.boundingClientRect.bottom < 0
+          if (!entry.isIntersecting && !passed) continue
           const el = entry.target as HTMLElement
           el.style.setProperty('--fx-reveal-delay', `${delays.get(el) ?? 0}ms`)
           el.classList.add('fx-in')
@@ -226,8 +232,13 @@ function setupReveal() {
   }
 
   // Content 组件在 vnode mount / update / unmount 时都会回调，
-  // 一次路由切换可能来好几趟。推到下一帧再收集，拿到的才是最终的 DOM
-  onContentUpdated(() => requestAnimationFrame(collect))
+  // 一次路由切换可能来好几趟。推到下一帧再收集，拿到的才是最终的 DOM。
+  // 同步那一趟也要：水合可能把容器整个换掉，只观察旧节点的话揭示永远不会发生
+  // （与 setupAboutRail 同一个时机、同一个原因）
+  onContentUpdated(() => {
+    collect()
+    requestAnimationFrame(collect)
+  })
 }
 
 /* --------------------------------------------------------------------------
@@ -400,6 +411,131 @@ function setupAboutRail() {
   })
 }
 
+/* --------------------------------------------------------------------------
+   项目页的「作品索引」
+   -------------------------------------------------------------------------- */
+
+/** 索引行的进场间隔。比第 9 节的列表稍大一档——这里只有几行，可以看得清一点 */
+const FOLIO_STAGGER_MS = 60
+
+/**
+ * 项目页的作品索引：编号 / 标题 / 元信息，点一下跳到对应小节。
+ *
+ * 索引整块从正文生成：取所有「后面紧跟一行 .entry-meta」的 h3 作为条目——作品名、
+ * 个人项目都是这个形状，技术栈那节的 h3 没有元信息，自然落选。这样索引不会和正文
+ * 走散：加一个作品，索引自己就多一行，正文里一个字都不用补。
+ *
+ * 位置放在页头下的导语之后。滚到某个作品时对应行标成当前行；点了某一行也先标上，
+ * 不必等滚动把它带进观察带。
+ *
+ * 脚本没跑或报错时页面就是普通的 Markdown，只是没有这块索引，正文完整。
+ */
+function setupWorksIndex() {
+  if (typeof window === 'undefined') return
+
+  let observer: IntersectionObserver | undefined
+
+  const build = () => {
+    observer?.disconnect()
+    observer = undefined
+
+    const doc = document.querySelector<HTMLElement>('.projects .vp-doc')
+    if (!doc) return
+
+    // 幂等：同步那一趟和下一帧那一趟都会跑，先清掉上一趟留下的索引
+    for (const stale of Array.from(doc.querySelectorAll('.folio'))) stale.remove()
+
+    // 锚点由 VitePress 的标题 id 提供；拿不到 id 的标题进不了索引（点了也跳不过去）
+    const headings = Array.from(
+      doc.querySelectorAll<HTMLElement>('h3:has(+ .entry-meta)')
+    ).filter((heading) => heading.id)
+    if (!headings.length) return
+
+    const nav = document.createElement('nav')
+    nav.className = 'folio'
+    nav.setAttribute('aria-label', '作品索引')
+
+    const rows = new Map<Element, HTMLElement>()
+    /** 当前行对应的标题。观察带里没有标题时保留上一次的值——一个作品往往比
+     *  一条观察带宽得多，翻到小节中间不该把「当前」清空 */
+    let current: Element | undefined
+
+    headings.forEach((heading, index) => {
+      const row = document.createElement('a')
+      row.className = 'folio-row'
+      row.href = `#${heading.id}`
+      // 逐行错开进场（动画在 css 里，这里只给延迟）
+      row.style.animationDelay = `${index * FOLIO_STAGGER_MS}ms`
+
+      const num = document.createElement('span')
+      num.className = 'folio-num'
+      num.textContent = String(index + 1).padStart(2, '0')
+
+      const title = document.createElement('span')
+      title.className = 'folio-title'
+      title.textContent = heading.textContent ?? ''
+
+      row.append(num, title)
+
+      const meta = heading.nextElementSibling?.textContent?.trim()
+      if (meta) {
+        const metaEl = document.createElement('span')
+        metaEl.className = 'folio-meta'
+        metaEl.textContent = meta
+        row.append(metaEl)
+      }
+
+      nav.append(row)
+      rows.set(heading, row)
+    })
+
+    // 点一行就先把它标成当前行：等滚动把标题带进观察带会慢半拍
+    nav.addEventListener('click', (event) => {
+      const row = (event.target as HTMLElement).closest<HTMLElement>('.folio-row')
+      if (!row) return
+      for (const [heading, candidate] of rows) {
+        if (candidate === row) current = heading
+        candidate.classList.toggle('is-current', candidate === row)
+      }
+    })
+
+    // 放在导语之后（正文外面还有一层 VitePress 编出来的 div，见第 13 节）
+    const lede =
+      doc.querySelector(':scope > div > p') ?? doc.querySelector(':scope > p')
+    if (lede) lede.after(nav)
+    else doc.prepend(nav)
+
+    observer = new IntersectionObserver(
+      (records) => {
+        const visible = new Set<Element>()
+        for (const record of records) {
+          if (record.isIntersecting) visible.add(record.target)
+          else visible.delete(record.target)
+        }
+        // 带里可能同时有两条（一节短、下一节又进来），取靠前的那个
+        const next = headings.find((heading) => visible.has(heading)) ?? current
+        if (next === current) return
+        current = next
+        for (const [heading, row] of rows) {
+          row.classList.toggle('is-current', heading === current)
+        }
+      },
+      // 观察带取视口上方 40%：标题一进这块就算「正在看这一节」；往回滚时它又落回
+      // 带里，两个方向都对。带以下的部分不参与，不然一眼扫过去会连跳好几行
+      { rootMargin: '0px 0px -60% 0px' }
+    )
+    for (const heading of headings) observer.observe(heading)
+  }
+
+  // 同步一趟、下一帧再一趟：同步那次是服务端渲染的 HTML（水合可能把容器整个换掉，
+  // 标记会跟着丢），下一帧那次拿到的才是最终 DOM——与 setupAboutRail 同一个时机。
+  // build 幂等，重复执行只会重新生成一遍索引
+  onContentUpdated(() => {
+    build()
+    requestAnimationFrame(build)
+  })
+}
+
 export default {
   extends: DefaultTheme,
   Layout,
@@ -409,5 +545,6 @@ export default {
     setupThemeTransition(app)
     setupReveal()
     setupAboutRail()
+    setupWorksIndex()
   }
 } satisfies Theme
