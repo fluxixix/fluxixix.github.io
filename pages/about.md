@@ -1,9 +1,10 @@
 ---
 title: 关于
 pageClass: about
-# 下面三个字段供 AboutHeader 生成页头，正文里不再重复写名字与身份行
-about: true
+# 下面几个字段供 PageMasthead 生成页头，正文里不再重复写名字与身份行
+masthead: true
 name: 邓一超
+tag: 关于 · ABOUT
 meta: 工具链研发 · 玩AI · 惠州
 ---
 
@@ -45,13 +46,7 @@ async function copyEmail() {
 }
 </script>
 
-在一家汽车电子公司做工具链研发，日常和 C、Python 打交道：写桌面端工具，把车上的数据变成人能看懂的图。再往前两年，写的是 MCU 软件。
-
-做了几年下来，越来越觉得有意思的部分都不在功能列表里：把一段几百兆的实车数据拖进去，几秒钟后能看清车在哪、雷达看到了什么；同事在自己电脑上双击一下就能跑，不用装 Python、也不用配环境；一句「这个能不能帮忙看一下」，最后变成当天就能用上的工具。
-
-UI/UX 上的原则就一条：既要好用，也要好看。功能跑通只是及格线，两样都顾上，我才觉得这个东西算做完了。
-
-最近在做什么、读什么、玩什么，记在 [Now](/now) 里；手上维护的东西在[项目](/projects)页。
+写代码五年，做过运维、爬虫、嵌入式 和 工具链，企业级的软件与AI资产管理平台， 玩一些 AI 相关的东西。
 
 ## 经历
 
@@ -72,7 +67,7 @@ UI/UX 上的原则就一条：既要好用，也要好看。功能跑通只是�
 
 #### 工具链
 
-<p class="entry-meta">Python · Qt / PySide6 · PyQtGraph · OpenGL · 2023 — 至今</p>
+<p class="entry-meta">Python · Qt / PySide6 · PyQtGraph · OpenGL · PyInstaller / PyArmor · 2023 — 至今</p>
 
 五款工具都在解同一件事：车上采下来的数据，得有人在几秒钟内看明白。共同点是不管数据从哪儿来——总线、摄像头、雷达还是数据记录设备——都先想办法用最快的速度读进来，再用一张图把话说清楚。
 
@@ -85,6 +80,14 @@ UI/UX 上的原则就一条：既要好用，也要好看。功能跑通只是�
 定位、技术栈和取舍写在[项目](/projects)页。
 
 桌面端开发是自学的，没什么捷径，就是问题来了一个个解决。
+
+#### 软件与 AI 资产平台
+
+<p class="entry-meta">Next.js · React · Python · Flask · PostgreSQL · Redis · Celery · 2026 — 至今</p>
+
+企业级的软件与 AI 资产平台。Admin 后台与 Portal 门户两套前端跑在同一套后端上：后端按 admin / dev / portal 三域分层，路由只管参数与鉴权，业务在 service、数据在 model；权限、审计、通知做成三条横切能力，三十九张表和两百多个接口都挂在这套结构上。部署是一个 docker compose 起七个服务：nginx 统一入口，前端、后端、Celery worker 与 beat、PostgreSQL 16、Redis 各管一段。
+
+具体做了什么写在[项目](/projects)页。
 
 ### 某数据服务公司 · Python 爬虫工程师
 
@@ -109,8 +112,8 @@ UI/UX 上的原则就一条：既要好用，也要好看。功能跑通只是�
 ## 技能
 
 - **语言** —— Python（主力）、C/C++（MCU / 嵌入式）；Go、Rust、TypeScript 不太会写，但都看得懂
-- **桌面端** —— PySide6 / PyQt5 / PyQtGraph、OpenGL、OpenCV、PyInstaller 打包
-- **数据** —— MongoDB、Elasticsearch、Kafka、Hive、Redis、Pandas、NumPy
+- **桌面端** —— PySide6 / PyQt5 / PyQtGraph、OpenGL、OpenCV、PyInstaller / PyArmor 打包
+- **数据库** —— MySQL、SQLite、PostgreSQL、MongoDB、Redis、Elasticsearch、Kafka、Hive
 - **汽车电子** —— ADAS 功能状态机与运行规则、规控算法集成、CANoe / CAPL、XCP / CAN 总线数据采集与解析、CCS / Tasking
 - **日常** —— Git、云服务器与云存储运维、Markdown 文档
 
