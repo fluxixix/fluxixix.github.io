@@ -230,6 +230,176 @@ function setupReveal() {
   onContentUpdated(() => requestAnimationFrame(collect))
 }
 
+/* --------------------------------------------------------------------------
+   关于页「经历」的时间线外轨
+   -------------------------------------------------------------------------- */
+
+/** 阅读线：轨道点亮到视口高度的这个位置为止 */
+const RAIL_READ_LINE = 0.45
+
+/**
+ * 关于页「经历」一节左侧的时间线外轨。
+ *
+ * 正文是一串平铺的兄弟节点（h2 / h3 / h4 / p / ul），CSS 没法表达「属于经历这一节」——
+ * h3 后面的段落和列表，与后面几节的段落和列表是同一类元素。所以轨道的几何量
+ * （起点、长度、已读高度）在这里量出来写进 CSS 变量，需要让出轨道宽度的块由这里
+ * 打标记 class，而不是包一层容器：路由切换时 VitePress 会把整篇正文重新渲染，
+ * 重组 DOM 迟早和它打架。
+ *
+ * 轨道样式全部挂在 .fx-rail-ready 下：脚本没跑或报错时，页面就是普通的 Markdown，
+ * 只是少了轨道，正文位置与可读性都不受影响。全节只有一个状态源（--fx-rail-lit），
+ * 节点是否点亮由它推出来，所以不必给每个节点单独挂观察者。
+ */
+function setupAboutRail() {
+  if (typeof window === 'undefined') return
+
+  let container: HTMLElement | null = null
+  /** 「经历」一节里的块，以及其中的标题（用来判断点亮到哪了） */
+  let blocks: HTMLElement[] = []
+  let nodes: HTMLElement[] = []
+  /** 轨道顶端的文档坐标与容器内偏移，滚动时只用这两个数，不碰布局 */
+  let railTop = 0
+  let railTopInContainer = 0
+  let railHeight = 0
+  /** 上一次写入的已读高度：值没变就不写样式，省掉一次不必要的样式重算 */
+  let painted = -1
+  let resizing: ResizeObserver | undefined
+
+  const wantsStatic = () =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+  /** 量测：轨道从第一个标题的顶端起，到这一节最后一个块的底端止 */
+  const measure = () => {
+    if (!container || !blocks.length) return
+
+    const containerTop = container.getBoundingClientRect().top + window.scrollY
+    const first = blocks[0].getBoundingClientRect()
+    railTop = first.top + window.scrollY
+    railTopInContainer = railTop - containerTop
+    railHeight = blocks[blocks.length - 1].getBoundingClientRect().bottom + window.scrollY - railTop
+
+    container.style.setProperty('--fx-rail-top', `${railTopInContainer.toFixed(1)}px`)
+    container.style.setProperty('--fx-rail-h', `${railHeight.toFixed(1)}px`)
+  }
+
+  /** 写样式只此一处：滚动时推进已读高度，并据此给节点上色 */
+  const apply = (next: number) => {
+    if (!container) return
+    // 半个像素以内不动：滚动停下来之后不该还在反复写样式
+    if (Math.abs(next - painted) < 0.5) return
+    painted = next
+
+    container.style.setProperty('--fx-rail-lit', `${next.toFixed(1)}px`)
+
+    // 节点的圆心落在标题首行上，用它的容器内偏移和已读段的底端比，
+    // 误差不超过半个字高，视觉上够用。offsetTop 是取整后的值，减 1 是为了让
+    // 「已读高度为 0 时第一个节点仍未点亮」这个边界稳定
+    const litBottom = railTopInContainer + next
+    for (const node of nodes) {
+      node.classList.toggle('is-lit', node.offsetTop < litBottom - 1)
+    }
+  }
+
+  /** 滚动时推进已读高度 */
+  const paint = () => {
+    if (!container || !blocks.length) return
+
+    const reached = window.scrollY + window.innerHeight * RAIL_READ_LINE - railTop
+    apply(Math.max(0, Math.min(reached, railHeight)))
+  }
+
+  // 直接挂在滚动事件上，不做视口判断也不算在 rAF 里：这里只读两个缓存的数、
+  // 写一个变量加几个 class，没有布局读取，值没变就早退；而 IntersectionObserver
+  // 与 requestAnimationFrame 都依赖渲染帧，窗口被遮住时会被节流甚至不投递，
+  // 进度就会卡在离开视口那一刻
+  const watch = () => {
+    window.addEventListener('scroll', paint, { passive: true })
+  }
+
+  const unwatch = () => {
+    window.removeEventListener('scroll', paint)
+  }
+
+  const collect = () => {
+    resizing?.disconnect()
+    resizing = undefined
+    unwatch()
+    painted = -1
+
+    // 路由切换会换掉整篇正文，先把上一次留下的标记与变量清干净
+    for (const el of blocks) {
+      el.classList.remove('fx-rail-item', 'fx-rail-node', 'fx-rail-dot')
+    }
+    blocks = []
+    nodes = []
+    container?.classList.remove('fx-rail-ready', 'fx-rail-static')
+    container = null
+
+    // VitePress 2 把整篇 Markdown 编成 .vp-doc 里的单个 div（custom.css 第 11 节
+    // 记的是同一件事），跨块布局只能挂在这个内层 div 上
+    const scope = document.querySelector<HTMLElement>('.about .vp-doc > div')
+    if (!scope) return
+
+    // 「经历」一节 = 标题为「经历」的 h2 到下一个 h2 之间的所有块
+    const children = Array.from(scope.children) as HTMLElement[]
+    const start = children.findIndex(
+      (el) => el.tagName === 'H2' && (el.textContent ?? '').includes('经历')
+    )
+    if (start < 0) return
+    const end = children.findIndex((el, index) => index > start && el.tagName === 'H2')
+    const section = children.slice(start + 1, end < 0 ? undefined : end)
+
+    for (const el of section) {
+      el.classList.add('fx-rail-item')
+      // 机构是圆环节点，子条目是小圆点，层级差一级
+      if (el.tagName === 'H3') {
+        el.classList.add('fx-rail-node')
+        nodes.push(el)
+      } else if (el.tagName === 'H4') {
+        el.classList.add('fx-rail-dot')
+        nodes.push(el)
+      }
+    }
+
+    if (!section.length || !nodes.length) {
+      for (const el of section) el.classList.remove('fx-rail-item')
+      return
+    }
+
+    container = scope
+    blocks = section
+    scope.classList.add('fx-rail-ready')
+    measure()
+    painted = -1
+
+    // 减少动效：不挂滚动监听，轨道整条点亮、节点全部就位（样式在 css 里处理）
+    if (wantsStatic()) {
+      scope.classList.add('fx-rail-static')
+      return
+    }
+
+    watch()
+
+    // 字体加载、窗口缩放、滚动条出现都会改变轨道长度，重新量一遍
+    resizing = new ResizeObserver(() => {
+      measure()
+      painted = -1
+      paint()
+    })
+    resizing.observe(scope)
+
+    paint()
+  }
+
+  // 同步来一遍、下一帧再来一遍：同步那次拿到的还是服务端渲染的 HTML（水合可能把
+  // 容器整个换掉，标记会跟着丢），下一帧那次拿到的才是最终 DOM——与 setupReveal
+  // 同一个时机。两次都跑是安全的，collect 幂等，重复执行只是重新量一次。
+  onContentUpdated(() => {
+    collect()
+    requestAnimationFrame(collect)
+  })
+}
+
 export default {
   extends: DefaultTheme,
   Layout,
@@ -238,5 +408,6 @@ export default {
     setupCursorFx()
     setupThemeTransition(app)
     setupReveal()
+    setupAboutRail()
   }
 } satisfies Theme

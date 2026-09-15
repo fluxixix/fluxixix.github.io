@@ -65,12 +65,13 @@ Node 24，与 CI 保持一致。
 │   ├── config.mts            站点配置
 │   ├── rss.ts                构建结束后生成 feed.xml
 │   └── theme/
-│       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示
-│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now 页头
+│       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示、关于页时间线
+│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now / 关于页页头
 │       ├── cursor.ts         光标粒子拖尾与点击波纹
 │       ├── now/NowHeader.vue Now 当月页的页头
+│       ├── about/AboutHeader.vue  关于页页头
 │       ├── vue-shim.d.ts     让 TS 认识 .vue 单文件组件
-│       └── custom.css        全站样式，按 11 个章节分层
+│       └── custom.css        全站样式，按 13 个章节分层
 ├── vercel.json
 └── .github/workflows/deploy.yml
 ```
@@ -133,6 +134,8 @@ line: 这个月想说的话   # 可选，渲染在页头下方
   圆心做 clip-path 扩散。不支持的浏览器直接退回即时切换。
 - **列表滚动揭示** — IntersectionObserver 分批淡入。隐藏态写在 JS 加的 class 下，
   所以禁用 JS 时页面就是普通内容，不会白屏。
+- **关于页的经历时间线** — 轨道几何量由脚本量测后写进 CSS 变量，滚动时推进已读段并
+  点亮节点；离开视口即摘掉滚动监听。减少动效时整条静态点亮，禁用 JS 时只剩普通 Markdown。
 
 另外两处不在这个文件里：
 

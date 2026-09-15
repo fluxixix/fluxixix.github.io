@@ -13,6 +13,9 @@
      8. 页脚与目录
      9. 入场与滚动揭示
     10. 光标粒子层、明暗切换扩散
+    11. Now 页
+    12. 关于页与项目页
+    13. 关于页页头与经历时间线
 
    两个必须记住的前提：
 
@@ -1721,5 +1724,366 @@ html :is(input, textarea, select, [contenteditable='true']) {
   .now-index .now-item,
   .now-index .now-item::before {
     transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   12. 关于页与项目页（/about、/projects）
+   -------------------------------------------------------------------------- */
+
+/* 两页的正文都是纯 Markdown，样式只补一层「简历感」：机构名或项目名下方跟
+   一行等宽的元信息（时间、技术栈）。层级仍然靠 h2 / h3 表达，不引入新的容器，
+   写的时候和写文章一样。
+
+   缩略线只给关于页：项目页的 h3 里还有「技术栈」分区下的几个小节标题，
+   给它们也画上分隔线，那一节会显得很脏。 */
+
+/* 元信息行：时间区间与技术栈共用，都是「标题的注脚」，所以在同一层语言里 */
+.about .entry-meta,
+.projects .entry-meta {
+  margin: 0.4rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  /* 同 .post-date：13px 的小字用 text-2 才够 AA 的 4.5:1，text-3 只有 3.1:1 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 无序列表：环形标记 ----
+
+   这两页的列表密度最高，默认的小圆点在中文正文里太软。换成一枚细圆环——
+   和经历时间线上的节点是同一套记号，悬停时被品牌色填满（等于「这一条被点亮」）。
+
+   纵向位置用「行高的一半减去半径」算出来，而不是交给 vertical-align: middle：
+   后者对齐的是西文的 x 高度中线，中文正文里会明显偏低。行高的一半正好是首行
+   的中线（行盒把字身框居中），取 lh 单位写，以后改行高标记会跟着走。
+
+   只作用于这两页：文章与 Now 页保持默认标记（Now 页的嵌套列表另有一套画法）。
+   标记是装饰，靠 ::before 画，ul/li 的语义不受影响。 */
+
+.about .vp-doc > div,
+.projects .vp-doc > div {
+  /* 圆环的直径，以及标记列的总宽（圆环 + 与文字之间的空隙）。
+     线宽 1.5px 配 0.45rem 是环孔还看得见的上限，再粗就成小色块了 */
+  --fx-mark-size: 0.45rem;
+  --fx-mark-gap: 1.4rem;
+}
+
+.about .vp-doc ul,
+.projects .vp-doc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.about .vp-doc ul > li,
+.projects .vp-doc ul > li {
+  position: relative;
+  /* 原本由 ul 的默认内边距让出的位置，改由条目自己让：标记正好落在这一列，
+     条目的背景块（带标签的行才有）也才能贴着文字算 */
+  padding-left: var(--fx-mark-gap);
+}
+
+.about .vp-doc ul > li::before,
+.projects .vp-doc ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* 0.875em 是行高 1.75 的一半，给不认 lh 单位的浏览器兜底 */
+  top: calc(0.875em - var(--fx-mark-size) / 2);
+  top: calc(0.5lh - var(--fx-mark-size) / 2);
+  box-sizing: border-box;
+  width: var(--fx-mark-size);
+  height: var(--fx-mark-size);
+  border: 1.5px solid var(--vp-c-text-2);
+  border-radius: 50%;
+  transition:
+    border-color var(--fx-dur-base),
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+/* 悬停时圆环被填满——和时间线节点「点亮」是同一个记号 */
+.about .vp-doc ul > li:hover::before,
+.projects .vp-doc ul > li:hover::before {
+  border-color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-1);
+  transform: scale(1.15);
+}
+
+/* 每家机构用一条细线起头，替代简历里的分栏。第一条不画——它上面紧挨着
+   h2 自己那条渐变分隔线，两条叠在一起会显得脏 */
+.about .vp-doc > div > h3 {
+  margin-top: var(--fx-space-6);
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 1.25rem;
+}
+
+.about .vp-doc > div > h3:first-of-type {
+  margin-top: var(--fx-space-5);
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* 项目名（h4）在机构下面自成一段，与上文的叙述拉开距离 */
+.about .vp-doc > div > h4 {
+  margin-top: var(--fx-space-5);
+}
+
+/* 技术栈注脚贴着项目名，别被 .vp-doc p 的 1rem 上边距推远 */
+.about .vp-doc > div > h4 + .entry-meta {
+  margin-top: 0.2rem;
+}
+
+/* 贴住 h4 的那条注脚同时是「这个项目的说明」的开头，和下面的正文留出正常段距 */
+.about .vp-doc > div > .entry-meta + p {
+  margin-top: var(--fx-space-3);
+}
+
+/* --------------------------------------------------------------------------
+   13. 关于页页头与经历时间线
+   -------------------------------------------------------------------------- */
+
+/* ---- 页头：结构来自 theme/about/AboutHeader.vue ----
+   与 Now 页页头（第 11 节）同一套语言：大标题 → 等宽小标签 → 细分隔线 →
+   等宽元信息。刻度不同只因为下面接的是正文而不是数据网格 */
+
+.about-head {
+  margin-bottom: var(--fx-space-6);
+}
+
+.about-head-name {
+  margin: 0;
+  font-size: clamp(2.25rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.about-head-tag {
+  margin: 0.75rem 0 0;
+  font-size: 0.65625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  /* 同 .now-head-tag：10.5px 不是大字号，text-3 只有 3.1:1，达不到 AA 的 4.5:1 */
+  color: var(--vp-c-text-2);
+}
+
+/* 品牌渐变细线：全站的渐变信号在这一页只出现这一次 */
+.about-head-rule {
+  width: 4rem;
+  height: 2px;
+  margin-top: 0.75rem;
+  border-radius: 1px;
+  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+}
+
+.about-head-meta {
+  margin: 0.75rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  /* 同 .entry-meta：13px 的小字用 text-2 才够 AA 的 4.5:1 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 经历时间线 ----
+   标记（fx-rail-item / node / dot）与三个几何量都由 index.ts 的 setupAboutRail()
+   写入，所有样式挂在 .fx-rail-ready 下：脚本没跑时页面就是普通 Markdown，
+   连下面的缩略线覆盖规则也一起失效，回到第 12 节的样子 */
+
+.about .vp-doc > div.fx-rail-ready {
+  position: relative;
+}
+
+/* 底色轨道与已读段：同一位置、同一起点，已读段的高度由脚本按滚动写 */
+.about .vp-doc > div.fx-rail-ready::before,
+.about .vp-doc > div.fx-rail-ready::after {
+  content: '';
+  position: absolute;
+  top: var(--fx-rail-top, 0);
+  left: 0;
+  width: 2px;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.about .vp-doc > div.fx-rail-ready::before {
+  height: var(--fx-rail-h, 0);
+  background-color: var(--vp-c-divider);
+}
+
+/* 已读段的渐变跟着高度伸缩，颜色随滚动手缓缓铺开 */
+.about .vp-doc > div.fx-rail-ready::after {
+  height: var(--fx-rail-lit, 0);
+  background-image: linear-gradient(180deg, var(--fx-brand-a), var(--fx-brand-b));
+}
+
+/* 正文整体右让出轨道宽度，轨道才落在内容列左边缘 */
+.about .vp-doc > div.fx-rail-ready > .fx-rail-item {
+  padding-left: 1.75rem;
+}
+
+/* 机构标题的缩略线退场：分段交给轨道，比横线干净 */
+.about .vp-doc > div.fx-rail-ready > h3 {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.about .vp-doc > div.fx-rail-ready > .fx-rail-node,
+.about .vp-doc > div.fx-rail-ready > .fx-rail-dot {
+  position: relative;
+}
+
+/* 节点圆心对准轨道中轴（轨道占 0~2px，中轴在 1px 处） */
+.about .vp-doc > div.fx-rail-ready > .fx-rail-node::before,
+.about .vp-doc > div.fx-rail-ready > .fx-rail-dot::before {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  box-sizing: border-box;
+  /* 底色压住轨道，圆环才看得出来 */
+  background-color: var(--vp-c-bg);
+  transition:
+    border-color var(--fx-dur-base) var(--fx-ease),
+    background-color var(--fx-dur-base) var(--fx-ease),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.about .vp-doc > div.fx-rail-ready > .fx-rail-node::before {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--vp-c-divider);
+  /* 0.65em 大致是标题首行的视觉中线，减去半径即圆的顶端 */
+  top: calc(0.65em - 6px);
+  left: -5px;
+}
+
+.about .vp-doc > div.fx-rail-ready > .fx-rail-dot::before {
+  width: 6px;
+  height: 6px;
+  top: calc(0.65em - 3px);
+  left: -2px;
+  background-color: var(--vp-c-divider);
+}
+
+/* 点亮：已读段扫过的节点换成品牌色 */
+.about .vp-doc > div.fx-rail-ready > .fx-rail-node.is-lit::before {
+  border-color: var(--vp-c-brand-1);
+  transform: scale(1.15);
+}
+
+.about .vp-doc > div.fx-rail-ready > .fx-rail-dot.is-lit::before {
+  background-color: var(--vp-c-brand-1);
+}
+
+/* 减少动效：轨道整条点亮、节点全部就位，且没有任何过渡。
+   （脚本在这条路径上根本不挂滚动监听，已读高度也就不会写进来） */
+.about .vp-doc > div.fx-rail-static::after {
+  height: var(--fx-rail-h, 0);
+}
+
+.about .vp-doc > div.fx-rail-static > .fx-rail-node::before {
+  border-color: var(--vp-c-brand-1);
+  transition: none;
+}
+
+.about .vp-doc > div.fx-rail-static > .fx-rail-dot::before {
+  background-color: var(--vp-c-brand-1);
+  transition: none;
+}
+
+/* 窄屏把轨道到文字的间距收窄。节点位置不受影响——它是相对轨道定位的 */
+@media (max-width: 48rem) {
+  .about .vp-doc > div.fx-rail-ready > .fx-rail-item {
+    padding-left: 1.25rem;
+  }
+}
+
+/* ---- 条目悬停微交互 ----
+   只作用于「**标签** ——描述」这种行（现在、经历里的工具链都是这个形状，
+   技能那张表碰巧同构，一并获得同样的反馈）。反馈语言与文章列表、归档页一致：
+   整行轻微右移、底色变浅，加上短横线标记染色（见第 12 节） */
+
+.about .vp-doc li:has(> strong:first-child) {
+  /* 背景块往左溢出一点、文字位置不动：负外边距与左内边距相抵。
+     左内边距里还要再让出标记那一列（标记的负缩进由第 12 节统一给），
+     圆环才会和其它列表落在同一列 */
+  margin-left: calc(-1 * var(--fx-space-3));
+  padding: var(--fx-space-1) var(--fx-space-3) var(--fx-space-1)
+    calc(var(--fx-mark-gap) + var(--fx-space-3));
+  border-radius: 6px;
+  /* 标签留正文色、描述压到次级：不加装饰，只靠明度分主次 */
+  color: var(--vp-c-text-2);
+  transition:
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.about .vp-doc li:has(> strong:first-child) > strong {
+  color: var(--vp-c-text-1);
+}
+
+/* 这类行比别的行多了一层内边距，标记要跟着挪：横向挪回被负外边距带走的距离，
+   纵向加上这层的上内边距——否则圆环会浮在文字上半行 */
+.about .vp-doc li:has(> strong:first-child)::before {
+  left: var(--fx-space-3);
+  top: calc(var(--fx-space-1) + 0.875em - var(--fx-mark-size) / 2);
+  top: calc(var(--fx-space-1) + 0.5lh - var(--fx-mark-size) / 2);
+}
+
+.about .vp-doc li:has(> strong:first-child):hover {
+  background-color: var(--vp-c-bg-soft);
+  transform: translateX(3px);
+}
+
+/* ---- 邮箱复制按钮（结构来自 pages/about.md 的 script setup） ---- */
+
+.about .about-copy {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: inherit;
+  color: var(--vp-c-text-1);
+  transition: color var(--fx-dur-base);
+}
+
+.about .about-copy:hover {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+/* 不删 outline，只限定在键盘交互上 */
+.about .about-copy:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* 提示默认不占位（空串也有宽度，会把地址往左推），有内容时才让出间距 */
+.about .about-copy-hint {
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-brand-1);
+}
+
+.about .about-copy-hint.is-on {
+  margin-left: var(--fx-space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc ul > li::before,
+  .projects .vp-doc ul > li::before,
+  .about .vp-doc li:has(> strong:first-child),
+  .about .about-copy {
+    transition: none;
+  }
+
+  .about .vp-doc li:has(> strong:first-child):hover {
+    transform: none;
   }
 }
