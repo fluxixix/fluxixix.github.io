@@ -77,7 +77,7 @@ async function copyEmail() {
 - **自动驾驶数据记录系统工具** —— 按标准走 DoIP/UDS 从设备取数，事件与视频一起回放，另配了 Web 管理端
 - **4D毫米波雷达 · 点云/目标 · 实时/离线 · 三维可视化系统** —— 实时与离线共用一条渲染管线
 
-定位、技术栈和取舍写在[项目](/projects)页。
+定位、技术栈和取舍写在[作品](/projects)页。
 
 桌面端开发是自学的，没什么捷径，就是问题来了一个个解决。
 
@@ -87,7 +87,7 @@ async function copyEmail() {
 
 企业级的软件与 AI 资产平台。Admin 后台与 Portal 门户两套前端跑在同一套后端上：后端按 admin / dev / portal 三域分层，路由只管参数与鉴权，业务在 service、数据在 model；权限、审计、通知做成三条横切能力，三十九张表和两百多个接口都挂在这套结构上。部署是一个 docker compose 起七个服务：nginx 统一入口，前端、后端、Celery worker 与 beat、PostgreSQL 16、Redis 各管一段。
 
-具体做了什么写在[项目](/projects)页。
+具体做了什么写在[作品](/projects)页。
 
 ### 某数据服务公司 · Python 爬虫工程师
 
