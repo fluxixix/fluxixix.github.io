@@ -101,6 +101,16 @@ async function loadHitokoto() {
 }
 
 onMounted(loadHitokoto)
+
+// 当期预览：最新一期的各 h2 板块，每块取前两条。空板块（如还没填的一期）不显示
+const current = computed(() => entries[0] ?? null)
+const preview = computed(() =>
+  current.value
+    ? current.value.sections
+        .filter(section => section.items.length > 0)
+        .map(section => ({ head: section.head, items: section.items.slice(0, 2) }))
+    : []
+)
 </script>
 
 # Now
@@ -109,6 +119,21 @@ onMounted(loadHitokoto)
   <span class="now-lead-text" :class="{ 'is-typing': typing }">{{ leadText }}</span>
   <span v-if="!typing && hitokotoFrom" class="now-lead-from">—— {{ hitokotoFrom }}</span>
 </button>
+
+<section v-if="current && preview.length" class="now-preview">
+  <header class="now-preview-head">
+    <h2 class="now-preview-title">当期<span class="now-preview-date">· {{ current.month }}</span></h2>
+    <a class="now-preview-more" :href="current.url">进入当期 →</a>
+  </header>
+  <div class="now-preview-grid">
+    <div v-for="section in preview" :key="section.head" class="now-preview-block">
+      <h3 class="now-preview-label">{{ section.head }}</h3>
+      <ul class="now-preview-items">
+        <li v-for="item in section.items" :key="item">{{ item }}</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
 <div v-if="!entries.length" class="now-empty">还没有留档。</div>
 

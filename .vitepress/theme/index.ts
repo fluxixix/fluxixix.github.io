@@ -1,87 +1,15 @@
 import { nextTick, type App, type Ref } from 'vue'
 import { onContentUpdated, useData, type EnhanceAppContext, type Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+// 字体全部自托管：中文宋体按 unicode-range 切片，浏览器只下载页面用字的切片
+import '@fontsource/noto-serif-sc/700.css'
+import '@fontsource-variable/fraunces'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/500.css'
 import { setupCursorFx } from './cursor'
 import Layout from './Layout.vue'
+import WorkPlate from './works/WorkPlate.vue'
 import './custom.css'
-
-/** 光晕跟随鼠标的最大位移（px） */
-const GLOW_SHIFT = 40
-
-/**
- * 首页 hero 的渐变光晕跟随鼠标做轻微视差移动。
- * 只写入 CSS 变量，平滑过渡交给 custom.css 的 transition 处理。
- */
-function setupHeroGlow() {
-  if (typeof window === 'undefined') return
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-  let frame = 0
-  let pointerX = 0
-  let pointerY = 0
-
-  // hero 的盒子只在滚动 / 改窗口大小 / 路由切换后才会变。
-  // 曾经这里是每帧 getBoundingClientRect()——那是一次强制同步布局，
-  // 鼠标一动整个首页的布局就要重算一遍，表现出来就是「首页整页都迟钝」；
-  // 内页因为查不到 .VPHero 会提前 return，所以只有首页卡。改成按需重测。
-  let hero: HTMLElement | null = null
-  let rect: DOMRect | null = null
-
-  const measure = () => {
-    hero = document.querySelector<HTMLElement>('.VPHero .container')
-    rect = hero ? hero.getBoundingClientRect() : null
-  }
-
-  window.addEventListener('resize', measure)
-  window.addEventListener('scroll', measure, { passive: true })
-
-  const clamp = (value: number) => Math.max(-1, Math.min(1, value))
-
-  // 0.7s 的过渡本来就把移动抹平了，偏移没有实际变化时不必写，
-  // 省掉一次会波及 hero 子树的样式重算
-  let wroteX = Number.NaN
-  let wroteY = Number.NaN
-
-  const update = () => {
-    frame = 0
-
-    // 首次进来时 DOM 已挂载；客户端路由切换后元素会换掉，靠 isConnected 兜住
-    if (!hero || !hero.isConnected) measure()
-    if (!hero || !rect) return
-
-    const inRange =
-      pointerX > rect.left - rect.width / 2 &&
-      pointerX < rect.right + rect.width / 2 &&
-      pointerY > rect.top - rect.height &&
-      pointerY < rect.bottom + rect.height
-
-    // 鼠标离开 hero 附近时让光晕平滑归位
-    const offsetX = inRange
-      ? clamp((pointerX - (rect.left + rect.width / 2)) / (rect.width / 2)) * GLOW_SHIFT
-      : 0
-    const offsetY = inRange
-      ? clamp((pointerY - (rect.top + rect.height / 2)) / (rect.height / 2)) * GLOW_SHIFT
-      : 0
-
-    if (Math.abs(offsetX - wroteX) < 0.5 && Math.abs(offsetY - wroteY) < 0.5) return
-    wroteX = offsetX
-    wroteY = offsetY
-
-    hero.style.setProperty('--vp-hero-glow-x', `${offsetX.toFixed(1)}px`)
-    hero.style.setProperty('--vp-hero-glow-y', `${offsetY.toFixed(1)}px`)
-  }
-
-  // 移动端没有 pointermove，此处只影响桌面端体验
-  window.addEventListener(
-    'pointermove',
-    (event) => {
-      pointerX = event.clientX
-      pointerY = event.clientY
-      if (!frame) frame = requestAnimationFrame(update)
-    },
-    { passive: true }
-  )
-}
 
 /** 主题切换按钮（导航栏和移动端菜单里是同一个组件） */
 const APPEARANCE_SWITCH_SELECTOR = '.VPSwitchAppearance'
@@ -158,7 +86,6 @@ function setupThemeTransition(app: App) {
 /** 做滚动揭示的元素。都是列表项——正文段落不参与，否则阅读时视线总在动 */
 const REVEAL_SELECTOR = [
   '.vp-doc .post-list .post-item',
-  '.VPFeatures.VPHomeFeatures .item',
   '.archive-timeline .timeline-year .timeline-item',
   // 关于页与项目页的章节标题：标题淡入的同时，它上面那条发丝线从左画出来
   '.about .vp-doc h2',
@@ -234,7 +161,7 @@ function setupReveal() {
   // Content 组件在 vnode mount / update / unmount 时都会回调，
   // 一次路由切换可能来好几趟。推到下一帧再收集，拿到的才是最终的 DOM。
   // 同步那一趟也要：水合可能把容器整个换掉，只观察旧节点的话揭示永远不会发生
-  // （与 setupAboutRail 同一个时机、同一个原因）
+  // （与 setupWorksIndex 同一个时机、同一个原因）
   onContentUpdated(() => {
     collect()
     requestAnimationFrame(collect)
@@ -242,297 +169,242 @@ function setupReveal() {
 }
 
 /* --------------------------------------------------------------------------
-   关于页「经历」的时间线外轨
+   文章阅读进度：窄屏顶部细线 + 胶囊外圈的进度环
    -------------------------------------------------------------------------- */
 
-/** 阅读线：轨道点亮到视口高度的这个位置为止 */
-const RAIL_READ_LINE = 0.45
+const SVG_NS = 'http://www.w3.org/2000/svg'
 
 /**
- * 关于页「经历」一节左侧的时间线外轨。
+ * 读到哪，进度就画到哪；两个形态共用同一个进度值。
  *
- * 正文是一串平铺的兄弟节点（h2 / h3 / h4 / p / ul），CSS 没法表达「属于经历这一节」——
- * h3 后面的段落和列表，与后面几节的段落和列表是同一类元素。所以轨道的几何量
- * （起点、长度、已读高度）在这里量出来写进 CSS 变量，需要让出轨道宽度的块由这里
- * 打标记 class，而不是包一层容器：路由切换时 VitePress 会把整篇正文重新渲染，
- * 重组 DOM 迟早和它打架。
+ * - 窄屏（<60rem）顶栏跟着页面滚走，用 body 下一根 2px 横向细线表达：
+ *   宽度写死、只动 transform: scaleX()，滚动时不触发布局。
+ * - ≥60rem 顶栏收成悬浮胶囊（见 custom.css 第 2 节），细线退场，换成套在
+ *   胶囊外圈的一圈 SVG 描边，颜色是品牌紫→青的渐变，读到哪画到哪。
  *
- * 轨道样式全部挂在 .fx-rail-ready 下：脚本没跑或报错时，页面就是普通的 Markdown，
- * 只是少了轨道，正文位置与可读性都不受影响。全节只有一个状态源（--fx-rail-lit），
- * 节点是否点亮由它推出来，所以不必给每个节点单独挂观察者。
+ * 环的几何尺寸由 ResizeObserver 从元素实际像素读出来喂给 viewBox，圆角在
+ * 任意宽度下都不会被拉成椭圆；进度用 pathLength="1" 归一化，stroke-dashoffset
+ * 直接就是「还剩多少没读」，不必自己算周长。只在文章区出现——首页、列表、
+ * 关于这些短页面不挂。
  */
-function setupAboutRail() {
+function setupReadingProgress() {
   if (typeof window === 'undefined') return
 
-  let container: HTMLElement | null = null
-  /** 「经历」一节里的块，以及其中的标题（用来判断点亮到哪了） */
-  let blocks: HTMLElement[] = []
-  let nodes: HTMLElement[] = []
-  /** 轨道顶端的文档坐标与容器内偏移，滚动时只用这两个数，不碰布局 */
-  let railTop = 0
-  let railTopInContainer = 0
-  let railHeight = 0
-  /** 上一次写入的已读高度：值没变就不写样式，省掉一次不必要的样式重算 */
-  let painted = -1
-  let resizing: ResizeObserver | undefined
+  /* --- 窄屏那根细线 --- */
+  const bar = document.createElement('div')
+  bar.className = 'fx-reading-progress'
+  bar.setAttribute('aria-hidden', 'true')
+  document.body.appendChild(bar)
 
-  const wantsStatic = () =>
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  /* --- 套在胶囊外圈的进度环 --- */
+  const ring = document.createElementNS(SVG_NS, 'svg')
+  ring.setAttribute('class', 'fx-nav-ring')
+  ring.setAttribute('aria-hidden', 'true')
 
-  /** 量测：轨道从第一个标题的顶端起，到这一节最后一个块的底端止 */
-  const measure = () => {
-    if (!container || !blocks.length) return
+  const defs = document.createElementNS(SVG_NS, 'defs')
+  const gradient = document.createElementNS(SVG_NS, 'linearGradient')
+  gradient.setAttribute('id', 'fx-nav-ring-grad')
+  // 默认 objectBoundingBox：渐变按描边盒子的横向宽度铺开，宽度变了也不用重算
+  gradient.setAttribute('x1', '0')
+  gradient.setAttribute('y1', '0')
+  gradient.setAttribute('x2', '1')
+  gradient.setAttribute('y2', '0')
+  for (const [offset, color] of [
+    ['0', 'var(--fx-brand-a)'],
+    ['1', 'var(--fx-brand-b)']
+  ]) {
+    const stop = document.createElementNS(SVG_NS, 'stop')
+    stop.setAttribute('offset', offset)
+    // stop-color 是 CSS 属性，能直接吃变量，明暗两套主题自动跟随
+    stop.style.setProperty('stop-color', color)
+    gradient.appendChild(stop)
+  }
+  defs.appendChild(gradient)
 
-    const containerTop = container.getBoundingClientRect().top + window.scrollY
-    const first = blocks[0].getBoundingClientRect()
-    railTop = first.top + window.scrollY
-    railTopInContainer = railTop - containerTop
-    railHeight = blocks[blocks.length - 1].getBoundingClientRect().bottom + window.scrollY - railTop
+  const track = document.createElementNS(SVG_NS, 'rect')
+  track.setAttribute('class', 'fx-nav-ring-track')
+  const ringBar = document.createElementNS(SVG_NS, 'rect')
+  ringBar.setAttribute('class', 'fx-nav-ring-bar')
+  // 周长归一化成 1，dashoffset 就等于「还剩的比例」
+  ringBar.setAttribute('pathLength', '1')
+  ringBar.setAttribute('stroke-dasharray', '1')
+  ringBar.setAttribute('stroke-dashoffset', '1')
 
-    container.style.setProperty('--fx-rail-top', `${railTopInContainer.toFixed(1)}px`)
-    container.style.setProperty('--fx-rail-h', `${railHeight.toFixed(1)}px`)
+  ring.appendChild(defs)
+  ring.appendChild(track)
+  ring.appendChild(ringBar)
+
+  /** 挂进顶栏；水合或路由切换把顶栏换掉时重新挂回去 */
+  const mount = () => {
+    const nav = document.querySelector('.VPNavBar')
+    if (nav && ring.parentElement !== nav) nav.appendChild(ring)
+  }
+  mount()
+  if (ring.parentElement !== document.querySelector('.VPNavBar')) {
+    // enhanceApp 阶段顶栏可能还没就位，等一帧再试
+    requestAnimationFrame(mount)
   }
 
-  /** 写样式只此一处：滚动时推进已读高度，并据此给节点上色 */
-  const apply = (next: number) => {
-    if (!container) return
-    // 半个像素以内不动：滚动停下来之后不该还在反复写样式
-    if (Math.abs(next - painted) < 0.5) return
-    painted = next
+  const STROKE = 1.5 // 与 CSS 里的 stroke-width 保持一致
+  let lastW = 0
+  let lastH = 0
 
-    container.style.setProperty('--fx-rail-lit', `${next.toFixed(1)}px`)
+  /** 把元素的实际像素尺寸同步给 viewBox 和两个 rect，圆角才不会变形 */
+  const sync = () => {
+    const box = ring.getBoundingClientRect()
+    const w = Math.round(box.width)
+    const h = Math.round(box.height)
+    // 窄屏 display: none 期间读不到尺寸，直接跳过
+    if (!w || !h) return
+    if (w === lastW && h === lastH) return
+    lastW = w
+    lastH = h
 
-    // 节点的圆心落在标题首行上，用它的容器内偏移和已读段的底端比，
-    // 误差不超过半个字高，视觉上够用。offsetTop 是取整后的值，减 1 是为了让
-    // 「已读高度为 0 时第一个节点仍未点亮」这个边界稳定
-    const litBottom = railTopInContainer + next
-    for (const node of nodes) {
-      node.classList.toggle('is-lit', node.offsetTop < litBottom - 1)
+    // 宽高由 CSS 定（见 .fx-nav-ring），这里只喂 viewBox，让内部单位与像素 1:1
+    ring.setAttribute('viewBox', `0 0 ${w} ${h}`)
+
+    // 描边是以路径为中心向两侧各画一半的，路径要从盒子里缩进半个描边宽
+    const radius = (h - STROKE) / 2
+    for (const rect of [track, ringBar]) {
+      rect.setAttribute('x', String(STROKE / 2))
+      rect.setAttribute('y', String(STROKE / 2))
+      rect.setAttribute('width', String(w - STROKE))
+      rect.setAttribute('height', String(h - STROKE))
+      rect.setAttribute('rx', String(radius))
+      rect.setAttribute('ry', String(radius))
     }
   }
 
-  /** 滚动时推进已读高度 */
+  let shown = false
+
   const paint = () => {
-    if (!container || !blocks.length) return
+    const onPost = window.location.pathname.startsWith('/posts/')
+    const doc = document.documentElement
+    const max = doc.scrollHeight - window.innerHeight
+    const progress = onPost && max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
 
-    const reached = window.scrollY + window.innerHeight * RAIL_READ_LINE - railTop
-    apply(Math.max(0, Math.min(reached, railHeight)))
-  }
-
-  // 直接挂在滚动事件上，不做视口判断也不算在 rAF 里：这里只读两个缓存的数、
-  // 写一个变量加几个 class，没有布局读取，值没变就早退；而 IntersectionObserver
-  // 与 requestAnimationFrame 都依赖渲染帧，窗口被遮住时会被节流甚至不投递，
-  // 进度就会卡在离开视口那一刻
-  const watch = () => {
-    window.addEventListener('scroll', paint, { passive: true })
-  }
-
-  const unwatch = () => {
-    window.removeEventListener('scroll', paint)
-  }
-
-  const collect = () => {
-    resizing?.disconnect()
-    resizing = undefined
-    unwatch()
-    painted = -1
-
-    // 路由切换会换掉整篇正文，先把上一次留下的标记与变量清干净
-    for (const el of blocks) {
-      el.classList.remove('fx-rail-item', 'fx-rail-node', 'fx-rail-dot')
-    }
-    blocks = []
-    nodes = []
-    container?.classList.remove('fx-rail-ready', 'fx-rail-static')
-    container = null
-
-    // VitePress 2 把整篇 Markdown 编成 .vp-doc 里的单个 div（custom.css 第 11 节
-    // 记的是同一件事），跨块布局只能挂在这个内层 div 上
-    const scope = document.querySelector<HTMLElement>('.about .vp-doc > div')
-    if (!scope) return
-
-    // 「经历」一节 = 标题为「经历」的 h2 到下一个 h2 之间的所有块
-    const children = Array.from(scope.children) as HTMLElement[]
-    const start = children.findIndex(
-      (el) => el.tagName === 'H2' && (el.textContent ?? '').includes('经历')
-    )
-    if (start < 0) return
-    const end = children.findIndex((el, index) => index > start && el.tagName === 'H2')
-    const section = children.slice(start + 1, end < 0 ? undefined : end)
-
-    for (const el of section) {
-      el.classList.add('fx-rail-item')
-      // 机构是圆环节点，子条目是小圆点，层级差一级
-      if (el.tagName === 'H3') {
-        el.classList.add('fx-rail-node')
-        nodes.push(el)
-      } else if (el.tagName === 'H4') {
-        el.classList.add('fx-rail-dot')
-        nodes.push(el)
-      }
+    if (progress > 0 && !shown) {
+      bar.classList.add('is-on')
+      ring.classList.add('is-on')
+      shown = true
+    } else if (progress === 0 && shown) {
+      bar.classList.remove('is-on')
+      ring.classList.remove('is-on')
+      shown = false
     }
 
-    if (!section.length || !nodes.length) {
-      for (const el of section) el.classList.remove('fx-rail-item')
-      return
-    }
-
-    container = scope
-    blocks = section
-    scope.classList.add('fx-rail-ready')
-    measure()
-    painted = -1
-
-    // 减少动效：不挂滚动监听，轨道整条点亮、节点全部就位（样式在 css 里处理）
-    if (wantsStatic()) {
-      scope.classList.add('fx-rail-static')
-      return
-    }
-
-    watch()
-
-    // 字体加载、窗口缩放、滚动条出现都会改变轨道长度，重新量一遍
-    resizing = new ResizeObserver(() => {
-      measure()
-      painted = -1
-      paint()
-    })
-    resizing.observe(scope)
-
-    paint()
+    bar.style.transform = `scaleX(${progress.toFixed(4)})`
+    ringBar.setAttribute('stroke-dashoffset', (1 - progress).toFixed(4))
   }
 
-  // 同步来一遍、下一帧再来一遍：同步那次拿到的还是服务端渲染的 HTML（水合可能把
-  // 容器整个换掉，标记会跟着丢），下一帧那次拿到的才是最终 DOM——与 setupReveal
-  // 同一个时机。两次都跑是安全的，collect 幂等，重复执行只是重新量一次。
+  // 胶囊的宽度随视口变，环的 viewBox 得跟着重算
+  const observer = new ResizeObserver(sync)
+  observer.observe(ring)
+
+  window.addEventListener('scroll', paint, { passive: true })
+  window.addEventListener('resize', sync, { passive: true })
+
+  // 路由切换后文章高度变了，进度要重算（切换瞬间 scaleX 保留旧值也无妨，下一帧即纠正）
   onContentUpdated(() => {
-    collect()
-    requestAnimationFrame(collect)
+    mount()
+    sync()
+    requestAnimationFrame(paint)
   })
+
+  sync()
+  paint()
 }
 
 /* --------------------------------------------------------------------------
-   项目页的「作品索引」
+   作品墙的展开：卡面尺寸固定，点一下就地摊开
    -------------------------------------------------------------------------- */
 
-/** 索引行的进场间隔。比第 9 节的列表稍大一档——这里只有几行，可以看得清一点 */
-const FOLIO_STAGGER_MS = 60
-
 /**
- * 项目页的作品索引：编号 / 标题 / 元信息，点一下跳到对应小节。
+ * 可折叠卡片：卡面尺寸固定，正文裁在卡里，点展开键就地摊开看全部详情。
+ * 作品页的九张海报卡与关于页的两张经历卡共用这一套（都是 .work-poster + .poster-toggle）。
  *
- * 索引整块从正文生成：取所有「后面紧跟一行 .entry-meta」的 h3 作为条目——作品名、
- * 个人项目都是这个形状，技术栈那节的 h3 没有元信息，自然落选。这样索引不会和正文
- * 走散：加一个作品，索引自己就多一行，正文里一个字都不用补。
+ * 高度要从具体值过渡到 auto，而 auto 不能插值，所以展开前先量一次「完全摊开」
+ * 的高度——临时摘掉所有过渡、把卡面放开，量完立刻还原——再拿它当过渡终点；
+ * 过渡结束后把内联高度交还给 auto，窗口缩放时卡片还能自己适应。收起的终点从
+ * --fx-poster-h 读，不写第二份常量。
  *
- * 位置放在页头下的导语之后。滚到某个作品时对应行标成当前行；点了某一行也先标上，
- * 不必等滚动把它带进观察带。
- *
- * 脚本没跑或报错时页面就是普通的 Markdown，只是没有这块索引，正文完整。
+ * dataset 挡一道重复绑定：onContentUpdated 在水合前后各跑一次，卡片可能是同一批 DOM。
  */
-function setupWorksIndex() {
+function setupWorkPosters() {
   if (typeof window === 'undefined') return
 
-  let observer: IntersectionObserver | undefined
+  const bind = () => {
+    const cards = document.querySelectorAll<HTMLElement>('.work-poster')
 
-  const build = () => {
-    observer?.disconnect()
-    observer = undefined
+    for (const card of cards) {
+      if (card.dataset.fxBound === '1') continue
+      const toggle = card.querySelector<HTMLButtonElement>('.poster-toggle')
+      if (!toggle) continue
+      card.dataset.fxBound = '1'
 
-    const doc = document.querySelector<HTMLElement>('.projects .vp-doc')
-    if (!doc) return
-
-    // 幂等：同步那一趟和下一帧那一趟都会跑，先清掉上一趟留下的索引
-    for (const stale of Array.from(doc.querySelectorAll('.folio'))) stale.remove()
-
-    // 锚点由 VitePress 的标题 id 提供；拿不到 id 的标题进不了索引（点了也跳不过去）
-    const headings = Array.from(
-      doc.querySelectorAll<HTMLElement>('h3:has(+ .entry-meta)')
-    ).filter((heading) => heading.id)
-    if (!headings.length) return
-
-    const nav = document.createElement('nav')
-    nav.className = 'folio'
-    nav.setAttribute('aria-label', '作品索引')
-
-    const rows = new Map<Element, HTMLElement>()
-    /** 当前行对应的标题。观察带里没有标题时保留上一次的值——一个作品往往比
-     *  一条观察带宽得多，翻到小节中间不该把「当前」清空 */
-    let current: Element | undefined
-
-    headings.forEach((heading, index) => {
-      const row = document.createElement('a')
-      row.className = 'folio-row'
-      row.href = `#${heading.id}`
-      // 逐行错开进场（动画在 css 里，这里只给延迟）
-      row.style.animationDelay = `${index * FOLIO_STAGGER_MS}ms`
-
-      const num = document.createElement('span')
-      num.className = 'folio-num'
-      num.textContent = String(index + 1).padStart(2, '0')
-
-      const title = document.createElement('span')
-      title.className = 'folio-title'
-      title.textContent = heading.textContent ?? ''
-
-      row.append(num, title)
-
-      const meta = heading.nextElementSibling?.textContent?.trim()
-      if (meta) {
-        const metaEl = document.createElement('span')
-        metaEl.className = 'folio-meta'
-        metaEl.textContent = meta
-        row.append(metaEl)
+      // 收起态的文案存在 dataset 里，展开时换成「收起」，收回来再贴回去
+      const label = toggle.querySelector('span')
+      if (label && !label.dataset.fxClosed) {
+        label.dataset.fxClosed = label.textContent ?? ''
       }
 
-      nav.append(row)
-      rows.set(heading, row)
-    })
+      toggle.addEventListener('click', () => {
+        const opening = !card.classList.contains('is-open')
+        const from = card.offsetHeight
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+        // 收起前记下展开键的视口位置，收起来时要把它按回原处（见下面 pin）
+        const anchor = toggle.getBoundingClientRect().top
 
-    // 点一行就先把它标成当前行：等滚动把标题带进观察带会慢半拍
-    nav.addEventListener('click', (event) => {
-      const row = (event.target as HTMLElement).closest<HTMLElement>('.folio-row')
-      if (!row) return
-      for (const [heading, candidate] of rows) {
-        if (candidate === row) current = heading
-        candidate.classList.toggle('is-current', candidate === row)
-      }
-    })
+        // 起点先钉住：从 auto 起跳浏览器不过渡
+        card.style.height = `${from}px`
 
-    // 放在导语之后（正文外面还有一层 VitePress 编出来的 div，见第 13 节）
-    const lede =
-      doc.querySelector(':scope > div > p') ?? doc.querySelector(':scope > p')
-    if (lede) lede.after(nav)
-    else doc.prepend(nav)
+        if (opening) {
+          card.classList.add('is-measuring', 'is-open')
+          card.style.height = 'auto'
+          const full = card.offsetHeight
+          card.classList.remove('is-measuring', 'is-open')
+          card.style.height = `${from}px`
+          void card.offsetHeight
+          card.classList.add('is-open')
+          card.style.height = `${full}px`
+        } else {
+          const fixed =
+            parseFloat(getComputedStyle(card).getPropertyValue('--fx-poster-h')) || 33
+          void card.offsetHeight
+          card.style.height = `${fixed * rem}px`
+          card.classList.remove('is-open')
 
-    observer = new IntersectionObserver(
-      (records) => {
-        const visible = new Set<Element>()
-        for (const record of records) {
-          if (record.isIntersecting) visible.add(record.target)
-          else visible.delete(record.target)
+          // 卡片一口气矮掉上千像素，浏览器不会替你保住参照物：视口不动的话，
+          // 指头底下那个键会瞬间飞出屏幕，整页像被拽去看下面一段。
+          // 于是过渡期间每帧把它按回原处——看着就是卡片向上收、键留在原处。
+          // 逐帧量的是当前误差，不预设时长，所以和缓动曲线天然同步
+          const until = performance.now() + 480
+          const pin = () => {
+            const delta = toggle.getBoundingClientRect().top - anchor
+            if (delta) window.scrollBy(0, delta)
+            if (performance.now() < until) requestAnimationFrame(pin)
+          }
+          requestAnimationFrame(pin)
         }
-        // 带里可能同时有两条（一节短、下一节又进来），取靠前的那个
-        const next = headings.find((heading) => visible.has(heading)) ?? current
-        if (next === current) return
-        current = next
-        for (const [heading, row] of rows) {
-          row.classList.toggle('is-current', heading === current)
+
+        if (label) {
+          label.textContent = opening ? '收起' : label.dataset.fxClosed ?? ''
         }
-      },
-      // 观察带取视口上方 40%：标题一进这块就算「正在看这一节」；往回滚时它又落回
-      // 带里，两个方向都对。带以下的部分不参与，不然一眼扫过去会连跳好几行
-      { rootMargin: '0px 0px -60% 0px' }
-    )
-    for (const heading of headings) observer.observe(heading)
+        toggle.setAttribute('aria-expanded', String(opening))
+
+        const settle = (event: TransitionEvent) => {
+          if (event.propertyName !== 'height') return
+          card.style.height = ''
+          card.removeEventListener('transitionend', settle)
+        }
+        card.addEventListener('transitionend', settle)
+      })
+    }
   }
 
-  // 同步一趟、下一帧再一趟：同步那次是服务端渲染的 HTML（水合可能把容器整个换掉，
-  // 标记会跟着丢），下一帧那次拿到的才是最终 DOM——与 setupAboutRail 同一个时机。
-  // build 幂等，重复执行只会重新生成一遍索引
   onContentUpdated(() => {
-    build()
-    requestAnimationFrame(build)
+    bind()
+    requestAnimationFrame(bind)
   })
 }
 
@@ -540,11 +412,12 @@ export default {
   extends: DefaultTheme,
   Layout,
   enhanceApp({ app }: EnhanceAppContext) {
-    setupHeroGlow()
+    // 作品页的版画：Markdown 里写一个 <WorkPlate /> 标签就够了
+    app.component('WorkPlate', WorkPlate)
     setupCursorFx()
     setupThemeTransition(app)
     setupReveal()
-    setupAboutRail()
-    setupWorksIndex()
+    setupWorkPosters()
+    setupReadingProgress()
   }
 } satisfies Theme

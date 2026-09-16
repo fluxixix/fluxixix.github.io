@@ -8,7 +8,7 @@
   <a href="https://fluxixix.github.io"><img src="https://img.shields.io/badge/%E7%AB%99%E7%82%B9-fluxixix.github.io-BD34FE?style=flat-square&amp;logo=gitbook&amp;logoColor=white" alt="站点" /></a>
   <a href="https://fluxixix.github.io/feed.xml"><img src="https://img.shields.io/badge/RSS-%E8%AE%A2%E9%98%85-41D1FF?style=flat-square&amp;logo=rss&amp;logoColor=white" alt="RSS" /></a>
   <a href="https://github.com/fluxixix/fluxixix.github.io/actions/workflows/deploy.yml"><img src="https://img.shields.io/github/actions/workflow/status/fluxixix/fluxixix.github.io/deploy.yml?style=flat-square&amp;label=deploy&amp;color=BD34FE" alt="deploy" /></a>
-  <img src="https://img.shields.io/badge/%E4%BE%9D%E8%B5%96-2_%E9%A1%B9-BD34FE?style=flat-square" alt="依赖 2 项" />
+  <img src="https://img.shields.io/badge/%E4%BE%9D%E8%B5%96-5_%E9%A1%B9-BD34FE?style=flat-square" alt="依赖 5 项" />
 </p>
 
 <p>
@@ -29,10 +29,11 @@
 | 框架 | [VitePress](https://vitepress.dev) `2.0.0-alpha.20` — 扩展默认主题，不另起一套 |
 | 交互 | Vue 3 + TypeScript |
 | 样式 | 原生 CSS，无预处理器；全部取值收敛在 `.vitepress/theme/custom.css` 的令牌层 |
+| 字体 | Fontsource 自托管：Fraunces Variable（拉丁衬线）+ Noto Serif SC 700（中文宋体，unicode-range 切片按需下载）+ IBM Plex Mono（等宽） |
 | 图标 | `@iconify-json/mdi` |
 | 部署 | GitHub Actions → GitHub Pages；Vercel 走同一份构建 |
 
-依赖清单短到只有两项，是刻意的：构建链路越短，越不容易某天因为一个传递依赖而挂掉。
+依赖刻意压在五项：三款字体、一套图标、框架本体；构建链路越短，越不容易某天因为一个传递依赖而挂掉。
 
 ## 快速开始
 
@@ -65,13 +66,16 @@ Node 24，与 CI 保持一致。
 │   ├── config.mts            站点配置
 │   ├── rss.ts                构建结束后生成 feed.xml
 │   └── theme/
-│       ├── index.ts          主题扩展：hero 光晕、光标特效、明暗扩散、滚动揭示、经历时间线、作品索引
-│       ├── Layout.vue        布局扩展：按 frontmatter 挂载 Now 页头与编辑体页头
-│       ├── cursor.ts         光标粒子拖尾与点击波纹
+│       ├── index.ts          主题扩展：点击粒子、明暗扩散、滚动揭示、作品墙展开、阅读进度
+│       ├── Layout.vue        布局扩展：首页刊头、全站页脚，按 frontmatter 挂载 Now 页头与编辑体页头
+│       ├── cursor.ts         点击迸发的粒子（圆环涟漪已去掉）
+│       ├── home/HomeCover.vue     首页刊头：眉题 / 衬线英文口号 / 四条索引
+│       ├── works/WorkPlate.vue    作品版画：内联 SVG 的竖版纸片（八个母题）
 │       ├── now/NowHeader.vue Now 当月页的页头
-│       ├── head/PageMasthead.vue  编辑体页头（关于页、项目页共用）
+│       ├── head/PageMasthead.vue  编辑体页头（关于页、作品页共用）
+│       ├── head/SiteFooter.vue    全站页脚（刊物版权页）
 │       ├── vue-shim.d.ts     让 TS 认识 .vue 单文件组件
-│       └── custom.css        全站样式，按 14 个章节分层
+│       └── custom.css        全站样式，按 15 个章节分层
 ├── vercel.json
 └── .github/workflows/deploy.yml
 ```
@@ -113,8 +117,9 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 
 正文只写板块与清单（`## 在做` / `## 在学` / `## 在读 / 在看` / `## 在玩`）：
 页头（大月份数字 + 每月一句话）由 `theme/now/NowHeader.vue` 按 frontmatter 生成，
-不用手写；`/now` 的索引（年份分组、期数、当前标记）由 `pages/now/now.data.ts`
-在构建期扫各期生成，不用改导航或侧边栏。
+不用手写；`/now` 的索引（年份分组、期数、当前标记、当期四个板块各前两条的预览）由
+`pages/now/now.data.ts` 在构建期扫各期生成（`includeSrc` 拿原文解析 h2 与顶层清单），
+不用改导航或侧边栏。
 
 三条硬约定（数据加载器只在构建期警告、不会报错，所以靠这里兜住）：
 
@@ -122,30 +127,77 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 - 文件名与 `month` 必须一致 —— 复制上一期改文件名时最容易忘改 `month`，那会让索引里出现两行同月；
 - `line` 写纯文本，它按原样渲染（写 Markdown 语法会原样显示出来）。
 
+索引页的当期预览只收每个板块的**顶层**条目、每板块取前两条：缩进的子条目不收，
+以冒号结尾的引自行（明细在子项里）也不收。这只影响 `/now` 的预览，当月页照常全文渲染。
+
 ## 主题里做了什么
 
-`.vitepress/theme/index.ts` 里六个交互，都做了降级：
+首页没有用默认 hero，`home-hero-before` 插槽里挂的是 `home/HomeCover.vue` 刊头：
+眉题一行、衬线英文口号、四条目次式索引；字体三层体系（Fraunces + 思源宋体衬线 /
+系统黑体正文 / IBM Plex Mono 等宽）在 `custom.css` 第 1 节定义，全站 h1/h2 与刊名走衬线。
 
-- **hero 光晕跟随指针** — 只写 CSS 变量，平滑交给 transition。盒子的位置按需重测，
-  不是每帧 `getBoundingClientRect()`（那会强制同步布局，表现出来是整页迟钝）。
-- **光标粒子拖尾 + 点击波纹** — 一个 canvas、一个 rAF 循环，两池都空了就彻底停掉。
+`.vitepress/theme/index.ts` 里五个交互，都做了降级：
+
+- **点击迸发的粒子** — 一个 canvas、一个 rAF 循环，粒子池空了循环彻底停掉。点下去从落点
+  迸出 16 颗粒子：均匀铺开再叠随机扰动，紫青两色按颗粒随机取色，带阻力与一点重力，
+  边飘边缩小淡出。早先那圈圆环涟漪和跟随指针的粒子拖尾都已经去掉。
   仅在 `(hover: hover) and (pointer: fine)` 下启用。
 - **明暗切换从按钮扩散** — View Transitions API 把切换那一帧包起来，新主题以按钮为
   圆心做 clip-path 扩散。不支持的浏览器直接退回即时切换。
 - **列表滚动揭示** — IntersectionObserver 分批淡入。隐藏态写在 JS 加的 class 下，
   所以禁用 JS 时页面就是普通内容，不会白屏。
-- **关于页的经历时间线** — 轨道几何量由脚本量测后写进 CSS 变量，滚动时推进已读段并
-  点亮节点；离开视口即摘掉滚动监听。减少动效时整条静态点亮，禁用 JS 时只剩普通 Markdown。
-- **项目页的作品索引** — 整块从正文里生成：取「后面紧跟一行元信息」的 h3 当条目，
-  标题做链接、元信息做注脚，滚到哪个作品就点亮哪一行。加一个作品，索引自己多一行，
-  正文一个字都不用补；禁用 JS 时只是没有这块索引。
+- **作品墙的展开** — 卡面高度写死、正文裁在卡里，点一下就跨列摊开看全部详情（见下面
+  「作品页」那节）。作品页的九张海报卡与关于页的两张经历卡共用同一套（`.work-poster`
+  + `.poster-toggle`），展开键是真的 `<button aria-expanded>`，键盘可用；禁用 JS 时卡片
+  照常显示，只是展开键不响应，内容一字不少。
+- **文章阅读进度** — 两个形态共用同一个进度值：窄屏（<60rem）顶栏跟着页面滚走，用 body
+  下一根 2px 渐变线，只动 `transform: scaleX()`；≥60rem 顶栏收成胶囊后细线退场，换成
+  套在胶囊外圈的一圈 SVG 描边，颜色是品牌紫→青渐变、读到哪画到哪（尺寸由 ResizeObserver
+  喂 viewBox，进度用 `pathLength="1"` 归一化，不必算周长）。只在 `/posts/` 下出现，回顶后淡出。
 
 `custom.css` 第 14 节是这两页的「作品集排版」：章节标题上方那条发丝线在标题进入视口时
 从左画出，正文用满整列（VitePress 给的上限），页头下面那段按导语放大一档。
 
-另外两处不在这个文件里：
+作品页还有几处自己的规矩：
 
-- **首页顶栏滚动后收成浮动胶囊** — 纯 CSS，搭在默认主题自己的 `.top` class 上，没有滚动监听。
+- **不要右侧目录**（frontmatter `aside: false`），省下的宽度交给作品。VitePress 给「没有
+  内容侧边栏」的页面留了 62rem（90rem 视口以上 69rem）、47rem 两道宽度，都挂在 scoped
+  属性上（(0,4,0)），用重复类名压到 (0,5,0)，容器定在 66rem。
+- **作品是一面墙**：九件作品统一是手写的 `<article class="work-poster">`，网格直接铺在
+  `.vp-doc` 的内容容器上——默认所有直接子元素通栏（章节标题、节导语、页首索引照旧），
+  只有海报卡占一列，两列各 480px，卡面高度写死 `--fx-poster-h` 33rem。没有用瀑布流：
+  规格统一才有墙的感觉，而且瀑布流按列填充，九件作品的阅读顺序会乱。
+- 卡面内容是眉题 / 衬线标题 + 副标题 / 技术栈 / 版画 + 指标（数字从正文里提出来，都有
+  出处）/ 导语，装不下的部分交给底部一条渐隐。渐隐下半段是实色——`overflow` 只裁到边框
+  盒，溢出的文字会钻进 padding 区，光靠裁剪盖不住——展开键再用 z-index 压上去。
+- 点「展开」就地铺满整行摊开看全部详情。高度要从固定值过渡到 auto，而 auto 不能插值，
+  所以 `setupWorkPosters` 先临时摘掉过渡量一次完整高度当终点，过渡完再把内联高度交还给
+  auto，窗口缩放时卡片还能自己适应。
+- 作品名走衬线大字并挂一枚 mono 编号（CSS 计数器，增删作品不用改数字）。页面上现在只有
+  卡片：章节标题、节导语、页首索引、原来的「技术栈」那节都已撤掉，分类信息留在卡片眉题
+  里（`平台 · PLATFORM` 这种）。
+- 每件作品配一张**版画**（`works/WorkPlate.vue`，Markdown 里写
+  `<WorkPlate variant="nodes" tone="violet" code="01" />`）——竖版 3:5 的内联 SVG 纸片，
+  大面积留白、整幅只有一个高饱和色锚点、脚边一行等宽微文字，纸色与墨色都吃 CSS 变量，
+  明暗主题各一套。八个母题按各件作品的性质挑：节点网络、点云、并行轨道、面板网格、层叠
+  格式、诊断脉冲、积木、页面框架，紫青两色交替。
+
+另外几处不在这个文件里：
+
+- **关于页「经历」是两张卡片** —— `custom.css` 第 13 节：卡片外壳复用作品页那套（`.work-poster` + `.poster-toggle`），里面是卡头（机构名在左，时间与地点在右）、导语、01–03 的阶段摘要行，点展开才摊开每段的正文、技术栈与五款工具。卡面高度按内容分别定（22rem / 15rem）。早期那版由脚本量测的滚动轨道早已删除。
+- **关于页其余各节各有一个形态** —— `custom.css` 第 15 节：章节标题右侧自动编号；「关注」是编号格言格（编号在左，品牌色竖线起头），「技能」是分类标签表（浅色标签表示看得懂、写得少），「玩 AI」是两列小卡（衬线名字 + 一句评），教育与联系收成版权页式双栏页尾。正文里对应写成 `<dl>` / `<div>` / 手写卡片，没有新增组件。
+- **全站页脚** — `head/SiteFooter.vue` 挂在 `layout-bottom` 插槽，一行等宽版权页小字。
+- **顶栏滚动后收成浮动胶囊** — 全站通用（原先只挂在首页）。纯 CSS，搭在默认主题自己的
+  `.top` class 上，没有滚动监听；未滚动时内页顶栏也统一透明、不画分隔线。标题列一律按
+  自然宽度走，搜索框全站都紧贴着站点标题。
+- **文章页侧边栏：一块悬浮卡片** — 主题让侧边栏从视口顶一直铺到页尾、顶栏让出左侧那一列
+  （`--vp-nav-col-offset`），顶栏因此被切开，站点标题也被拉成与侧边栏同宽、看着像侧边栏的
+  一部分。这里反过来：顶栏从最左铺到最右、自成一条；侧边栏收成一块悬浮的圆角卡片
+  （`custom.css` 第 2 节）——半透明底 + 发丝描边 + 顶边内高光 + 三层投影 + 左上角一抹品牌紫的
+  反射光，与顶栏胶囊同一套玻璃语言；卡片里分组名收成小眉题，当前项点亮左侧指示条，
+  悬停整行轻微右移。主题原本塞在侧边栏里的那块 sticky 幕布（挡滚上来内容的色块）已去掉——
+  滚动交给卡片自己的圆角裁切。
+- **划词选中色、日期等宽数字** — 都在第 1 节，一处定义全站生效。
 - **全文搜索** — VitePress 本地搜索，界面文案已中文化。
 
 ## 部署

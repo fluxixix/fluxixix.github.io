@@ -5,17 +5,19 @@
 
      1. 设计令牌      颜色 / 字号 / 间距 / 动效曲线，全站唯一取值来源
      2. 导航栏      毛玻璃底 + 首页滚动后的浮动胶囊
-     3. 首页 hero（含渐变光晕）
-     4. 首页 features
+     3. 首页刊头      杂志式封面（眉题 / 衬线陈述 / 四条索引）
+     4. 全站页脚与阅读进度
      5. 正文排版
      6. 文章列表
      7. 归档时间轴
-     8. 页脚与目录
+     8. 页脚与目录（VP 自带的目录与上下篇）
      9. 入场与滚动揭示
-    10. 光标粒子层、明暗切换扩散
+    10. 点击粒子、明暗切换扩散
     11. Now 页
     12. 关于页与项目页
-    13. 关于页页头与经历时间线
+    13. 编辑体页头、经历篇章与邮箱按钮
+    14. 作品集排版（关于 / 作品页章节线与导语）
+    15. 关于页杂志化区块（信条 / 技能标签 / 玩 AI 索引 / 版权页页尾）
 
    两个必须记住的前提：
 
@@ -77,6 +79,20 @@
   /* 品牌名专用：视口宽时封顶，窄屏回到 3rem，避免中文/长词换行 */
   --fx-text-display: clamp(3rem, 7vw, 4.5rem);
 
+  /* 字体三层体系（展示衬线 / 正文黑体 / 注释等宽）：
+     拉丁先落到 Fraunces 变量字体，中文再落到思源宋体；Fraunces 没有的字
+     （汉字、标点）按字符逐个回退，所以一条栈就能混排。宋体只引了 700 一档，
+     层级靠字号拉开，别给衬线元素写别的 font-weight */
+  --fx-font-serif:
+    'Fraunces Variable', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong',
+    serif;
+
+  /* 等宽栈整体换成 IBM Plex Mono：代码块、技术栈行、编号与日期都取它，
+     直接覆盖主题变量，不用逐处改 font-family */
+  --vp-font-family-mono:
+    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
   /* 间距：4px 基准 */
   --fx-space-1: 0.25rem;
   --fx-space-3: 0.75rem;
@@ -111,6 +127,20 @@
   --vp-button-brand-active-bg: #8b2bd1;
 }
 
+/* 划词选中：淡品牌紫，不喧宾夺主；深浅两套透明度不同 */
+::selection {
+  background-color: rgba(139, 43, 209, 0.16);
+}
+
+.dark ::selection {
+  background-color: rgba(201, 140, 251, 0.26);
+}
+
+/* 日期数字等宽对齐：列表里多行日期上下扫读时，数字列不再左右晃 */
+.vp-doc time {
+  font-variant-numeric: tabular-nums;
+}
+
 /* --------------------------------------------------------------------------
    2. 导航栏
    -------------------------------------------------------------------------- */
@@ -142,16 +172,39 @@
   --fx-nav-float-height: 3rem;
   /* 胶囊内左右留白 */
   --fx-nav-float-pad: 1.5rem;
+  /* 侧边栏卡片四周的气口（顶栏胶囊也是这套语言） */
+  --fx-sidebar-inset: 1rem;
 
   --fx-nav-float-bg: rgba(255, 255, 255, 0.68);
   --fx-nav-float-ring: rgba(17, 17, 20, 0.07);
   --fx-nav-float-shadow: 0 8px 28px -12px rgba(17, 17, 20, 0.28);
+
+  /* 侧边栏卡片：比胶囊更"厚"一层——它常驻在页面上，要能压住正文而不抢戏。
+     三层阴影分别管「贴地的暗边、中距的落影、大范围的扩散」，少一层就会
+     看着像贴纸而不是浮起来的板子 */
+  --fx-sidebar-card-bg: rgba(255, 255, 255, 0.72);
+  /* 左上角一抹品牌紫的反射光，玻璃才不像一块塑料 */
+  --fx-sidebar-card-sheen: rgba(189, 52, 254, 0.07);
+  --fx-sidebar-card-top: rgba(255, 255, 255, 0.8);
+  --fx-sidebar-card-shadow:
+    0 1px 2px rgba(17, 17, 20, 0.05),
+    0 10px 24px -12px rgba(17, 17, 20, 0.22),
+    0 32px 56px -32px rgba(17, 17, 20, 0.3);
 }
 
 .dark {
   --fx-nav-float-bg: rgba(32, 33, 39, 0.72);
   --fx-nav-float-ring: rgba(255, 255, 255, 0.08);
   --fx-nav-float-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.7);
+
+  --fx-sidebar-card-bg: rgba(32, 33, 39, 0.74);
+  --fx-sidebar-card-sheen: rgba(189, 52, 254, 0.13);
+  /* 暗色下没有环境光，顶边高光要压得很低，否则像贴了条白胶带 */
+  --fx-sidebar-card-top: rgba(255, 255, 255, 0.06);
+  --fx-sidebar-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 10px 24px -12px rgba(0, 0, 0, 0.6),
+    0 32px 56px -32px rgba(0, 0, 0, 0.85);
 }
 
 @media (min-width: 80rem) {
@@ -161,12 +214,14 @@
 }
 
 /* 只在 ≥60rem 生效：窄屏下 .VPNav 不是 fixed（见 VPNav.vue），
-   顶栏本来就跟着页面滚走，做浮动胶囊没有意义 */
+   顶栏本来就跟着页面滚走，做浮动胶囊没有意义。
+   这套胶囊原先只挂在首页（.VPNavBar.home），现在全站统一——内页滚动后
+   收成同一条胶囊，顶部状态也一起透明，见下面的 .top 规则 */
 @media (min-width: 60rem) {
-  /* 过渡必须挂在 .home::before 上、而不是只挂在滚动态那条规则里。
+  /* 过渡必须挂在静态那条 ::before 上、而不是只挂在滚动态那条规则里。
      只挂在滚动态的话，滚回顶部时那条选择器不再匹配，transition 会跟着
      一起失效，胶囊是"啪"地弹回整条而不是收回去——只有一边有动画 */
-  .VPNavBar.home::before {
+  .VPNavBar::before {
     transition:
       background-color var(--fx-dur-base),
       box-shadow var(--fx-dur-base),
@@ -179,9 +234,16 @@
       border-radius 0.4s var(--fx-ease);
   }
 
+  /* 内页未滚动时也交给透明处理，和首页顶部一个样：主题只给 .home 留了
+     这个口子（--vp-nav-home-bg-color: transparent），内页要自己补上 */
+  .VPNavBar:not(.home).top::before {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
+
   /* 触发条件是主题自己的 .top，也就是 useWindowScroll 的 y <= 0。
-     所以这一整块不需要任何脚本，也不会误伤内页——内页压根没有 .home */
-  .VPNavBar.home:not(.top)::before {
+     所以这一整块不需要任何脚本 */
+  .VPNavBar:not(.top)::before {
     /* 纵向上把胶囊从整条里"抠"出来：上下各让出 8px，
        剩下的高度正好等于 --fx-nav-float-height，圆心也还留在 32px 上 */
     top: calc((var(--vp-nav-height) - var(--fx-nav-float-height)) / 2);
@@ -200,32 +262,41 @@
     box-shadow: var(--fx-nav-float-shadow), inset 0 0 0 1px var(--fx-nav-float-ring);
   }
 
-  .VPNavBar.home .wrapper {
+  .VPNavBar .wrapper {
     transition: padding 0.4s var(--fx-ease);
   }
 
   /* 顶栏内容要跟着一起收，否则标题和菜单会探到胶囊外面。
      这里两处 max-width 是同一个算式，容器才会和胶囊严丝合缝地叠在一起；
      留白也一并从 wrapper 挪到 container 上，两层的 padding 才不会叠加 */
-  .VPNavBar.home .container {
+  .VPNavBar .container {
     transition:
       max-width 0.4s var(--fx-ease),
       padding 0.4s var(--fx-ease);
   }
 
-  .VPNavBar.home:not(.top) .wrapper {
+  .VPNavBar:not(.top) .wrapper {
     padding: 0;
   }
 
-  .VPNavBar.home:not(.top) .container {
+  .VPNavBar:not(.top) .container {
     max-width: min(var(--fx-nav-float-max), 100% - var(--fx-nav-float-inset) * 2);
     padding: 0 var(--fx-nav-float-pad);
+  }
+
+  /* 标题列一律按自然宽度走。主题把非首页的标题列撑到与侧边栏同宽
+     （min-width / max-width 都是 sidebar-width − 2rem），本意是让搜索框在每个
+     doc 页都落在同一个位置；代价是站点标题被拉成一列、看着像侧边栏的一部分，
+     顶栏也被这条列宽切开。放开之后站点标题和搜索框贴在一起，全站位置一致 */
+  .VPNavBar.VPNavBar:not(.home) .title {
+    min-width: 0;
+    max-width: none;
   }
 
   /* logo 和菜单项这两个点击区默认被撑到整条高度（4rem），按内容收窄之后
      它们的焦点圈才不会画到胶囊外面去。文字本来就在盒子里居中，收窄之后
      落点分毫不变，所以这个变化是看不见的 */
-  .VPNavBar.home:not(.top) .VPNavBarMenuLink {
+  .VPNavBar:not(.top) .VPNavBarMenuLink {
     height: auto;
     min-height: 0;
     margin-block: auto;
@@ -236,22 +307,120 @@
      所以这里按标签名精确指到那个 <a>，两个外层 div 保持原样拉伸——
      它们没有焦点圈，撑满也不会露出来。中间两层必须改成 flex 居中：
      <a> 一旦不再撑满高度，块级排列会把它顶到上边去，logo 就离开中线了 */
-  .VPNavBar.home:not(.top) .title,
-  .VPNavBar.home:not(.top) .VPNavBarTitle {
+  .VPNavBar:not(.top) .title,
+  .VPNavBar:not(.top) .VPNavBarTitle {
     display: flex;
     align-items: center;
   }
 
-  .VPNavBar.home:not(.top) a.title {
+  .VPNavBar:not(.top) a.title {
     height: auto;
     min-height: 0;
     padding-block: 0.5rem;
   }
 
-  /* 悬浮的胶囊底下不该再压一条贯穿整屏的分隔线。
-     这条要凑够 5 个类名才盖得住主题的 .VPNavBar:not(.home.top) .divider-line */
-  .VPNavBar.home:not(.top) .divider .divider-line {
+  /* 悬浮的胶囊底下不该再压一条贯穿整屏的分隔线；顶部状态下内页也统一
+     不画线（首页本来就没有）。类名重复写一次是为了凑够特异性盖住主题的
+     .VPNavBar:not(.home.top) .divider-line */
+  .VPNavBar.VPNavBar:not(.top) .divider .divider-line,
+  .VPNavBar.VPNavBar:not(.home).top .divider .divider-line {
     background-color: transparent;
+  }
+}
+
+/* ---- 侧边栏退回自己那一列，并做成一块悬浮卡片 ----
+   主题的安排是「侧边栏从视口顶一直铺到页尾，顶栏让出左侧那一列」——
+   .VPNavBar::before 的 left 也从侧边栏右缘起算（--vp-nav-col-offset）。
+   代价是顶栏被侧边栏的宽度切开，站点标题那一列还和侧边栏同宽，看着像是
+   侧边栏的一部分。
+   这里反过来：顶栏从最左铺到最右、自成一条；侧边栏不再是一块铺满整列的
+   灰面板，而是收成一块悬浮的圆角卡片——和顶栏胶囊同一套语言（半透明底、
+   一圈发丝描边、柔和投影），四周留出气口。列表在卡片里滚动，滚动条也不会
+   顶到圆角上。 */
+@media (min-width: 60rem) {
+  .VPNavBar.has-sidebar.VPNavBar {
+    --vp-nav-col-offset: 0px;
+  }
+
+  .VPSidebar.VPSidebar {
+    top: calc(
+      var(--vp-layout-top-height, 0px) + var(--vp-nav-height) + var(--fx-sidebar-inset)
+    );
+    bottom: var(--fx-sidebar-inset);
+    left: var(--fx-sidebar-inset);
+    /* 在 17rem 的列里左右各留一道气口：卡片四周都有留白，才浮得起来 */
+    width: calc(var(--vp-sidebar-width) - var(--fx-sidebar-inset) * 2);
+    max-width: none;
+    /* 原来的 2rem 左右内边距收到卡片里，4rem 的顶距改由 top 让出 */
+    padding: 1rem 1rem 3rem;
+    border-radius: 1.25rem;
+    background-color: var(--fx-sidebar-card-bg);
+    background-image: linear-gradient(
+      155deg,
+      var(--fx-sidebar-card-sheen) 0%,
+      transparent 42%
+    );
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    /* 一圈发丝描边 + 顶边一道内高光，两个 inset 叠出玻璃的厚度 */
+    box-shadow:
+      var(--fx-sidebar-card-shadow),
+      inset 0 0 0 1px var(--fx-nav-float-ring),
+      inset 0 1px 0 var(--fx-sidebar-card-top);
+  }
+
+  /* 主题在侧边栏里放了一块 sticky 的「幕布」：原本侧边栏从视口顶开始铺，
+     滚上来的内容会从顶栏后面露出来，得靠这块一顶栏高的色块挡住
+     （用的是 --vp-sidebar-bg-color，浅色是灰、暗色近黑）。
+     现在侧边栏是下方一块独立卡片，滚动内容由卡片自己的圆角裁切，
+     这块幕布就只剩一坨灰块盖在卡片顶上，去掉 */
+  .VPSidebar.VPSidebar .curtain {
+    display: none;
+  }
+
+  /* 卡片里的排版：分组名收成淡淡的小眉题，和站内其它小标签一个语言 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-0 > .item > .text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--vp-c-text-3);
+  }
+
+  /* 当前这一篇：点亮主题留给深层的指示条，作为「你在这里」的锚点 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+    background-color: var(--vp-c-brand-1);
+  }
+
+  /* 悬停整行右移一点，和首页索引行、文章列表是同一个反馈语言 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1 > .item > .link {
+    transition: transform var(--fx-dur-base) var(--fx-ease);
+  }
+
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1 > .item > .link:hover {
+    transform: translateX(2px);
+  }
+
+  /* 顶栏那条分割线现在整条横跨，侧边栏列上方原有的那一小段短划线就不必画了
+     （col-offset 归零后它本来也会被推到视口外）。
+     以上几条的类名都重复写了一次：主题的组件样式的特异性与这里相同，
+     靠加载顺序定胜负不可靠（dev 下 SFC 样式是运行时追加到 head 末尾的） */
+  .VPNavBar.has-sidebar.VPNavBar .divider::before {
+    content: none;
+  }
+}
+
+/* 搜索按钮矮一档：主题默认上下各 0.5rem 内边距，落在 4rem 高的顶栏里偏厚。
+   按钮的高度其实由里面那枚快捷键胶囊撑出来，所以它也要一起收。
+   只改 ≥48rem 那种「图标 + 文字 + 快捷键」的形态；窄屏那枚撑满整条高度的
+   图标按钮不动（它靠 padding 撑宽，收了会缩点击区）。
+   类名写两遍是为了压过组件 scoped 样式带上的 [data-v-…] 属性 */
+@media (min-width: 48rem) {
+  .VPNavBar .VPNavBarSearchButton.VPNavBarSearchButton {
+    padding: 0.3rem 0.7rem;
+  }
+
+  .VPNavBar .VPNavBarSearchButton .keys {
+    padding: 0.15rem 0.35rem;
   }
 }
 
@@ -259,348 +428,335 @@
    把所有过渡压平了，胶囊就是直接切换 */
 
 /* --------------------------------------------------------------------------
-   3. 首页 hero
+   3. 首页刊头（结构来自 theme/home/HomeCover.vue）
+
+   首页不再用默认 hero：没有渐变大字、光晕和 emoji 卡片。刊头是一页「目次」——
+   眉题一行、衬线陈述一段、四条索引，零件全部与内页同语言（发丝线、编号、竖线）。
    -------------------------------------------------------------------------- */
 
-/* 品牌名用渐变填充，取值与 vitepress.dev 一致 */
-:root {
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #bd34fe 30%, #41d1ff);
-}
-
-/* 首屏按海报排：整块留白更多，文字列仍然靠左停在光晕之外的安静区域。
-   加 -layout-top-height 是为了不挡住布局顶部的插槽（默认 0） */
-.VPHero.VPHomeHero {
-  padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 3.5rem);
-  padding-bottom: 3.5rem;
+.home-cover {
+  width: 100%;
+  max-width: 80rem; /* 与 VPHomeContent.container 同一根宽度标尺 */
+  margin: 0 auto;
+  padding: clamp(2.25rem, 5.5vw, 4rem) 1.5rem 0;
 }
 
 @media (min-width: 40rem) {
-  .VPHero.VPHomeHero {
-    padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 6rem);
-    padding-bottom: 5rem;
+  .home-cover {
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 }
 
 @media (min-width: 60rem) {
-  .VPHero.VPHomeHero {
-    padding-top: calc(var(--vp-nav-height) + var(--vp-layout-top-height, 0px) + 7rem);
-    padding-bottom: 6rem;
+  .home-cover {
+    padding-left: 4rem;
+    padding-right: 4rem;
   }
 }
 
-.VPHero.VPHomeHero .heading {
-  gap: 0.75rem;
-}
-
-/* 品牌名：首屏最大声的一行。默认主题里 name 和 text 同字号同字重，
-   读起来分不出主次，这里明确拉开 */
-.VPHero.VPHomeHero .name {
-  max-width: none;
-  font-size: var(--fx-text-display);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.045em;
-}
-
-/* 主张：降一整级，宽度收窄到一行左右 */
-.VPHero.VPHomeHero .text {
-  max-width: 26rem;
-  font-size: clamp(1.375rem, 2.6vw, 1.75rem);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.02em;
-  color: var(--vp-c-text-1);
-}
-
-/* 尾注：再降一级，做成一枚安静的元信息行，前面用品牌渐变短线收口 */
-.VPHero.VPHomeHero .tagline {
-  padding-top: var(--fx-space-5);
-  max-width: 24rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.6;
+/* 眉题：左右两端各一枚等宽小标签，下面一条发丝线收口 */
+.home-cover-kicker {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fx-space-4);
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--vp-c-text-2);
 }
 
-.VPHero.VPHomeHero .tagline::before {
-  content: '';
-  display: block;
-  width: 2.5rem;
-  height: 2px;
-  margin-bottom: var(--fx-space-4);
-  border-radius: 1px;
-  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
-}
-
-.VPHero.VPHomeHero .actions {
-  padding-top: var(--fx-space-6);
-}
-
-/* 圆角从胶囊改成 10px 的圆角矩形，并加大点击面积。
-   默认 .VPButton.medium 是 38px 高，触屏上偏小 */
-.VPHero.VPHomeHero .actions .VPButton.medium {
-  padding: 0 1.5rem;
-  border-radius: 0.625rem;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 2.8;
+/* 陈述：衬线大字，是整页唯一「大声」的元素 */
+.home-cover-statement {
+  margin: 0 0 clamp(1.75rem, 4vw, 2.75rem);
+  max-width: 22em;
+  font-family: var(--fx-font-serif);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3.6vw, 2.625rem);
+  line-height: 1.4;
   letter-spacing: 0.01em;
+  color: var(--vp-c-text-1);
+  animation: fx-rise 0.7s var(--fx-ease) both;
 }
 
-/* 主按钮靠一层很淡的品牌色投影从背景里浮起来，悬停再抬 1px */
-.VPHero.VPHomeHero .actions .VPButton.brand {
-  box-shadow:
-    0 1px 2px rgba(139, 43, 209, 0.24),
-    0 6px 18px -6px rgba(139, 43, 209, 0.5);
+/* 索引四行：编号 / 标题 / 注脚 / 箭头，语言与作品页 .folio 一致——
+   整块只由开头那条发丝线起头，行间靠留白，悬停时行首竖线亮起、整行右移 */
+.home-index {
+  border-top: 1px solid var(--vp-c-divider);
 }
 
-.VPHero.VPHomeHero .actions .VPButton.brand:hover {
-  box-shadow:
-    0 2px 4px rgba(139, 43, 209, 0.26),
-    0 10px 24px -6px rgba(139, 43, 209, 0.55);
-  transform: translateY(-1px);
-}
-
-.VPHero.VPHomeHero .actions .VPButton.brand:active {
-  box-shadow: 0 1px 2px rgba(139, 43, 209, 0.24);
-  transform: translateY(0);
-}
-
-/* 首页 hero 右侧的渐变光晕（配色参考 vitepress.dev，但不放图案）。
-   几何参数是推导出来的，不要随手改；下面只补了入场淡入 */
-.VPHero {
-  /* 只裁剪横向溢出，避免出现横向滚动条；纵向留出光晕的柔和边缘 */
-  overflow-x: clip;
-}
-
-.VPHero .container {
+.home-index-row {
   position: relative;
+  display: grid;
+  grid-template-columns: 3rem auto minmax(0, 1fr) auto;
+  gap: 0 var(--fx-space-4);
+  align-items: baseline;
+  padding: 0.7rem 0 0.7rem var(--fx-space-3);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
 }
 
-.VPHero .container::before {
+.home-index-row::before {
   content: '';
   position: absolute;
-  top: 50%;
-  /* 用 left + translate(-50%) 把圆心钉死：盒子尺寸要跟遮罩一起调，
-     用 right 定位的话一改尺寸圆心就会跟着挪。
-     85% 是复刻原版 right: -4% 时的圆心位置 */
-  left: 85%;
-  z-index: 0;
-  /* 原版是 min(40vw, 30rem) 的圆盘配 blur(5rem)，模糊会把颜色向外抹开约 3σ，
-     完整承载那圈外扩需要 2.09 倍宽；这里取 1.8 倍
-     （= 0.86 × 2.09 × min(40vw, 30rem)），也就是整体缩到原版的 86%。
-     遮罩是按比例映射的，所以缩小时连内核一起等比变小，观感不变 */
-  width: min(72vw, 54rem);
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  /* 原版是 50% / 50% 的硬分界，靠 blur 化开；过渡带宽度 = 4σ ≈ 盒子对角线的 25%，
-     换算到放大后的盒子上就是 38% → 62% */
-  background-image: linear-gradient(-45deg, #bd34fe 38%, #41d1ff 62%);
-  /* 柔边用径向遮罩重建高斯衰减，替代 filter: blur(5rem)。
-     各档取的是正态分布累积值 Φ((R₀ − r) / σ)，也就是"半径 R₀ 的圆盘被 σ 模糊后"
-     的解析解——所以它不是手调的近似，而是原版模糊效果的等价复刻。
-     48% 处正好 0.5，对应原版圆盘的边缘 */
-  -webkit-mask-image: radial-gradient(
-    circle closest-side,
-    rgba(0, 0, 0, 0.997) 0%,
-    rgba(0, 0, 0, 0.985) 10%,
-    rgba(0, 0, 0, 0.945) 20%,
-    rgba(0, 0, 0, 0.847) 30%,
-    rgba(0, 0, 0, 0.674) 40%,
-    rgba(0, 0, 0, 0.5) 48%,
-    rgba(0, 0, 0, 0.341) 55%,
-    rgba(0, 0, 0, 0.162) 65%,
-    rgba(0, 0, 0, 0.059) 75%,
-    rgba(0, 0, 0, 0.016) 85%,
-    rgba(0, 0, 0, 0.003) 95%,
-    transparent 100%
-  );
-  mask-image: radial-gradient(
-    circle closest-side,
-    rgba(0, 0, 0, 0.997) 0%,
-    rgba(0, 0, 0, 0.985) 10%,
-    rgba(0, 0, 0, 0.945) 20%,
-    rgba(0, 0, 0, 0.847) 30%,
-    rgba(0, 0, 0, 0.674) 40%,
-    rgba(0, 0, 0, 0.5) 48%,
-    rgba(0, 0, 0, 0.341) 55%,
-    rgba(0, 0, 0, 0.162) 65%,
-    rgba(0, 0, 0, 0.059) 75%,
-    rgba(0, 0, 0, 0.016) 85%,
-    rgba(0, 0, 0, 0.003) 95%,
-    transparent 100%
-  );
-  opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
-  pointer-events: none;
-  /* 跟随鼠标：--vp-hero-glow-x/y 与 --vp-hero-glow-scale 由主题脚本写入 */
-  transform: translate3d(calc(-50% + var(--vp-hero-glow-x, 0px)), calc(-50% + var(--vp-hero-glow-y, 0px)), 0)
-    scale(var(--vp-hero-glow-scale, 1));
-  /* 这里刻意不加 transition。跟随值每帧都在变，过渡就会每帧被重启一次
-     （实测 120 帧里触发了 118 次 transitionrun / 117 次 transitioncancel），
-     合成器永远接不过去，动画只能挂在主线程上——首页整页都会跟着迟钝。
-     直接写 transform 反而是纯粹的合成层更新，更跟手也更省 */
-  /* 用 backwards 而不是 both：延时期间要停在 from（全透明），
-     动画结束后又没有残留的填充态，元素不会一直挂着合成层和层叠上下文 */
-  animation:
-    vp-hero-glow-in 0.9s var(--fx-ease) backwards,
-    vp-hero-glow-breathe 9s ease-in-out 0.9s infinite;
-  will-change: transform, opacity;
+  left: 0;
+  top: 0.65rem;
+  bottom: 0.65rem;
+  width: 2px;
+  border-radius: 1px;
+  background-color: var(--vp-c-brand-1);
+  transform: scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
 }
 
-/* 鼠标移到 hero 区域时，光晕轻微放大 */
-.VPHero:hover .container::before {
-  --vp-hero-glow-scale: 1.12;
+.home-index-row:hover,
+.home-index-row:focus-visible {
+  transform: translateX(3px);
 }
 
-@keyframes vp-hero-glow-breathe {
-  0%,
-  100% {
-    opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
-  }
-
-  50% {
-    opacity: var(--vp-hero-glow-opacity, 0.5);
-  }
+.home-index-row:hover::before,
+.home-index-row:focus-visible::before {
+  transform: scaleY(1);
 }
 
-/* 入场时从无到有。呼吸动画带 0.9s 延迟，两者同时在动画列表里时
-   后声明的那个接管 opacity，所以延时期间由这条负责 */
-@keyframes vp-hero-glow-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: calc(var(--vp-hero-glow-opacity, 0.5) * 0.88);
-  }
+.home-index-num {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fx-dur-base);
 }
 
-/* 浅色模式背景更亮，光晕收敛一些 */
-:root:not(.dark) .VPHero .container::before {
-  --vp-hero-glow-opacity: 0.34;
+.home-index-row:hover .home-index-num {
+  color: var(--vp-c-brand-1);
 }
 
-/* 窄屏下缩小光晕，避免压住标题。宽度同样是原版 20rem 的 1.8 倍 */
-@media (max-width: 59.99rem) {
-  .VPHero .container::before {
-    left: 82%;
-    width: 36rem;
-    --vp-hero-glow-opacity: 0.32;
-  }
-}
-
-/* 尊重系统的减少动效设置 */
-@media (prefers-reduced-motion: reduce) {
-  .VPHero .container::before {
-    animation: none;
-  }
-}
-
-/* --------------------------------------------------------------------------
-   4. 首页 features
-   -------------------------------------------------------------------------- */
-
-/* 默认主题把 features 渲染成四张带底色的圆角卡片，和首屏的气质是两套路子。
-   这里去掉卡片，改成用顶部细线分隔的四列 —— 视线落在标题上而不是框上 */
-.VPFeatures.VPHomeFeatures {
-  padding-top: var(--fx-space-4);
-}
-
-.VPFeatures.VPHomeFeatures .items {
-  margin: 0;
-}
-
-.VPFeatures.VPHomeFeatures .item {
-  padding: 0;
-}
-
-@media (min-width: 40rem) {
-  .VPFeatures.VPHomeFeatures .item {
-    padding: 0 var(--fx-space-5) 0 0;
-    margin-bottom: var(--fx-space-5);
-  }
-}
-
-.VPFeatures.VPHomeFeatures .VPFeature {
-  height: 100%;
-  border: 0;
-  border-top: 1px solid var(--vp-c-divider);
-  border-radius: 0;
-  padding-top: var(--fx-space-4);
-  background-color: transparent;
-  transition: border-color var(--fx-dur-base);
-}
-
-.VPFeatures.VPHomeFeatures .VPFeature:hover {
-  border-top-color: var(--vp-c-brand-1);
-}
-
-.VPFeatures.VPHomeFeatures .box {
-  padding: 0;
-}
-
-/* emoji 图标默认去色，悬停时才亮起来：既压住了四块彩色带来的噪声，
-   又留了一个廉价的反馈点 */
-.VPFeatures.VPHomeFeatures .icon {
-  justify-content: flex-start;
-  margin-bottom: var(--fx-space-3);
-  border-radius: 0;
-  width: auto;
-  height: auto;
-  font-size: 1.375rem;
-  line-height: 1;
-  background-color: transparent;
-  filter: grayscale(1) opacity(0.65);
-  transition: filter var(--fx-dur-base);
-}
-
-.VPFeatures.VPHomeFeatures .VPFeature:hover .icon {
-  filter: grayscale(0) opacity(1);
-}
-
-.VPFeatures.VPHomeFeatures .title {
-  font-size: 1rem;
+.home-index-label {
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
-.VPFeatures.VPHomeFeatures .details {
-  padding-top: var(--fx-space-1);
+.home-index-meta {
   font-size: var(--fx-text-md);
-  font-weight: 400;
-  line-height: 1.7;
   color: var(--vp-c-text-2);
 }
 
-.VPFeatures.VPHomeFeatures .link-text {
-  padding-top: var(--fx-space-3);
+.home-index-arrow {
+  font-family: var(--vp-font-family-mono);
+  color: var(--vp-c-text-3);
+  transition:
+    transform var(--fx-dur-base) var(--fx-ease),
+    color var(--fx-dur-base);
 }
 
-.VPFeatures.VPHomeFeatures .link-text-value {
-  font-size: var(--fx-text-sm);
-  font-weight: 500;
+.home-index-row:hover .home-index-arrow {
   color: var(--vp-c-brand-1);
-}
-
-/* 箭头悬停时向右滑出 3px，和文章列表的反馈保持同一套语言 */
-.VPFeatures.VPHomeFeatures .link-text-icon {
-  transition: transform var(--fx-dur-base) var(--fx-ease);
-}
-
-.VPFeatures.VPHomeFeatures .VPFeature:hover .link-text-icon {
   transform: translateX(3px);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .VPFeatures.VPHomeFeatures .link-text-icon {
-    transition: none;
+/* 逐行错开进场。用 nth-child 而不是脚本写延迟：组件静态、永远跑得完 */
+@media (prefers-reduced-motion: no-preference) {
+  .home-index-row {
+    animation: folio-in var(--fx-dur-slow) var(--fx-ease) both;
   }
 
-  .VPFeatures.VPHomeFeatures .VPFeature:hover .link-text-icon {
-    transform: none;
+  .home-index-row:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+
+  .home-index-row:nth-child(2) {
+    animation-delay: 0.11s;
+  }
+
+  .home-index-row:nth-child(3) {
+    animation-delay: 0.17s;
+  }
+
+  .home-index-row:nth-child(4) {
+    animation-delay: 0.23s;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-cover-statement,
+  .home-index-row {
+    animation: none;
+  }
+}
+
+/* 窄屏：注脚换行到标题下面，箭头不参与挤压 */
+@media (max-width: 40rem) {
+  .home-index-row {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  }
+
+  .home-index-meta {
+    grid-column: 2;
+  }
+}
+
+/* 首页正文（最新文章）与刊头之间的留白。VPHomeContent 默认上下留白是按
+   hero + features 的节奏给的，刊头自己收了尾，这里重新定；
+   主题还给 .vp-doc 垫了同样一档 padding，首页清掉，避免两层叠着 */
+.VPHome.VPHome .VPHomeContent {
+  padding-top: clamp(2rem, 4.5vw, 3rem);
+}
+
+.VPHome.VPHome .vp-doc {
+  padding-top: 0;
+}
+
+/* h2 默认 margin-top 是给正文长文分章用的；首页只有这一个标题，
+   上方 VPHomeContent 的 padding 已经是间隔，margin 清零 */
+.VPHome.VPHome .vp-doc h2 {
+  margin-top: 0;
+}
+
+/* 主题给 .VPHome 留了 128px 下外边距（hero 页节奏），首页不需要，
+   列表与 footer 之间只留 footer 自己的 margin */
+.VPHome.VPHome {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   4. 全站页脚与阅读进度
+   -------------------------------------------------------------------------- */
+
+/* 文章页顶部那根 2px：宽度写死 100%，进度只动 transform，不触发布局。
+   脚本在 /posts/ 之外把进度压到 0，回顶后整根淡出（见 index.ts） */
+.fx-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: calc(var(--vp-z-index-nav, 30) + 1);
+  width: 100%;
+  height: 2px;
+  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+  transform: scaleX(0);
+  transform-origin: 0 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--fx-ease);
+}
+
+.fx-reading-progress.is-on {
+  opacity: 1;
+}
+
+/* ≥60rem 顶栏是固定悬浮的胶囊，进度交给环（见下），这根横向细线退场 */
+@media (min-width: 60rem) {
+  .fx-reading-progress {
+    display: none;
+  }
+}
+
+/* ---- 胶囊外圈的阅读进度环 ----
+   一个 SVG 圆角矩形描边，套在收缩后的导航胶囊外圈上：颜色沿宽度方向从品牌紫
+   渐变到品牌青，读到哪画到哪。尺寸由 index.ts 按元素实际像素喂给 viewBox，
+   所以圆角在任意宽度下都不会被拉成椭圆；进度用 pathLength="1" 归一化，
+   dashoffset 直接就是「还剩多少没读」 */
+.fx-nav-ring {
+  /* 窄屏没有胶囊，环无处可画；到 ≥60rem 才由下面的媒体查询放出来 */
+  display: none;
+  position: absolute;
+  /* SVG 是替换元素：只给 left/right 是不会被拉宽的，它会退回 300×150 的固有
+     尺寸，所以宽度必须显式给，居中改用 left + translateX */
+  top: calc((var(--vp-nav-height) - var(--fx-nav-float-height)) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(var(--fx-nav-float-max), calc(100% - var(--fx-nav-float-inset) * 2));
+  height: var(--fx-nav-float-height);
+  /* 描边画在盒子边界上，overflow 要放开，否则圆角外侧会被裁掉 */
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fx-dur-base) var(--fx-ease);
+  z-index: 2;
+}
+
+.fx-nav-ring.is-on {
+  opacity: 1;
+}
+
+/* 放到基类之后：媒体查询不增加特异性，写在前面会被上面的 display: none 盖掉 */
+@media (min-width: 60rem) {
+  .fx-nav-ring {
+    display: block;
+  }
+}
+
+/* 未读部分：极淡的一圈，让"环"的形状完整，也读出还剩多长 */
+.fx-nav-ring-track {
+  fill: none;
+  stroke: var(--vp-c-divider);
+  stroke-width: 1.5;
+}
+
+.fx-nav-ring-bar {
+  fill: none;
+  stroke: url(#fx-nav-ring-grad);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  /* 进度是逐帧算出来的，这里不插值，免得滚动时刻在追 */
+  transition: none;
+}
+
+/* 刊物的版权页：一条发丝线 + 一行等宽小字 */
+.site-footer {
+  border-top: 1px solid var(--vp-c-divider);
+  margin-top: 3rem;
+}
+
+.site-footer-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fx-space-4);
+  flex-wrap: wrap;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-3);
+}
+
+@media (min-width: 40rem) {
+  .site-footer-inner {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  .site-footer-inner {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+.site-footer-links {
+  display: flex;
+  gap: var(--fx-space-5);
+}
+
+.site-footer a {
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: color var(--fx-dur-base);
+}
+
+.site-footer a:hover {
+  color: var(--vp-c-brand-1);
+}
+
 
 /* --------------------------------------------------------------------------
    5. 正文排版
@@ -610,9 +766,10 @@
    这里只调字号阶梯、行高和分隔方式 */
 
 .vp-doc h1 {
+  font-family: var(--fx-font-serif);
   font-size: var(--fx-text-3xl);
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   line-height: 1.25;
 }
 
@@ -621,9 +778,11 @@
   margin: var(--fx-space-7) 0 var(--fx-space-4);
   border-top: 0;
   padding-top: 1.75rem;
+  font-family: var(--fx-font-serif);
   font-size: var(--fx-text-2xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  /* 宋体只引了 700 一档：h2 全部收到 700，层级已由字号区分 */
+  font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1.35;
 }
 
@@ -1211,40 +1370,19 @@
   }
 }
 
-/* 首屏入场：品牌名 → 主张 → 尾注 → 按钮，逐级落下，80ms 一档。
-   填充模式用 backwards 而不是 both：延时期间停在 from（不可见），
-   动画结束后不留填充态，元素不会一直挂着层叠上下文 */
-@media (prefers-reduced-motion: no-preference) {
-  .VPHero.VPHomeHero .name {
-    animation: fx-rise 0.7s var(--fx-ease) 0.05s backwards;
-  }
-
-  .VPHero.VPHomeHero .text {
-    animation: fx-rise 0.7s var(--fx-ease) 0.13s backwards;
-  }
-
-  .VPHero.VPHomeHero .tagline {
-    animation: fx-rise 0.7s var(--fx-ease) 0.21s backwards;
-  }
-
-  .VPHero.VPHomeHero .actions {
-    animation: fx-rise 0.7s var(--fx-ease) 0.29s backwards;
-  }
-}
+/* fx-rise：首屏刊头陈述用的一次性上浮（见第 3 节 .home-cover-statement） */
 
 /* 滚动揭示：列表与卡片进入视口时分批淡入。
    初始的隐藏态挂在 html.fx-reveal-ready 上，由脚本决定何时打开——
    脚本没跑（禁用 JS / 太老的浏览器）时页面就是普通的静态内容。
    过渡只写在 .fx-in 上，所以隐藏这一步是瞬时的，不会先闪一下再淡出 */
 html.fx-reveal-ready .vp-doc .post-list .post-item,
-html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item,
 html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
   opacity: 0;
   transform: translateY(0.75rem);
 }
 
 html.fx-reveal-ready .vp-doc .post-list .post-item.fx-in,
-html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item.fx-in,
 html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item.fx-in {
   opacity: 1;
   transform: none;
@@ -1256,7 +1394,6 @@ html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item.fx-in {
 /* 键盘 Tab 到还没揭示的条目时立刻放出来。
    少了这条，用键盘的人会聚焦到一个看不见的链接上 */
 html.fx-reveal-ready .vp-doc .post-list .post-item:focus-within,
-html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item:focus-within,
 html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item:focus-within {
   opacity: 1;
   transform: none;
@@ -1264,7 +1401,6 @@ html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item:focus-withi
 
 @media (prefers-reduced-motion: reduce) {
   html.fx-reveal-ready .vp-doc .post-list .post-item,
-  html.fx-reveal-ready .VPFeatures.VPHomeFeatures .item,
   html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
     opacity: 1;
     transform: none;
@@ -1272,11 +1408,13 @@ html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item:focus-withi
 }
 
 /* --------------------------------------------------------------------------
-   10. 光标粒子层、明暗切换扩散
+   10. 点击粒子、明暗切换扩散
    -------------------------------------------------------------------------- */
 
 :root {
-  /* 光标拖尾与自定义光标沿用品牌渐变，改 --fx-brand-a/b 即可一起换掉 */
+  /* 点击迸发的粒子与自定义光标沿用品牌渐变：粒子在紫、青两色之间按颗粒随机
+     取色，凑出渐变观感（每帧为小圆点新建渐变不划算）。改 --fx-brand-a / -b
+     即可一起换掉 */
   --vp-cursor-glow: var(--fx-brand-a);
   --vp-cursor-glow-2: var(--fx-brand-b);
   /* 手型光标：链接/按钮上的 pointer，品牌渐变 + 白描边，热点落在食指指尖 (11 2) */
@@ -1313,7 +1451,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
   left: 0;
   /* 尺寸由 cursor.ts 按视口大小写入，这里不设 width/height：
      canvas 是替换元素，inset: 0 拉伸不了它，反而会退回固有尺寸 */
-  /* 高于本地搜索弹窗(100)，弹窗打开时拖尾不会被压掉 */
+  /* 高于本地搜索弹窗(100)，弹窗打开时粒子不会被压掉 */
   z-index: 150;
   /* 必须为 none，否则全站点击都会被这层吞掉 */
   pointer-events: none;
@@ -1382,8 +1520,9 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .now-head-year {
+  font-family: var(--fx-font-serif);
   font-size: 3.625rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 月份跟着年份走，比年份小两档，靠基线对齐而不是猜偏移 */
@@ -1589,6 +1728,113 @@ html :is(input, textarea, select, [contenteditable='true']) {
   }
 }
 
+/* ---- 索引页：当期板块预览 ----
+   数据来自 now.data.ts 对每期原文的解析：四个板块、每块前两条，
+   让索引页打开就有当期内容，不必再点进月份页才知道这一期写了什么 */
+
+.now-preview {
+  /* 线上方 1.5rem，和线和内容之间那 1.25rem 是一档；原来上面 3.5rem，
+     hitokoto 到这条线就空出一大截 */
+  margin: var(--fx-space-5) 0 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.now-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fx-space-4);
+  margin-bottom: 1.75rem;
+}
+
+/* 这个 h2 在视觉上是「眉题」而不是章节：压掉继承自 .vp-doc h2 的字号字重，
+   以及第 5 节那条 h2 上方的发丝线。选择器必须带 pageClass 前缀，
+   否则类选择器(0,1,0)压不过 .vp-doc h2(0,1,1) */
+.now-index .vp-doc .now-preview-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* 眉题：中文用黑体，不做字符间距（CJK 加 tracking 会字字散开） */
+  font-family: var(--vp-font-family-base);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.now-index .vp-doc .now-preview-date {
+  margin-left: 0.5em;
+  font-family: var(--vp-font-family-mono);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--vp-c-text-3);
+}
+
+.now-index .vp-doc .now-preview-title::before {
+  display: none;
+}
+
+.now-index .vp-doc a.now-preview-more,
+.now-index .vp-doc a.now-preview-more:hover {
+  flex: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  font-weight: 400;
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: color var(--fx-dur-base);
+}
+
+.now-index .vp-doc a.now-preview-more:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.now-index .vp-doc .now-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem 2.5rem;
+}
+
+@media (min-width: 48rem) {
+  .now-index .vp-doc .now-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.now-index .vp-doc h3.now-preview-label {
+  margin: 0 0 0.6rem;
+  font-size: var(--fx-text-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.now-index .vp-doc ul.now-preview-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 缩进要同时容下标记和它后面的一个空格：破折号自己就占约 1em（等于 1rem），
+   以前 padding-left 正好 1rem，标记和文字之间只剩 1px，看着像没空格；
+   以《 这类全角标点开头的条目自带左侧空隙，反而像有——同一列表里就忽有忽无。
+   补到 1.3rem，破折号后稳定留出约一个空格的宽度 */
+.now-index .vp-doc ul.now-preview-items li {
+  position: relative;
+  padding-left: 1.3rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+.now-index .vp-doc ul.now-preview-items li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--vp-c-text-3);
+}
+
 /* ---- 索引页：年份分组 + 目次式月份行 ---- */
 
 /* 这里必须带上 .vp-doc：pageClass 是挂在 .Layout 根元素上的（VitePress 2 的行为），
@@ -1757,17 +2003,13 @@ html :is(input, textarea, select, [contenteditable='true']) {
    12. 关于页与项目页（/about、/projects）
    -------------------------------------------------------------------------- */
 
-/* 两页的正文都是纯 Markdown，样式只补一层「简历感」：机构名或项目名下方跟
-   一行等宽的元信息（时间、技术栈）。层级仍然靠 h2 / h3 表达，不引入新的容器，
-   写的时候和写文章一样。
+/* 作品页的正文是纯 Markdown：作品名下方跟一行等宽元信息（技术栈、年份）。
+   关于页的经历已经改成第 13 节的篇章结构，不再走这套规则。 */
 
-   缩略线只给关于页：项目页的 h3 里还有「技术栈」分区下的几个小节标题，
-   给它们也画上分隔线，那一节会显得很脏。 */
-
-/* 元信息行：时间区间与技术栈共用，都是「标题的注脚」，所以在同一层语言里 */
-.about .entry-meta,
+/* 元信息行：作品名的注脚。与标题之间留一口气，多行之间反而收紧——
+   这样它读成「一块注脚」，而不是几行独立的正文 */
 .projects .entry-meta {
-  margin: 0.4rem 0 0;
+  margin: 0.7rem 0 0;
   font-family: var(--vp-font-family-mono);
   font-size: var(--fx-text-sm);
   line-height: 1.7;
@@ -1776,10 +2018,14 @@ html :is(input, textarea, select, [contenteditable='true']) {
   font-variant-numeric: tabular-nums;
 }
 
+.projects .entry-meta + .entry-meta {
+  margin-top: 0.15rem;
+}
+
 /* ---- 无序列表：环形标记 ----
 
-   这两页的列表密度最高，默认的小圆点在中文正文里太软。换成一枚细圆环——
-   和经历时间线上的节点是同一套记号，悬停时被品牌色填满（等于「这一条被点亮」）。
+   这两页的列表密度最高，默认的小圆点在中文正文里太软。换成一枚细圆环，
+   悬停时被品牌色填满（等于「这一条被点亮」）。
 
    纵向位置用「行高的一半减去半径」算出来，而不是交给 vertical-align: middle：
    后者对齐的是西文的 x 高度中线，中文正文里会明显偏低。行高的一半正好是首行
@@ -1829,7 +2075,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
     transform var(--fx-dur-base) var(--fx-ease);
 }
 
-/* 悬停时圆环被填满——和时间线节点「点亮」是同一个记号 */
+/* 悬停时圆环被填满，等于「这一条被点亮」 */
 .about .vp-doc ul > li:hover::before,
 .projects .vp-doc ul > li:hover::before {
   border-color: var(--vp-c-brand-1);
@@ -1837,37 +2083,8 @@ html :is(input, textarea, select, [contenteditable='true']) {
   transform: scale(1.15);
 }
 
-/* 每家机构用一条细线起头，替代简历里的分栏。第一条不画——它上面紧挨着
-   h2 自己那条渐变分隔线，两条叠在一起会显得脏 */
-.about .vp-doc > div > h3 {
-  margin-top: var(--fx-space-6);
-  border-top: 1px solid var(--vp-c-divider);
-  padding-top: 1.25rem;
-}
-
-.about .vp-doc > div > h3:first-of-type {
-  margin-top: var(--fx-space-5);
-  border-top: 0;
-  padding-top: 0;
-}
-
-/* 项目名（h4）在机构下面自成一段，与上文的叙述拉开距离 */
-.about .vp-doc > div > h4 {
-  margin-top: var(--fx-space-5);
-}
-
-/* 技术栈注脚贴着项目名，别被 .vp-doc p 的 1rem 上边距推远 */
-.about .vp-doc > div > h4 + .entry-meta {
-  margin-top: 0.2rem;
-}
-
-/* 贴住 h4 的那条注脚同时是「这个项目的说明」的开头，和下面的正文留出正常段距 */
-.about .vp-doc > div > .entry-meta + p {
-  margin-top: var(--fx-space-3);
-}
-
 /* --------------------------------------------------------------------------
-   13. 页头、经历时间线与邮箱复制按钮
+   13. 页头、经历篇章与邮箱复制按钮
    -------------------------------------------------------------------------- */
 
 /* ---- 页头：结构来自 theme/head/PageMasthead.vue ----
@@ -1876,20 +2093,22 @@ html :is(input, textarea, select, [contenteditable='true']) {
    进场是一次性的四步：名字 → 标签 → 细线 → 元信息，一步比一步晚一点点 */
 
 .masthead {
-  margin-bottom: var(--fx-space-6);
+  margin-bottom: var(--fx-space-5);
 }
 
 .masthead-name {
   margin: 0;
-  font-size: clamp(2.5rem, 6vw, 3.5rem);
-  font-weight: 800;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(2rem, 4.6vw, 2.75rem);
+  /* 宋体只引了 700；中文衬线不宜负字距，微松一点更有刊名感 */
+  font-weight: 700;
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: 0.02em;
   animation: masthead-rise 0.6s var(--fx-ease) both;
 }
 
 .masthead-tag {
-  margin: 0.9rem 0 0;
+  margin: 0.5rem 0 0;
   font-size: 0.65625rem;
   font-weight: 600;
   letter-spacing: 0.2em;
@@ -1902,7 +2121,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 .masthead-rule {
   width: 4rem;
   height: 2px;
-  margin-top: 0.85rem;
+  margin-top: 0.6rem;
   border-radius: 1px;
   transform-origin: left center;
   background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
@@ -1910,7 +2129,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .masthead-meta {
-  margin: 0.9rem 0 0;
+  margin: 0.6rem 0 0;
   font-family: var(--vp-font-family-mono);
   font-size: var(--fx-text-sm);
   line-height: 1.7;
@@ -1950,123 +2169,251 @@ html :is(input, textarea, select, [contenteditable='true']) {
   }
 }
 
-/* ---- 经历时间线 ----
-   标记（fx-rail-item / node / dot）与三个几何量都由 index.ts 的 setupAboutRail()
-   写入，所有样式挂在 .fx-rail-ready 下：脚本没跑时页面就是普通 Markdown，
-   连下面的缩略线覆盖规则也一起失效，回到第 12 节的样子 */
+/* ---- 经历：两张卡片，阶段摘要在外、详情收在卡里 ----
+   卡片外壳复用作品页那套（.work-poster 给边框、圆角、底部渐隐与展开键），这里只管
+   里面的版式：卡头两栏（机构名在左、时间在右），01–03 的阶段摘要行当骨架，
+   点展开才把每段的正文、技术栈和五款工具摊开。
+   选择器一律挂 .career-card 作用域：VP 默认的 .vp-doc p/h3/h4/ul 是 (0,1,1)，
+   第 12 节的 .about .vp-doc h3 更高到 (0,2,1)，单类选择器抢不过 */
 
-.about .vp-doc > div.fx-rail-ready {
-  position: relative;
+/* 高度得压过 .work-poster 上那份默认值（33rem）：两条同特异性，而它在后面，
+   所以这里把选择器写成两个类。
+   底部留白是照展开键的落位算的：键用绝对定位钉在卡底（bottom 1.25rem），
+   自身约 1.65rem 高，所以它的顶边线恒定在距卡底 2.9rem 处；内容得停在这条线
+   上面 0.5rem，于是 2.9rem + 0.5rem = 3.4rem。少给一分，线就划过最后一行字 */
+.work-poster.career-card {
+  /* 收起态的高度。展开键的顶边线恒定在距卡底 2.9rem 处，所以卡有多高就决定了
+     这条线离第三行阶段多远：19rem 会空出 17.4px，和展开后那条分隔线的 8px 对不上；
+     18.4rem 收口到 7.8px，两边看着才是同一条线 */
+  --fx-poster-h: 18.4rem;
+  margin-top: var(--fx-space-5);
+  padding-bottom: 3.4rem;
 }
 
-/* 底色轨道与已读段：同一位置、同一起点，已读段的高度由脚本按滚动写 */
-.about .vp-doc > div.fx-rail-ready::before,
-.about .vp-doc > div.fx-rail-ready::after {
-  content: '';
-  position: absolute;
-  top: var(--fx-rail-top, 0);
-  left: 0;
-  width: 2px;
-  border-radius: 1px;
-  pointer-events: none;
+/* 上面那份底距要精确，就不能让最后一个元素的下外边距再插一脚 */
+.career-card .poster-more > div :last-child {
+  margin-bottom: 0;
 }
 
-.about .vp-doc > div.fx-rail-ready::before {
-  height: var(--fx-rail-h, 0);
-  background-color: var(--vp-c-divider);
+/* 第二张（爬虫那段）内容短，卡面跟着矮一档，省得留一大片空 */
+.work-poster.career-card + .career-card {
+  --fx-poster-h: 11rem;
+  margin-top: 1.25rem;
 }
 
-/* 已读段的渐变跟着高度伸缩，颜色随滚动手缓缓铺开 */
-.about .vp-doc > div.fx-rail-ready::after {
-  height: var(--fx-rail-lit, 0);
-  background-image: linear-gradient(180deg, var(--fx-brand-a), var(--fx-brand-b));
+/* 经历卡不用那层渐隐：收起时三行阶段全在卡里（内容没被裁），
+   留着它反而把第三行罩成半透明。渐隐是给「下面还有」的卡交代用的 */
+.career-card::after {
+  display: none;
 }
 
-/* 正文整体右让出轨道宽度，轨道才落在内容列左边缘 */
-.about .vp-doc > div.fx-rail-ready > .fx-rail-item {
-  padding-left: 1.75rem;
+.career-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem;
+  align-items: end;
 }
 
-/* 机构标题的缩略线退场：分段交给轨道，比横线干净 */
-.about .vp-doc > div.fx-rail-ready > h3 {
-  border-top: 0;
-  padding-top: 0;
+.career-card .career-when {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.5;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
 }
 
-.about .vp-doc > div.fx-rail-ready > .fx-rail-node,
-.about .vp-doc > div.fx-rail-ready > .fx-rail-dot {
-  position: relative;
+.career-card .career-where {
+  margin-left: 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--vp-c-divider);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
 }
 
-/* 节点圆心对准轨道中轴（轨道占 0~2px，中轴在 1px 处） */
-.about .vp-doc > div.fx-rail-ready > .fx-rail-node::before,
-.about .vp-doc > div.fx-rail-ready > .fx-rail-dot::before {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  box-sizing: border-box;
-  /* 底色压住轨道，圆环才看得出来 */
-  background-color: var(--vp-c-bg);
-  transition:
-    border-color var(--fx-dur-base) var(--fx-ease),
-    background-color var(--fx-dur-base) var(--fx-ease),
-    transform var(--fx-dur-base) var(--fx-ease);
+/* (0,3,0) 才能盖过第 12 节的 .about .vp-doc h3 */
+.career-card .career-head .career-org {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  /* 宋体只引了 700 一档 */
+  font-weight: 700;
+  font-size: clamp(1.375rem, 2.4vw, 1.625rem);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
 }
 
-.about .vp-doc > div.fx-rail-ready > .fx-rail-node::before {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--vp-c-divider);
-  /* 0.65em 大致是标题首行的视觉中线，减去半径即圆的顶端 */
-  top: calc(0.65em - 6px);
-  left: -5px;
+.career-card .career-role {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0.35rem 0 0;
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
 }
 
-.about .vp-doc > div.fx-rail-ready > .fx-rail-dot::before {
-  width: 6px;
-  height: 6px;
-  top: calc(0.65em - 3px);
-  left: -2px;
-  background-color: var(--vp-c-divider);
+.career-card .career-lead {
+  margin: 0.8rem 0 0;
+  font-size: var(--fx-text-base);
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
 }
 
-/* 点亮：已读段扫过的节点换成品牌色 */
-.about .vp-doc > div.fx-rail-ready > .fx-rail-node.is-lit::before {
-  border-color: var(--vp-c-brand-1);
-  transform: scale(1.15);
+/* 阶段摘要：一行一段，编号在左、年份靠右 */
+.career-phases {
+  margin-top: 0.85rem;
+  border-top: 1px solid var(--vp-c-divider);
 }
 
-.about .vp-doc > div.fx-rail-ready > .fx-rail-dot.is-lit::before {
-  background-color: var(--vp-c-brand-1);
+.career-card .phase-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 0.5rem 0;
 }
 
-/* 减少动效：轨道整条点亮、节点全部就位，且没有任何过渡。
-   （脚本在这条路径上根本不挂滚动监听，已读高度也就不会写进来） */
-.about .vp-doc > div.fx-rail-static::after {
-  height: var(--fx-rail-h, 0);
+.career-card .phase-row + .phase-row {
+  border-top: 1px solid var(--vp-c-divider);
 }
 
-.about .vp-doc > div.fx-rail-static > .fx-rail-node::before {
-  border-color: var(--vp-c-brand-1);
-  transition: none;
+.career-card .phase-row .phase-no {
+  flex: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
 }
 
-.about .vp-doc > div.fx-rail-static > .fx-rail-dot::before {
-  background-color: var(--vp-c-brand-1);
-  transition: none;
+.career-card .phase-row .phase-name {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
 }
 
-/* 窄屏把轨道到文字的间距收窄。节点位置不受影响——它是相对轨道定位的 */
-@media (max-width: 48rem) {
-  .about .vp-doc > div.fx-rail-ready > .fx-rail-item {
-    padding-left: 1.25rem;
+.career-card .phase-row .phase-year {
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 展开后的详情与上面的摘要行之间拉一条线：两边都有阶段标题，
+   不隔开的话第一段详情会被误读成摘要的第四行。
+   线的上下各留 0.5rem，和摘要行之间那两条同款发丝线（.phase-row + .phase-row）
+   是同一把尺子：上方那 0.5rem 由 03 行自己的行内边距出，下方由这里的行内边距出 */
+.career-card.is-open .poster-more > div {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* 展开后的详情：编号已经在摘要行里出现过，这里只留标题、技术栈与正文 */
+.career-card .career-phase {
+  margin-top: 1.75rem;
+}
+
+/* 分隔线下面那一条的 1.75rem 会顶到线上，第一条要归零 */
+.career-card.is-open .poster-more > div > .career-phase:first-child {
+  margin-top: 0;
+}
+
+.career-card .phase-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+
+/* 技术栈在左、年份在右（.phase-year 自己靠右） */
+.career-card .phase-meta {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1rem;
+  align-items: baseline;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.career-card .phase-meta .phase-year {
+  margin-left: auto;
+  color: var(--vp-c-text-3);
+}
+
+.career-card .phase-body {
+  margin-top: 0.5rem;
+}
+
+.career-card .career-list {
+  margin-top: 0.5rem;
+}
+
+/* 五款工具：名在上、注在下，发丝线分行 */
+.career-card .career-tools {
+  margin: 1rem 0;
+  border-top: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.career-card .tool-row {
+  padding: 1rem 0;
+}
+
+.career-card .tool-row + .tool-row {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.career-card .tool-name,
+.career-card .tool-desc {
+  margin: 0;
+}
+
+.career-card .tool-name {
+  font-size: var(--fx-text-base);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.career-card .tool-desc {
+  margin-top: 0.15rem;
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+/* 窄屏：卡头收成单列，时间回到机构名上方 */
+@media (max-width: 40rem) {
+  .career-card .career-head {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.2rem;
+  }
+
+  .career-card .career-when {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .career-card .career-head .career-org {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .career-card .career-role {
+    grid-row: 3;
   }
 }
 
 /* ---- 条目悬停微交互 ----
-   只作用于「**标签** ——描述」这种行（经历的「工具链」、关于页的技能表、项目页的
-   技术栈表都是这个形状）。反馈语言与文章列表、归档页一致：整行轻微右移、底色变浅，
-   加上圆环标记被填满（见第 12 节） */
+   只作用于「**标签** ——描述」这种行（作品页的技术栈表就是这个形状）。反馈语言与
+   文章列表、归档页一致：整行轻微右移、底色变浅，加上圆环标记被填满（见第 12 节） */
 
 .about .vp-doc li:has(> strong:first-child),
 .projects .vp-doc li:has(> strong:first-child) {
@@ -2167,13 +2514,26 @@ html :is(input, textarea, select, [contenteditable='true']) {
    脚本没跑（禁用 JS、报错、减少动效）时页面就是普通的静态文档。
    -------------------------------------------------------------------------- */
 
+/* ---- 作品版画的纸与墨 ----
+   浅色是略暖的旧纸（纸色要和白页面拉开一点，否则纸片会整个融进背景），
+   暗色是比页面底色高半档的深灰；墨色一律压淡，只让锚点那一个色相保持满饱和
+   ——整张版画的色彩策略就这一句 */
+:root {
+  --fx-plate-paper: #f5f2ec;
+  --fx-plate-ink: #b0aaa2;
+  --fx-plate-anchor: var(--fx-brand-a);
+}
+
+.dark {
+  --fx-plate-paper: #232228;
+  --fx-plate-ink: #56545d;
+}
+
 .about .vp-doc,
 .projects .vp-doc {
   /* 正文行宽：用满整列。这两页的正文列本身就有上限（VitePress 给的 688px），
      再往里压一截，右边就会空出一大片、离目录很远。想收窄只改这一个值即可 */
   --fx-measure: 100%;
-  /* 作品索引：编号那一列的宽度 */
-  --fx-folio-num: 2.5rem;
 }
 
 /* ---- 章节：一条发丝线 ----
@@ -2190,12 +2550,18 @@ html :is(input, textarea, select, [contenteditable='true']) {
   padding-top: var(--fx-h2-pad);
   font-size: clamp(1.6rem, 2.4vw, 2rem);
   line-height: 1.25;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   background-image: linear-gradient(var(--vp-c-divider), var(--vp-c-divider));
   background-repeat: no-repeat;
   background-position: 0 0;
   background-size: var(--fx-rule) 1px;
   transition: background-size var(--fx-dur-slow) var(--fx-ease);
+}
+
+/* 刊头下面那第一个标题：4.5rem 是章节之间的气口，搁在页头下面就成了断档。
+   收到与 .masthead 下边距同一档，页头才像是带着第一个章节走 */
+.about .vp-doc > div > h2:first-child {
+  margin-top: var(--fx-space-5);
 }
 
 /* VitePress 把 h2 的 # 钉在 top: 1.5rem —— 那是它自己给 h2 的上内边距。这里的
@@ -2217,17 +2583,476 @@ html :is(input, textarea, select, [contenteditable='true']) {
   letter-spacing: -0.01em;
 }
 
+/* 作品名：改成衬线大字，与关于页的机构名同一尺度、同一语言；行首挂一枚 mono
+   编号，和页首那条作品索引一一对应——滚到正文里也能认出「这是第几个」。
+   编号交给 CSS 计数器，增删作品不用回来改数字。
+   留白也放到 4rem：一整页九个作品，靠间距分组，不靠分隔线 */
 .projects .vp-doc h3:has(+ .entry-meta) {
-  margin-top: 3.5rem;
-  font-size: 1.4375rem;
+  margin-top: 4rem;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(1.5rem, 2.6vw, 1.875rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  counter-increment: fx-work;
+}
+
+.projects .vp-doc h3:has(+ .entry-meta)::before {
+  content: counter(fx-work, decimal-leading-zero);
+  margin-right: 0.7rem;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-brand-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 作品页的两套计数器：章节编号（h2 右侧）与作品编号（h3 行首）。
+   两个计数器都在这里起头，全页连续 —— 不与分组绑定 */
+.projects .vp-doc {
+  counter-reset: fx-section fx-work;
+}
+
+/* 章节标题右侧的编号：与关于页同一套做法，那份只作用于 .about，这里补上。
+   h2 变 flex 只影响内部排版，发丝线在背景上、锚点绝对定位，都不参与 */
+.projects .vp-doc h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  counter-increment: fx-section;
+}
+
+.projects .vp-doc h2::after {
+  content: counter(fx-section, decimal-leading-zero);
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 作品版画 ----
+   每件作品配一张竖版纸片（3:5）：内联 SVG 画的极简图形，大面积留白，整幅
+   只放一个高饱和色锚点，脚边一行等宽微文字。它浮在条目右上角、正文绕排——
+   图与文并排是编辑体的老办法，用不着再加卡片。
+   纸色与墨色都吃变量，明暗各一套；锚点色只换色相，饱和度不动 */
+.work-plate {
+  float: right;
+  width: 6.75rem;
+  margin: 0.4rem 0 1rem 1.75rem;
+  --fx-plate-anchor: var(--fx-brand-a);
+}
+
+.work-plate.is-cyan {
+  --fx-plate-anchor: var(--fx-brand-b);
+}
+
+.work-plate svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.plate-paper {
+  fill: var(--fx-plate-paper);
+  stroke: var(--vp-c-divider);
+  stroke-width: 1;
+}
+
+.plate-dot {
+  fill: var(--fx-plate-ink);
+}
+
+.plate-wire,
+.plate-trace {
+  fill: none;
+  stroke: var(--fx-plate-ink);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+/* 虚线那根代表推算/回放出来的轨迹，与实测的实线区分开 */
+.plate-trace {
+  stroke-dasharray: 3 2;
+}
+
+.plate-anchor {
+  fill: var(--fx-plate-anchor);
+}
+
+/* 网格、层叠、积木、框架这几个母题用描边方框搭骨架，
+   色锚点则是一块实心方块——都只有一档色相，与圆点母题同一套规矩 */
+.plate-box {
+  fill: none;
+  stroke: var(--fx-plate-ink);
+  stroke-width: 1;
+}
+
+.plate-anchor-block {
+  fill: var(--fx-plate-anchor);
+}
+
+.plate-rule {
+  stroke: var(--vp-c-divider);
+  stroke-width: 1;
+}
+
+.plate-code,
+.plate-note {
+  font-family: var(--vp-font-family-mono);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  fill: var(--vp-c-text-3);
+}
+
+/* 窄屏正文列本来就窄，绕排会把行压成一条条细缝，改成整块居中 */
+@media (max-width: 48rem) {
+  .work-plate {
+    float: none;
+    width: 5.5rem;
+    margin: 1.25rem auto 1.5rem;
+  }
+}
+
+/* ---- 作品海报 ----
+   作品页不要右侧目录（frontmatter 里 aside: false），省下的宽度交给作品本身。
+   但列宽一放开，正文段落会长到读不动，所以文字自己收在 44rem 上，海报卡用满整列
+   ——版面上「文字有它的尺度、图版可以破格」 */
+
+.projects .vp-doc.vp-doc {
+  --fx-measure: 44rem;
+}
+
+/* 目录撤掉之后，VitePress 给「没有内容侧边栏」的页面留了一道宽度：.container 是
+   62rem（90rem 视口以上 69rem）、.content 是 47rem，两条都挂在 scoped 属性上、
+   特异性 (0,4,0)，光靠 .projects .VPDoc .container（(0,3,0)）压不住，这里用重复
+   类名提到 (0,5,0)。
+   66rem 是按版面反推的：container 1056 − content 两侧 4rem = 卡片 992，
+   卡片去掉内边距 936，再减版画 12rem 与栏距 2.5rem —— 右栏正好落在 44rem 的行宽上，
+   段落的右缘与卡片内边距对齐，不会多出一条参差的留白 */
+.projects.projects .VPDoc .container.container {
+  max-width: 66rem;
+}
+
+.projects.projects .VPDoc .content.content {
+  max-width: none;
+}
+
+/* ---- 作品墙 ----
+   作品不再是一条条文字，而是一面墙：两列网格，每张海报尺寸定死（宽半列、高 33rem），
+   卡面装不下的内容收在里面，点「展开」就地铺满整行摊开看。
+   没有用瀑布流：规格统一才有「墙」的感觉，参差交给卡片之间的留白；而且瀑布流按列
+   填充，九件作品的阅读顺序会乱。
+   网格直接铺在 .vp-doc 的内容容器上：默认所有直接子元素通栏，只有海报卡占一列——
+   页面现在通篇都是卡片，这两条留着，以后往网格里插别的东西也不用改 */
+
+.projects .vp-doc > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 2rem;
+}
+
+.projects .vp-doc > div > * {
+  grid-column: 1 / -1;
+}
+
+.projects .vp-doc > div > .work-poster {
+  grid-column: auto;
+}
+
+.work-poster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* 卡面高度固定：装不下的内容由 ::after 那条渐隐交代。
+     展开时 JS 会量出目标高度写进来，所以这里得有 height 的过渡 */
+  --fx-poster-h: 33rem;
+  height: var(--fx-poster-h);
+  padding: 1.5rem 1.5rem 3.75rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 1.25rem;
+  background-color: var(--vp-c-bg-alt);
+  overflow: hidden;
+  transition: height 0.42s var(--fx-ease);
+}
+
+/* 展开态：跨满整行、高度放开，卡面裁掉的部分全都摊开。
+   选择器得压过上面那条「网格项占一列」的规则（它多一个 .vp-doc，特异性更高） */
+.projects .vp-doc > div > .work-poster.is-open {
+  grid-column: 1 / -1;
+}
+
+.work-poster.is-open {
+  height: auto;
+}
+
+/* 没有展开键的卡（内容是导语就说完的），不必给底部的键留位置 */
+.work-poster:not(:has(.poster-toggle)) {
+  padding-bottom: 1.5rem;
+}
+
+/* 量高度的那一帧：所有过渡先停下，量完立刻摘掉（见 index.ts 的 setupWorkPosters） */
+.work-poster.is-measuring,
+.work-poster.is-measuring * {
+  transition: none !important;
+}
+
+/* 卡面底部：一条从透明过渡到卡面底色的渐隐。它做两件事——交代「下面还有」，
+   以及把被裁内容的尾巴盖干净：overflow 只裁到边框盒，卡面下边距那一带属于
+   padding，溢出的文字会钻进去，光靠裁剪盖不住。所以下半段是实色，
+   展开键用 z-index 压在这层之上 */
+.work-poster::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 8rem;
+  background: linear-gradient(to bottom, transparent 0, var(--vp-c-bg-alt) 45%);
+  pointer-events: none;
+  transition: opacity var(--fx-dur-base) var(--fx-ease);
+}
+
+.work-poster.is-open::after {
+  opacity: 0;
+}
+
+/* 展开键钉在卡面底部：卡片被裁时它也得看得见 */
+.poster-toggle {
+  position: absolute;
+  z-index: 1;
+  inset: auto 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--vp-c-divider);
+  background: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition: color var(--fx-dur-base) var(--fx-ease);
+}
+
+.poster-toggle:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* 加号展开时转成叉，收起再转回来 */
+.poster-toggle::after {
+  content: '+';
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.work-poster.is-open .poster-toggle::after {
+  transform: rotate(45deg);
+}
+
+/* 眉题那两条外边距一直没生效：VitePress 的 .vp-doc p 是 (0,1,1)，单类比不过它，
+   于是白顶了 16px 下来，和卡片的左内边距对不齐。按这片区的写法补 .projects 前缀 */
+.projects .work-poster .poster-kind {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+/* 卡面标题：编号仍是正文那份 CSS 计数器（与页首索引同号），只是排得小一号 */
+.projects .vp-doc .work-poster .poster-title {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.projects .vp-doc .work-poster .poster-title::before {
+  margin-right: 0.6rem;
+  font-size: 0.6875rem;
+  vertical-align: 0.75em;
+}
+
+.poster-sub {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-text-2);
+}
+
+.projects .work-poster .entry-meta {
+  margin-top: 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+}
+
+.projects .work-poster .entry-meta + .entry-meta {
+  margin-top: 0.1rem;
+}
+
+/* 卡面主体：左栏版画与数字并排，右栏留给导语 */
+.poster-body {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+
+.work-poster .work-plate {
+  float: none;
+  width: 100%;
+  margin: 0;
+}
+
+.poster-metrics {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.poster-metrics > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.poster-metrics dt {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-3);
+}
+
+.poster-metrics dd {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.poster-metrics dd span {
+  margin-left: 0.12em;
+  font-family: var(--vp-font-family-sans);
+  font-size: 0.5625rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+}
+
+.poster-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.poster-lead {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: var(--vp-c-text-2);
+}
+
+/* 详情：收起时零高度（grid-template-rows 0fr→1fr 那套，能真的过渡），展开才占位。
+   里面只放一个直接子元素——grid 的 1fr 行会等分容器高度，若摊成好几行（段落 + 列表 +
+   段落），每行都会被拉成一样高，短的那几行下面就白出一大片。多的内容自己包一层 */
+.poster-more {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.42s var(--fx-ease);
+}
+
+.poster-more > * {
+  overflow: hidden;
+}
+
+/* 收起时详情零高度，但子元素的 margin 不归轨道管，会白白占住一段——
+   留着的话卡面底部多出一块空白，渐隐线也跟着错位 */
+.work-poster:not(.is-open) .poster-more > *:first-child {
+  margin-top: 0;
+}
+
+.work-poster.is-open .poster-more {
+  grid-template-rows: 1fr;
+}
+
+.poster-more ul {
+  margin: 1.5rem 0 0;
+}
+
+/* 展开后版面跟着铺开：版画回到 12rem，导语也回到正文的尺度 */
+.work-poster.is-open .poster-body {
+  grid-template-columns: 12rem minmax(0, 1fr);
+  gap: 2.5rem;
+  margin-top: 2rem;
+}
+
+.work-poster.is-open .poster-lead {
+  margin-bottom: 0;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: inherit;
+}
+
+/* 窄屏：一列到底，卡面高度放开——手机上不适合再裁一刀，展开键也回到流末尾 */
+@media (max-width: 60rem) {
+  .projects .vp-doc > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .work-poster,
+  .work-poster.is-open {
+    grid-column: auto;
+    height: auto;
+  }
+
+  .work-poster {
+    padding-bottom: 1.5rem;
+  }
+
+  .work-poster::after {
+    display: none;
+  }
+
+  .poster-toggle {
+    position: static;
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .work-poster {
+    padding: 1.25rem 1.25rem 1.25rem;
+  }
+
+  .poster-body,
+  .work-poster.is-open .poster-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
 }
 
 /* ---- 正文尺度 ----
    页头下面那段是导语，比正文大一档、行距再放开一点，并且比正文短两字——用来把
    导语和正文的块区分开。
-   注意正文外面还有一层 VitePress 编出来的 div（第 13 节量轨道时记过同一件事），
+   注意正文外面还有一层 VitePress 编出来的 div（第 11 节记过同一件事），
    所以取首段要用 .vp-doc > div > p */
 
 .about .vp-doc p,
@@ -2243,93 +3068,6 @@ html :is(input, textarea, select, [contenteditable='true']) {
   margin-bottom: var(--fx-space-6);
   font-size: 1.125rem;
   line-height: 1.9;
-}
-
-/* ---- 作品索引：编号 / 标题 / 元信息 ----
-   元素由 index.ts 的 setupWorksIndex() 从正文的 h3 生成，正文里不重复写一遍：
-   加一个作品，索引自己就多一行。它只在脚本跑过之后存在，样式不必再挂 ready 类 */
-
-.folio {
-  margin: var(--fx-space-6) 0 var(--fx-space-7);
-  border-top: 1px solid var(--vp-c-divider);
-}
-
-/* 一行一件作品：编号与标题同一行，技术栈作注脚缩在标题下面。
-   技术栈那串元信息又长又是等宽字，跟标题抢同一行会把标题挤到换行，
-   所以让它独立占一行——顺带窄屏也不用再换布局。
-   行间不画分隔线：整块只由开头那条长横线起头，行与行靠留白分开 */
-.folio-row {
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--fx-folio-num) minmax(0, 1fr);
-  gap: 0.15rem var(--fx-space-4);
-  align-items: baseline;
-  padding: 0.7rem 0 0.7rem var(--fx-space-3);
-  /* 进场用动画而不是「隐藏态 + 放出来」：动画自己会跑完，不依赖脚本再补一次
-     样式写入——页面在后台标签页里加载时 rAF 会被节流，那种情况下索引不能一直藏着。
-     动画只碰 opacity，不碰 transform：hover 的位移本身就是个 transform */
-  animation: folio-in var(--fx-dur-slow) var(--fx-ease) both;
-  transition: transform var(--fx-dur-base) var(--fx-ease);
-}
-
-/* 整行是链接，但标题不该是链接色，也不该有下划线——一列紫字、几道横线都太吵。
-   选择器要压过 .vp-doc a（它带下划线），所以这里必须凑够三个类。
-   可点这件事交给光标、悬停位移、行首那条竖线和编号的颜色来说 */
-.projects .vp-doc .folio-row,
-.projects .vp-doc .folio-row:hover {
-  color: var(--vp-c-text-1);
-  text-decoration: none;
-}
-
-/* 行首那条品牌色竖线：悬停时出现；滚到某个作品时，它也是「当前这一行」的记号
-   （和归档页选中某一期是同一个记号） */
-.folio-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.6rem;
-  bottom: 0.6rem;
-  width: 2px;
-  border-radius: 1px;
-  background-color: var(--vp-c-brand-1);
-  transform: scaleY(0);
-  transition: transform var(--fx-dur-base) var(--fx-ease);
-}
-
-.folio-row:hover {
-  transform: translateX(3px);
-}
-
-.folio-row:hover::before,
-.folio-row.is-current::before {
-  transform: scaleY(1);
-}
-
-.folio-row:hover .folio-num,
-.folio-row.is-current .folio-num {
-  color: var(--vp-c-brand-1);
-}
-
-.folio-num {
-  font-family: var(--vp-font-family-mono);
-  font-size: 0.75rem;
-  color: var(--vp-c-text-2);
-  font-variant-numeric: tabular-nums;
-}
-
-.folio-title {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.folio-meta {
-  grid-column: 2;
-  font-family: var(--vp-font-family-mono);
-  font-size: var(--fx-text-sm);
-  line-height: 1.7;
-  color: var(--vp-c-text-2);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---- 滚动揭示：章节标题的发丝线 ----
@@ -2358,19 +3096,258 @@ html.fx-reveal-ready .projects .vp-doc h2.fx-in {
 
 @media (prefers-reduced-motion: reduce) {
   .about .vp-doc h2,
-  .projects .vp-doc h2,
-  .folio-row,
-  .folio-row::before {
+  .projects .vp-doc h2 {
     transition: none;
-  }
-
-  .folio-row {
-    animation: none;
   }
 
   html.fx-reveal-ready .about .vp-doc h2,
   html.fx-reveal-ready .projects .vp-doc h2 {
     --fx-rule: 100%;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   15. 关于页杂志化区块
+
+   about 正文的后半原本全是同一种「粗体 + 破折号」列表：信条、技能、玩具、
+   联系方式被排成一种节奏。这一节把四组内容各自换成符合其性质的形态：
+   信条走编号大字的双栏，技能走标签表，玩 AI 走左名右注的索引行，
+   教育与联系合成版权页式页尾。仍然只靠尺度、留白和发丝线。
+   -------------------------------------------------------------------------- */
+
+/* ---- 章节自动编号 ----
+   计数器由 CSS 维护，加删章节不用改数字；编号排在标题右侧（# 锚点在左侧外）。
+   h2 变 flex 只影响内部排版，发丝线在背景上、锚点绝对定位，都不参与 */
+
+.about .vp-doc {
+  counter-reset: fx-section;
+}
+
+.about .vp-doc h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  counter-increment: fx-section;
+}
+
+.about .vp-doc h2::after {
+  content: counter(fx-section, decimal-leading-zero);
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* 手写的 dl / dd 在浏览器默认样式里带外边距，先清掉再由各组自己定 */
+.about .vp-doc dl,
+.about .vp-doc dl dd {
+  margin: 0;
+}
+
+/* ---- 信条：编号格言格 ----
+   一条一条往下读：编号悬在左列，品牌色竖线起头，标题与解释都挂在竖线上。
+   不做成卡片——四条格言本来就是一组连读的话，拆开会把语气切断 */
+
+.about-creed {
+  margin-top: var(--fx-space-5);
+  counter-reset: creed;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.creed-item {
+  counter-increment: creed;
+  position: relative;
+  padding-left: 3rem;
+}
+
+/* 编号绝对定位到左列，标题与解释整块让出位置 */
+.creed-item dt::before {
+  content: counter(creed, decimal-leading-zero);
+  position: absolute;
+  top: 0.15rem;
+  left: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.creed-item dt {
+  margin: 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--vp-c-brand-1);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+}
+
+.creed-item dd {
+  margin-top: 0.4rem;
+  padding-left: calc(0.85rem + 2px);
+  color: var(--vp-c-text-2);
+  font-size: var(--fx-text-sm);
+  line-height: 1.85;
+}
+
+/* ---- 技能：行式标签表 ----
+   分类名占左列（像表头），标签在右列自动换行；行间发丝线，整块上下收口。
+   标签含中文，用 sans 而不是 mono；浅色无框标签表示「看得懂、写得少」 */
+
+.skill-list {
+  margin-top: var(--fx-space-5);
+  border-top: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.35rem 1.5rem;
+  align-items: baseline;
+  padding: 0.85rem 0;
+}
+
+.skill-row + .skill-row {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.skill-row dt {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+
+.skill-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+}
+
+.skill-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 2px;
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.skill-tag.is-soft {
+  padding-left: 0;
+  padding-right: 0;
+  border-color: transparent;
+  color: var(--vp-c-text-3);
+}
+
+.skill-note {
+  margin: 0.9rem 0 0;
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-3);
+}
+
+/* ---- 玩 AI：两列小卡 ----
+   名字走衬线标题，评价跟在下面；卡片只留一圈发丝边和半档底色，颜色不参与——
+   这一节的主角是名字和那句评价 */
+
+.ai-list {
+  margin-top: var(--fx-space-5);
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 48rem) {
+  .ai-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ai-row {
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.875rem;
+  background-color: var(--vp-c-bg-alt);
+}
+
+.ai-row dt {
+  font-family: var(--fx-font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.ai-row dd {
+  margin-top: 0.5rem;
+  color: var(--vp-c-text-2);
+  font-size: var(--fx-text-sm);
+  line-height: 1.8;
+}
+
+/* ---- 页尾版权页：教育与联系双栏 ----
+   章节标题（教育与联系）已经有发丝线起头，这里再收一条细线做版权页框；
+   两个区块的标签用 sans 小眉题，正文 15px，元信息等宽。
+   宽屏不做等宽分栏：教育列让最长的 mono 学历行一行铺完（max-content），
+   联系行都短，吃剩余宽度；两栏之间留更宽的气口。 */
+
+.about-colophon {
+  margin-top: var(--fx-space-5);
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: var(--fx-space-5);
+  display: grid;
+  gap: var(--fx-space-5);
+}
+
+@media (min-width: 48rem) {
+  .about-colophon {
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 4rem;
+  }
+}
+
+.col-label {
+  margin: 0 0 0.55rem;
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--vp-c-text-3);
+}
+
+.col-line {
+  margin: 0.35rem 0;
+  font-size: var(--fx-text-base);
+  line-height: 1.8;
+}
+
+.col-meta {
+  margin: 0.5rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 窄屏：标签表堆叠 ----
+   组名收成区块眉题，标签整行铺开。creed 是单列的编号格、ai-list 是卡片网格，
+   窄屏都自动落成一列，不用额外处理 */
+
+@media (max-width: 40rem) {
+  .skill-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc h2::after {
+    transition: none;
   }
 }
 
