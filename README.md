@@ -2,7 +2,7 @@
 
 <img src="public/fluxixix.svg" width="267" height="63" alt="fluxixix" />
 
-<p>个人博客，VitePress 起底，主题是手搓的。</p>
+<p>个人博客，基于 VitePress，主题是自定义的。</p>
 
 <p>
   <a href="https://fluxixix.github.io"><img src="https://img.shields.io/badge/%E7%AB%99%E7%82%B9-fluxixix.github.io-BD34FE?style=flat-square&amp;logo=gitbook&amp;logoColor=white" alt="站点" /></a>
@@ -33,7 +33,7 @@
 | 图标 | `@iconify-json/mdi` |
 | 部署 | GitHub Actions → GitHub Pages；Vercel 走同一份构建 |
 
-依赖刻意压在五项：三款字体、一套图标、框架本体；构建链路越短，越不容易某天因为一个传递依赖而挂掉。
+依赖刻意压在五项：三款字体、一套图标、框架本体；构建链路越短，越不容易某天因为一个传递依赖而构建失败。
 
 ## 快速开始
 
@@ -163,7 +163,7 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 - **不要右侧目录**（frontmatter `aside: false`），省下的宽度交给作品。VitePress 给「没有
   内容侧边栏」的页面留了 62rem（90rem 视口以上 69rem）、47rem 两道宽度，都挂在 scoped
   属性上（(0,4,0)），用重复类名压到 (0,5,0)，容器定在 66rem。
-- **作品是一面墙**：九件作品统一是手写的 `<article class="work-poster">`，网格直接铺在
+- **作品是一面墙**：九件作品统一是直接写的 `<article class="work-poster">`，网格直接铺在
   `.vp-doc` 的内容容器上——默认所有直接子元素通栏（章节标题、节导语、页首索引照旧），
   只有海报卡占一列，两列各 480px，卡面高度写死 `--fx-poster-h` 33rem。没有用瀑布流：
   规格统一才有墙的感觉，而且瀑布流按列填充，九件作品的阅读顺序会乱。
@@ -185,7 +185,7 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 另外几处不在这个文件里：
 
 - **关于页「经历」是两张卡片** —— `custom.css` 第 13 节：卡片外壳复用作品页那套（`.work-poster` + `.poster-toggle`），里面是卡头（机构名在左，时间与地点在右）、导语、01–03 的阶段摘要行，点展开才摊开每段的正文、技术栈与五款工具。卡面高度按内容分别定（18.4rem / 11rem），底距按展开键的落位算（3.4rem），收起时展开键的视口位置由脚本逐帧回拉。早期那版由脚本量测的滚动轨道早已删除。
-- **关于页其余各节各有一个形态** —— `custom.css` 第 15 节：章节标题右侧自动编号；「关注」是编号格言格（编号在左，品牌色竖线起头），「技能」是分类标签表，「玩 AI」是两列小卡（衬线名字 + 一句评），教育与联系收成版权页式双栏页尾。正文里对应写成 `<dl>` / `<div>` / 手写卡片，没有新增组件。
+- **关于页其余各节各有一个形态** —— `custom.css` 第 15 节：章节标题右侧自动编号；「关注」是编号格言格（编号在左，品牌色竖线起头），「技能」是分类标签表，「玩 AI」是两列小卡（衬线名字 + 一句评），教育与联系收成版权页式双栏页尾。正文里对应写成 `<dl>` / `<div>` / 直接写的卡片，没有新增组件。
 - **全站页脚** — `head/SiteFooter.vue` 挂在 `layout-bottom` 插槽，一行等宽版权页小字。
 - **顶栏滚动后收成浮动胶囊** — 全站通用（原先只挂在首页）。纯 CSS，搭在默认主题自己的
   `.top` class 上，没有滚动监听；未滚动时内页顶栏也统一透明、不画分隔线。标题列一律按
@@ -209,9 +209,9 @@ Vercel 用同一份 `vercel.json`（`buildCommand: npm run docs:build`，
 构建时注入 —— 本地 dev 下 `/_vercel/insights/script.js` 会被 SPA 兜底成 HTML，
 浏览器按 JS 解析就会报 `SyntaxError: Unexpected token '<'`。
 
-## 两个容易踩的地方
+## 两个需要注意的地方
 
 - **这份 README 不会被发布**。`config.mts` 里 `srcExclude: ['**/README.md']`，
   它可以放心写面向开发者的话。
-- **侧边栏是手写的，不跟文件系统同步**。新文章只建文件不补 `sidebar`，
+- **侧边栏是手动维护的，不跟文件系统同步**。新文章只建文件不补 `sidebar`，
   它不会出现在任何导航里。
