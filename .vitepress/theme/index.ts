@@ -87,9 +87,9 @@ function setupThemeTransition(app: App) {
 const REVEAL_SELECTOR = [
   '.vp-doc .post-list .post-item',
   '.archive-timeline .timeline-year .timeline-item',
-  // 关于页与项目页的章节标题：标题淡入的同时，它上面那条发丝线从左画出来
+  // 关于页与作品页的章节标题：标题淡入的同时，它上面那条发丝线从左画出来
   '.about .vp-doc h2',
-  '.projects .vp-doc h2'
+  '.works .vp-doc h2'
 ].join(',')
 
 /** 同一批里相邻两项的揭示间隔，形成自上而下的阶梯 */

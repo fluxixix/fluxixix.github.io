@@ -107,7 +107,7 @@ async function copyEmail() {
         <p class="phase-meta"><span>Next.js · React · Python · Flask · PostgreSQL · Redis · Celery</span><span class="phase-year">2026 — 至今</span></p>
         <div class="phase-body">
           <p>企业级的软件与 AI 资产平台。Admin 后台与 Portal 门户两套前端跑在同一套后端上：后端按 admin / dev / portal 三域分层，路由只管参数与鉴权，业务在 service、数据在 model；权限、审计、通知做成三条横切能力，三十九张表和两百多个接口都挂在这套结构上。部署是一个 docker compose 起七个服务：nginx 统一入口，前端、后端、Celery worker 与 beat、PostgreSQL 16、Redis 各管一段。</p>
-          <p>详情见 <a href="/projects">作品</a> 页。</p>
+          <p>详情见 <a href="/works">作品</a> 页。</p>
         </div>
       </section>
     </div>

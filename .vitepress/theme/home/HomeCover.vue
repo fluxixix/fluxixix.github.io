@@ -4,7 +4,7 @@
 // 不依赖滚动脚本，后台标签页打开也不会一直藏着。
 const rows = [
   { num: '01', label: '文章', meta: '技术笔记与零散思考', href: '/posts/' },
-  { num: '02', label: '作品', meta: '平台 · 工具链 · 个人项目', href: '/projects' },
+  { num: '02', label: '作品', meta: '平台 · 工具链 · 个人项目', href: '/works' },
   { num: '03', label: 'Now', meta: '最近在做、在学、在玩的', href: '/now' },
   { num: '04', label: '归档', meta: '按时间倒序，适合顺着翻', href: '/archive' }
 ]

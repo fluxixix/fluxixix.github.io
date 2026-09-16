@@ -70,9 +70,9 @@ VitePress 的 `srcDir` 默认是项目根目录，所以**目录布局就是 URL
 │  ├─ posts.data.ts              # 构建期扫描文章，供列表/归档/首页读取
 │  ├─ tech/                      # 按主题分子目录
 │  └─ notes/
-├─ pages/                        # 独立页面（关于/项目/归档/Now）
+├─ pages/                        # 独立页面（关于/作品/归档/Now）
 │  ├─ about.md
-│  ├─ projects.md
+│  ├─ works.md
 │  ├─ archive.md
 │  └─ now.md
 ├─ public/                       # 原样拷贝的静态资源（robots.txt 等）

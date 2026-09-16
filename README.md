@@ -55,7 +55,7 @@ Node 24，与 CI 保持一致。
 │   ├── posts.data.ts         列表数据源（构建期读取各篇 frontmatter）
 │   ├── tech/                 技术
 │   └── notes/                随笔
-├── pages/                    独立页面：about / archive / projects
+├── pages/                    独立页面：about / archive / works
 │   ├── now.md                Now 索引页（按年分组，数据来自 now/）
 │   └── now/
 │       ├── now.data.ts       月度留档的数据源（构建期读取各期 frontmatter）

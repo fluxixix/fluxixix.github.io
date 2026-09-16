@@ -1,6 +1,6 @@
 ---
 title: 作品
-pageClass: projects
+pageClass: works
 # 页头由 PageMasthead 生成（与关于页同一套语言），正文里不再重复写标题
 # aside: false —— 不要右侧的本页目录，省下的宽度全部交给作品本身
 aside: false

@@ -2000,7 +2000,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 /* --------------------------------------------------------------------------
-   12. 关于页与项目页（/about、/projects）
+   12. 关于页与作品页（/about、/works）
    -------------------------------------------------------------------------- */
 
 /* 作品页的正文是纯 Markdown：作品名下方跟一行等宽元信息（技术栈、年份）。
@@ -2008,7 +2008,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 /* 元信息行：作品名的注脚。与标题之间留一口气，多行之间反而收紧——
    这样它读成「一块注脚」，而不是几行独立的正文 */
-.projects .entry-meta {
+.works .entry-meta {
   margin: 0.7rem 0 0;
   font-family: var(--vp-font-family-mono);
   font-size: var(--fx-text-sm);
@@ -2018,7 +2018,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
   font-variant-numeric: tabular-nums;
 }
 
-.projects .entry-meta + .entry-meta {
+.works .entry-meta + .entry-meta {
   margin-top: 0.15rem;
 }
 
@@ -2035,7 +2035,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
    标记是装饰，靠 ::before 画，ul/li 的语义不受影响。 */
 
 .about .vp-doc > div,
-.projects .vp-doc > div {
+.works .vp-doc > div {
   /* 圆环的直径，以及标记列的总宽（圆环 + 与文字之间的空隙）。
      线宽 1.5px 配 0.45rem 是环孔还看得见的上限，再粗就成小色块了 */
   --fx-mark-size: 0.45rem;
@@ -2043,13 +2043,13 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .about .vp-doc ul,
-.projects .vp-doc ul {
+.works .vp-doc ul {
   list-style: none;
   padding-left: 0;
 }
 
 .about .vp-doc ul > li,
-.projects .vp-doc ul > li {
+.works .vp-doc ul > li {
   position: relative;
   /* 原本由 ul 的默认内边距让出的位置，改由条目自己让：标记正好落在这一列，
      条目的背景块（带标签的行才有）也才能贴着文字算 */
@@ -2057,7 +2057,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .about .vp-doc ul > li::before,
-.projects .vp-doc ul > li::before {
+.works .vp-doc ul > li::before {
   content: '';
   position: absolute;
   left: 0;
@@ -2077,7 +2077,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 /* 悬停时圆环被填满，等于「这一条被点亮」 */
 .about .vp-doc ul > li:hover::before,
-.projects .vp-doc ul > li:hover::before {
+.works .vp-doc ul > li:hover::before {
   border-color: var(--vp-c-brand-1);
   background-color: var(--vp-c-brand-1);
   transform: scale(1.15);
@@ -2416,7 +2416,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
    文章列表、归档页一致：整行轻微右移、底色变浅，加上圆环标记被填满（见第 12 节） */
 
 .about .vp-doc li:has(> strong:first-child),
-.projects .vp-doc li:has(> strong:first-child) {
+.works .vp-doc li:has(> strong:first-child) {
   /* 背景块往左溢出一点、文字位置不动：负外边距与左内边距相抵。
      左内边距里还要再让出标记那一列（标记自己绝对定位在 left: 0），
      圆环才会和其它列表落在同一列 */
@@ -2432,21 +2432,21 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .about .vp-doc li:has(> strong:first-child) > strong,
-.projects .vp-doc li:has(> strong:first-child) > strong {
+.works .vp-doc li:has(> strong:first-child) > strong {
   color: var(--vp-c-text-1);
 }
 
 /* 这类行比别的行多了一层内边距，标记要跟着挪：横向挪回被负外边距带走的距离，
    纵向加上这层的上内边距——否则圆环会浮在文字上半行 */
 .about .vp-doc li:has(> strong:first-child)::before,
-.projects .vp-doc li:has(> strong:first-child)::before {
+.works .vp-doc li:has(> strong:first-child)::before {
   left: var(--fx-space-3);
   top: calc(var(--fx-space-1) + 0.875em - var(--fx-mark-size) / 2);
   top: calc(var(--fx-space-1) + 0.5lh - var(--fx-mark-size) / 2);
 }
 
 .about .vp-doc li:has(> strong:first-child):hover,
-.projects .vp-doc li:has(> strong:first-child):hover {
+.works .vp-doc li:has(> strong:first-child):hover {
   background-color: var(--vp-c-bg-soft);
   transform: translateX(3px);
 }
@@ -2490,15 +2490,15 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 @media (prefers-reduced-motion: reduce) {
   .about .vp-doc ul > li::before,
-  .projects .vp-doc ul > li::before,
+  .works .vp-doc ul > li::before,
   .about .vp-doc li:has(> strong:first-child),
-  .projects .vp-doc li:has(> strong:first-child),
+  .works .vp-doc li:has(> strong:first-child),
   .about .about-copy {
     transition: none;
   }
 
   .about .vp-doc li:has(> strong:first-child):hover,
-  .projects .vp-doc li:has(> strong:first-child):hover {
+  .works .vp-doc li:has(> strong:first-child):hover {
     transform: none;
   }
 }
@@ -2530,7 +2530,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 .about .vp-doc,
-.projects .vp-doc {
+.works .vp-doc {
   /* 正文行宽：用满整列。这两页的正文列本身就有上限（VitePress 给的 688px），
      再往里压一截，右边就会空出一大片、离目录很远。想收窄只改这一个值即可 */
   --fx-measure: 100%;
@@ -2540,7 +2540,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
    线用 background-size 画而不是 border：这样才能「从左画到右」 */
 
 .about .vp-doc h2,
-.projects .vp-doc h2 {
+.works .vp-doc h2 {
   /* 兜底值：脚本没跑时线是实打实画好的 */
   --fx-rule: 100%;
   /* 线上方的留白。锚点 # 的落点也要跟这条走（见下面 .header-anchor 规则），
@@ -2567,16 +2567,16 @@ html :is(input, textarea, select, [contenteditable='true']) {
 /* VitePress 把 h2 的 # 钉在 top: 1.5rem —— 那是它自己给 h2 的上内边距。这里的
    留白更薄，锚点不跟着挪就会落到标题文字下面 */
 .about .vp-doc h2 .header-anchor,
-.projects .vp-doc h2 .header-anchor {
+.works .vp-doc h2 .header-anchor {
   top: var(--fx-h2-pad);
 }
 
 /* ---- 标题尺度 ----
-   关于页的 h3 是机构名；项目页里只有「后面跟着一行元信息」的 h3 才是作品名
+   关于页的 h3 是机构名；作品页里只有「后面跟着一行元信息」的 h3 才是作品名
    （技术栈那节的 h3 是分组名，不吃作品的尺度） */
 
 .about .vp-doc h3,
-.projects .vp-doc h3 {
+.works .vp-doc h3 {
   margin-top: 3rem;
   font-size: 1.3125rem;
   line-height: 1.35;
@@ -2587,7 +2587,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
    编号，和页首那条作品索引一一对应——滚到正文里也能认出「这是第几个」。
    编号交给 CSS 计数器，增删作品不用回来改数字。
    留白也放到 4rem：一整页九个作品，靠间距分组，不靠分隔线 */
-.projects .vp-doc h3:has(+ .entry-meta) {
+.works .vp-doc h3:has(+ .entry-meta) {
   margin-top: 4rem;
   font-family: var(--fx-font-serif);
   font-size: clamp(1.5rem, 2.6vw, 1.875rem);
@@ -2597,7 +2597,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
   counter-increment: fx-work;
 }
 
-.projects .vp-doc h3:has(+ .entry-meta)::before {
+.works .vp-doc h3:has(+ .entry-meta)::before {
   content: counter(fx-work, decimal-leading-zero);
   margin-right: 0.7rem;
   font-family: var(--vp-font-family-mono);
@@ -2610,20 +2610,20 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 /* 作品页的两套计数器：章节编号（h2 右侧）与作品编号（h3 行首）。
    两个计数器都在这里起头，全页连续 —— 不与分组绑定 */
-.projects .vp-doc {
+.works .vp-doc {
   counter-reset: fx-section fx-work;
 }
 
 /* 章节标题右侧的编号：与关于页同一套做法，那份只作用于 .about，这里补上。
    h2 变 flex 只影响内部排版，发丝线在背景上、锚点绝对定位，都不参与 */
-.projects .vp-doc h2 {
+.works .vp-doc h2 {
   display: flex;
   align-items: baseline;
   gap: 1rem;
   counter-increment: fx-section;
 }
 
-.projects .vp-doc h2::after {
+.works .vp-doc h2::after {
   content: counter(fx-section, decimal-leading-zero);
   margin-left: auto;
   font-family: var(--vp-font-family-mono);
@@ -2722,22 +2722,22 @@ html :is(input, textarea, select, [contenteditable='true']) {
    但列宽一放开，正文段落会长到读不动，所以文字自己收在 44rem 上，海报卡用满整列
    ——版面上「文字有它的尺度、图版可以破格」 */
 
-.projects .vp-doc.vp-doc {
+.works .vp-doc.vp-doc {
   --fx-measure: 44rem;
 }
 
 /* 目录撤掉之后，VitePress 给「没有内容侧边栏」的页面留了一道宽度：.container 是
    62rem（90rem 视口以上 69rem）、.content 是 47rem，两条都挂在 scoped 属性上、
-   特异性 (0,4,0)，光靠 .projects .VPDoc .container（(0,3,0)）压不住，这里用重复
+   特异性 (0,4,0)，光靠 .works .VPDoc .container（(0,3,0)）压不住，这里用重复
    类名提到 (0,5,0)。
    66rem 是按版面反推的：container 1056 − content 两侧 4rem = 卡片 992，
    卡片去掉内边距 936，再减版画 12rem 与栏距 2.5rem —— 右栏正好落在 44rem 的行宽上，
    段落的右缘与卡片内边距对齐，不会多出一条参差的留白 */
-.projects.projects .VPDoc .container.container {
+.works.works .VPDoc .container.container {
   max-width: 66rem;
 }
 
-.projects.projects .VPDoc .content.content {
+.works.works .VPDoc .content.content {
   max-width: none;
 }
 
@@ -2749,18 +2749,18 @@ html :is(input, textarea, select, [contenteditable='true']) {
    网格直接铺在 .vp-doc 的内容容器上：默认所有直接子元素通栏，只有海报卡占一列——
    页面现在通篇都是卡片，这两条留着，以后往网格里插别的东西也不用改 */
 
-.projects .vp-doc > div {
+.works .vp-doc > div {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 2rem;
 }
 
-.projects .vp-doc > div > * {
+.works .vp-doc > div > * {
   grid-column: 1 / -1;
 }
 
-.projects .vp-doc > div > .work-poster {
+.works .vp-doc > div > .work-poster {
   grid-column: auto;
 }
 
@@ -2782,7 +2782,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 /* 展开态：跨满整行、高度放开，卡面裁掉的部分全都摊开。
    选择器得压过上面那条「网格项占一列」的规则（它多一个 .vp-doc，特异性更高） */
-.projects .vp-doc > div > .work-poster.is-open {
+.works .vp-doc > div > .work-poster.is-open {
   grid-column: 1 / -1;
 }
 
@@ -2857,8 +2857,8 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 /* 眉题那两条外边距一直没生效：VitePress 的 .vp-doc p 是 (0,1,1)，单类比不过它，
-   于是白顶了 16px 下来，和卡片的左内边距对不齐。按这片区的写法补 .projects 前缀 */
-.projects .work-poster .poster-kind {
+   于是白顶了 16px 下来，和卡片的左内边距对不齐。按这片区的写法补 .works 前缀 */
+.works .work-poster .poster-kind {
   margin: 0 0 0.75rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--vp-c-divider);
@@ -2869,7 +2869,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 }
 
 /* 卡面标题：编号仍是正文那份 CSS 计数器（与页首索引同号），只是排得小一号 */
-.projects .vp-doc .work-poster .poster-title {
+.works .vp-doc .work-poster .poster-title {
   margin: 0;
   font-family: var(--fx-font-serif);
   font-size: 1.375rem;
@@ -2878,7 +2878,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
   letter-spacing: -0.01em;
 }
 
-.projects .vp-doc .work-poster .poster-title::before {
+.works .vp-doc .work-poster .poster-title::before {
   margin-right: 0.6rem;
   font-size: 0.6875rem;
   vertical-align: 0.75em;
@@ -2893,13 +2893,13 @@ html :is(input, textarea, select, [contenteditable='true']) {
   color: var(--vp-c-text-2);
 }
 
-.projects .work-poster .entry-meta {
+.works .work-poster .entry-meta {
   margin-top: 0.75rem;
   font-size: 0.6875rem;
   line-height: 1.6;
 }
 
-.projects .work-poster .entry-meta + .entry-meta {
+.works .work-poster .entry-meta + .entry-meta {
   margin-top: 0.1rem;
 }
 
@@ -3013,7 +3013,7 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 /* 窄屏：一列到底，卡面高度放开——手机上不适合再裁一刀，展开键也回到流末尾 */
 @media (max-width: 60rem) {
-  .projects .vp-doc > div {
+  .works .vp-doc > div {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -3064,13 +3064,13 @@ html :is(input, textarea, select, [contenteditable='true']) {
 
 .about .vp-doc p,
 .about .vp-doc ul,
-.projects .vp-doc p,
-.projects .vp-doc ul {
+.works .vp-doc p,
+.works .vp-doc ul {
   max-width: var(--fx-measure);
 }
 
 .about .vp-doc > div > p:first-of-type,
-.projects .vp-doc > div > p:first-of-type {
+.works .vp-doc > div > p:first-of-type {
   max-width: calc(var(--fx-measure) - 2em);
   margin-bottom: var(--fx-space-6);
   font-size: 1.125rem;
@@ -3082,12 +3082,12 @@ html :is(input, textarea, select, [contenteditable='true']) {
    页内目录都靠它），万一观察者没跑起来，标题必须还在。所以这里只让线画出来 */
 
 html.fx-reveal-ready .about .vp-doc h2,
-html.fx-reveal-ready .projects .vp-doc h2 {
+html.fx-reveal-ready .works .vp-doc h2 {
   --fx-rule: 0%;
 }
 
 html.fx-reveal-ready .about .vp-doc h2.fx-in,
-html.fx-reveal-ready .projects .vp-doc h2.fx-in {
+html.fx-reveal-ready .works .vp-doc h2.fx-in {
   --fx-rule: 100%;
   transition: background-size var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms);
 }
@@ -3103,12 +3103,12 @@ html.fx-reveal-ready .projects .vp-doc h2.fx-in {
 
 @media (prefers-reduced-motion: reduce) {
   .about .vp-doc h2,
-  .projects .vp-doc h2 {
+  .works .vp-doc h2 {
     transition: none;
   }
 
   html.fx-reveal-ready .about .vp-doc h2,
-  html.fx-reveal-ready .projects .vp-doc h2 {
+  html.fx-reveal-ready .works .vp-doc h2 {
     --fx-rule: 100%;
   }
 }
