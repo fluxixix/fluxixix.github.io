@@ -3,16 +3,16 @@ title: 关于
 pageClass: about
 # 下面几个字段供 PageMasthead 生成页头，正文里不再重复写名字与身份行
 masthead: true
-name: 邓一超
+name: fluxixix
 tag: 关于 · ABOUT
-meta: 工具链研发 · 玩AI · 惠州
+meta: 工具链研发 · 玩AI · 广东
 ---
 
 <script setup lang="ts">
 import { ref } from 'vue'
 
 // 联系我那一行把邮箱做成按钮：点一下复制到剪贴板，就地给个交代
-const email = 'yichao.deng@icloud.com'
+const email = '944292511@qq.com'
 const hint = ref('')
 
 let hintTimer = 0
@@ -52,7 +52,7 @@ async function copyEmail() {
 
 ### 某汽车电子公司 · 高级工程师 × 工具链研发
 
-<p class="entry-meta">2022.01 — 至今 · 惠州</p>
+<p class="entry-meta">2022.01 — 至今 · 广东</p>
 
 前两年写 MCU 软件，2023 年起转做工具链。
 
@@ -91,7 +91,7 @@ async function copyEmail() {
 
 ### 某数据服务公司 · Python 爬虫工程师
 
-<p class="entry-meta">2021.01 — 2022.01 · 长沙</p>
+<p class="entry-meta">2021.01 — 2022.01 · 湖南</p>
 
 第一份工作，写爬虫，一年多里做了十二个以上的网页、小程序和 App 采集项目。
 
