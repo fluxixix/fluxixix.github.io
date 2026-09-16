@@ -132,7 +132,7 @@ async function copyEmail() {
 
 **湖南工业大学** · 电子科学与技术 · 工学学士
 
-<p class="entry-meta">2015.09 — 2019.07 · 英语 CET-6 / 日语 JLPT-N2 / 计算机二级 C</p>
+<p class="entry-meta">2015.09 — 2019.07 · 英语 CET-6 / 日语 JLPT-N2</p>
 
 ## 联系我
 
