@@ -3042,6 +3042,13 @@ html :is(input, textarea, select, [contenteditable='true']) {
     padding: 1.25rem 1.25rem 1.25rem;
   }
 
+  /* 压成一栏后版画会跟着卡片铺满整行（390px 上是 302×503），比卡片里任何
+     文字都抢。按卡片宽度的比例收回来：桌面那档是 8rem 占 480px 卡宽（27%），
+     这里用同一个比例，最小 5.5rem 兜住 320px 的小屏 */
+  .work-poster .work-plate {
+    width: clamp(5.5rem, 27%, 8rem);
+  }
+
   .poster-body,
   .work-poster.is-open .poster-body {
     grid-template-columns: minmax(0, 1fr);
