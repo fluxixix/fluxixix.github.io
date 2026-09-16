@@ -162,25 +162,41 @@ async function copyEmail() {
     <dd>
       <span class="skill-tag">Python</span>
       <span class="skill-tag">C / C++</span>
-      <span class="skill-tag is-soft">Go</span>
-      <span class="skill-tag is-soft">Rust</span>
-      <span class="skill-tag is-soft">TypeScript</span>
+      <span class="skill-tag">Go</span>
+      <span class="skill-tag">Rust</span>
+      <span class="skill-tag">TypeScript</span>
     </dd>
   </div>
   <div class="skill-row">
-    <dt>桌面端</dt>
+    <dt>桌面端框架</dt>
     <dd>
       <span class="skill-tag">PySide6</span>
       <span class="skill-tag">PyQt5</span>
-      <span class="skill-tag">PyQtGraph</span>
-      <span class="skill-tag">OpenGL</span>
-      <span class="skill-tag">OpenCV</span>
-      <span class="skill-tag">PyInstaller</span>
-      <span class="skill-tag">PyArmor</span>
+      <span class="skill-tag">Tauri</span>
+      <span class="skill-tag">Electron</span>
     </dd>
   </div>
   <div class="skill-row">
-    <dt>数据与后端</dt>
+    <dt>前端框架</dt>
+    <dd>
+      <span class="skill-tag">Vue</span>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">Next.js</span>
+      <span class="skill-tag">Tailwind</span>
+      <span class="skill-tag">TanStack Query</span>
+      <span class="skill-tag">Zustand</span>
+    </dd>
+  </div>
+  <div class="skill-row">
+    <dt>后端框架</dt>
+    <dd>
+      <span class="skill-tag">Flask</span>
+      <span class="skill-tag">SQLAlchemy</span>
+      <span class="skill-tag">Celery</span>
+    </dd>
+  </div>
+  <div class="skill-row">
+    <dt>数据库</dt>
     <dd>
       <span class="skill-tag">MySQL</span>
       <span class="skill-tag">SQLite</span>
@@ -188,17 +204,15 @@ async function copyEmail() {
       <span class="skill-tag">MongoDB</span>
       <span class="skill-tag">Redis</span>
       <span class="skill-tag">Elasticsearch</span>
-      <span class="skill-tag">Kafka</span>
-      <span class="skill-tag">Hive</span>
     </dd>
   </div>
   <div class="skill-row">
     <dt>汽车电子</dt>
     <dd>
-      <span class="skill-tag">ADAS 状态机</span>
-      <span class="skill-tag">规控算法集成</span>
+      <span class="skill-tag">MCU</span>
+      <span class="skill-tag">SOC</span>
+      <span class="skill-tag">ADAS</span>
       <span class="skill-tag">CANoe</span>
-      <span class="skill-tag">CAPL</span>
       <span class="skill-tag">XCP / CAN / ETH</span>
       <span class="skill-tag">CCS</span>
       <span class="skill-tag">Tasking</span>
@@ -214,8 +228,6 @@ async function copyEmail() {
     </dd>
   </div>
 </dl>
-
-<p class="skill-note">Python 是主力，C / C++ 用在 MCU 与嵌入式；浅色标签 = 看得懂，写得少。</p>
 
 ## 玩AI
 
@@ -249,15 +261,19 @@ async function copyEmail() {
 <div class="about-colophon">
   <section class="col-block">
     <p class="col-label">教育</p>
-    <p class="col-line">湖南工业大学 · 电子科学与技术 · 工学学士</p>
-    <p class="col-meta">2015.09 — 2019.07 · 英语 CET-6 / 日语 JLPT-N2</p>
+    <dl class="col-facts">
+      <div><dt>学校</dt><dd>湖南工业大学</dd></div>
+      <div><dt>专业</dt><dd>电子科学与技术 · 工学学士</dd></div>
+      <div><dt>时间</dt><dd>2015.09 — 2019.07</dd></div>
+      <div><dt>语言</dt><dd>英语 CET-6 / 日语 JLPT-N2</dd></div>
+    </dl>
   </section>
   <section class="col-block">
     <p class="col-label">联系</p>
-    <p class="col-line">
-      邮箱：<button type="button" class="about-copy" @click="copyEmail">{{ email }}</button><span class="about-copy-hint" :class="{ 'is-on': hint }" role="status" aria-live="polite">{{ hint }}</span>
-    </p>
-    <p class="col-line">GitHub：<a href="https://github.com/fluxixix">fluxixix</a></p>
+    <dl class="col-facts">
+      <div><dt>邮箱</dt><dd><button type="button" class="about-copy" @click="copyEmail">{{ email }}</button><span class="about-copy-hint" :class="{ 'is-on': hint }" role="status" aria-live="polite">{{ hint }}</span></dd></div>
+      <div><dt>GitHub</dt><dd><a href="https://github.com/fluxixix">fluxixix</a></dd></div>
+    </dl>
   </section>
 </div>
 

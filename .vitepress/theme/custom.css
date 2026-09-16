@@ -3238,20 +3238,6 @@ html.fx-reveal-ready .projects .vp-doc h2.fx-in {
   color: var(--vp-c-text-2);
 }
 
-.skill-tag.is-soft {
-  padding-left: 0;
-  padding-right: 0;
-  border-color: transparent;
-  color: var(--vp-c-text-3);
-}
-
-.skill-note {
-  margin: 0.9rem 0 0;
-  font-size: var(--fx-text-sm);
-  line-height: 1.7;
-  color: var(--vp-c-text-3);
-}
-
 /* ---- 玩 AI：两列小卡 ----
    名字走衬线标题，评价跟在下面；卡片只留一圈发丝边和半档底色，颜色不参与——
    这一节的主角是名字和那句评价 */
@@ -3292,10 +3278,10 @@ html.fx-reveal-ready .projects .vp-doc h2.fx-in {
 }
 
 /* ---- 页尾版权页：教育与联系双栏 ----
-   章节标题（教育与联系）已经有发丝线起头，这里再收一条细线做版权页框；
-   两个区块的标签用 sans 小眉题，正文 15px，元信息等宽。
-   宽屏不做等宽分栏：教育列让最长的 mono 学历行一行铺完（max-content），
-   联系行都短，吃剩余宽度；两栏之间留更宽的气口。 */
+   章节标题（教育与联系）已经有发丝线起头，这里再收一条细线做版权页框。
+   每栏是「栏目眉题 + 键值表」：眉题等宽小字带一串字距，下面自己收一条细线；
+   栏内字段名与值分两列，值全部从同一条左边缘起 —— 这块存在的意义就是这个对齐。
+   选择器都带 .col-block 前缀：VP 的 .vp-doc p / dl 是 (0,1,1)，单类比不过它 */
 
 .about-colophon {
   margin-top: var(--fx-space-5);
@@ -3307,31 +3293,48 @@ html.fx-reveal-ready .projects .vp-doc h2.fx-in {
 
 @media (min-width: 48rem) {
   .about-colophon {
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4rem;
   }
 }
 
-.col-label {
-  margin: 0 0 0.55rem;
-  font-size: var(--fx-text-sm);
-  font-weight: 600;
-  color: var(--vp-c-text-3);
-}
-
-.col-line {
-  margin: 0.35rem 0;
-  font-size: var(--fx-text-base);
-  line-height: 1.8;
-}
-
-.col-meta {
-  margin: 0.5rem 0 0;
+.col-block .col-label {
+  margin: 0 0 0.7rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
   font-family: var(--vp-font-family-mono);
   font-size: var(--fx-text-sm);
-  line-height: 1.7;
+  font-weight: 600;
+  letter-spacing: 0.16em;
   color: var(--vp-c-text-3);
-  font-variant-numeric: tabular-nums;
+}
+
+.col-block .col-facts {
+  margin: 0;
+  font-size: var(--fx-text-base);
+  line-height: 1.7;
+}
+
+/* 一行一组「字段名 + 值」；列宽写死，每个小网格才落在同一条竖线上 */
+.col-facts > div {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.col-facts > div + div {
+  margin-top: 0.3rem;
+}
+
+.col-facts dt {
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-3);
+}
+
+.col-facts dd {
+  margin: 0;
+  color: var(--vp-c-text-1);
 }
 
 /* ---- 窄屏：标签表堆叠 ----
