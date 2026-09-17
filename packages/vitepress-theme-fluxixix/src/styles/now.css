@@ -1,0 +1,500 @@
+/* --------------------------------------------------------------------------
+   11. Now 页（/now 索引页与 /now/YYYY-MM 当月页）
+   -------------------------------------------------------------------------- */
+
+/* ---- 当月页页头：结构来自 theme/now/NowHeader.vue ---- */
+
+.now-head {
+  margin-bottom: var(--fx-space-5);
+}
+
+.now-head-num {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.now-head-year {
+  font-family: var(--fx-font-serif);
+  font-size: 3.625rem;
+  font-weight: 700;
+}
+
+/* 月份跟着年份走，比年份小两档，靠基线对齐而不是猜偏移 */
+.now-head-month {
+  font-size: var(--fx-text-xl);
+  font-weight: 700;
+  color: var(--vp-c-text-2);
+}
+
+.now-head-tag {
+  margin: 0.75rem 0 0;
+  font-size: 0.65625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  /* 用 text-2 而不是更淡的 text-3：10.5px 不是大字号，text-3 只有 3.1:1，
+     达不到 AA 的 4.5:1（第 1 节的注释里也按这条线取过值） */
+  color: var(--vp-c-text-2);
+}
+
+/* 通栏实线压住页头，用正文色而不是分隔线色，才有"压住"的分量 */
+.now-head-rule {
+  margin-top: 0.75rem;
+  border-top: 2px solid var(--vp-c-text-1);
+}
+
+/* 每月一句话：左侧粗竖线 + 比正文略大的字号 */
+.now-head-line {
+  margin: 1.25rem 0 0;
+  padding-left: 0.875rem;
+  border-left: 3px solid var(--vp-c-brand-1);
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+/* ---- 当月页正文：两列网格，h2 做左栏标签 ----
+
+   VitePress 2 把整篇 Markdown 编译成 .vp-doc 里的单个 div（已核对产物：
+   <div class="vp-doc _now_2026-09"><div><h2>…），所以网格要挂在这个内层 div 上。
+   挂 .vp-doc 自己会让整篇正文被当成一个网格项挤进第二列，左边空出一条死列。
+
+   网格按行自动放置，所以每个 h2 会和它下面第一个内容块落在同一行，
+   左栏标签后方的空列不做填充。写作仍然是最普通的 Markdown。 */
+
+.now-month .vp-doc > div {
+  /* 标签与内容首行共用的纵向偏移：两处必须相等，否则左栏标签会与内容错开 */
+  --now-row-pad: 0.9rem;
+  display: grid;
+  grid-template-columns: 5.75rem minmax(0, 1fr);
+  column-gap: var(--fx-space-5);
+  row-gap: var(--fx-space-5);
+  align-items: start;
+}
+
+/* 覆盖 .vp-doc h2 自带的边框、大间距和那条渐变分隔线 */
+.now-month .vp-doc > div > h2 {
+  grid-column: 1;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  /* 同 .now-head-tag：13px 的小字不用 text-3，那个对比度不够 AA */
+  color: var(--vp-c-text-2);
+}
+
+.now-month .vp-doc > div > h2::before {
+  content: none;
+}
+
+.now-month .vp-doc > div > :not(h2) {
+  grid-column: 2;
+}
+
+.now-month .vp-doc > div > ul {
+  margin: 0;
+}
+
+/* 板块之间的点线：只压在内容列，不横穿左栏标签 */
+.now-month .vp-doc > div > h2 + * {
+  border-top: 1px dotted var(--vp-c-divider);
+  padding-top: var(--now-row-pad);
+}
+
+/* 第一节上面是页头那条实线，不再重复画线 */
+.now-month .vp-doc > div > h2:first-child + * {
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* 标签跟着首行的内边距走，两者视觉对齐。
+
+   这里用 margin 而不是 padding：第 5 节把锚点 # 定位在 h2 的 top: 1.75rem，
+   那是按 h2 自带 padding-top 算的。标签的上下内外边距清零后锚点会掉到标签下方，
+   改用 margin 推开标签、锚点就能用 top: 0 归位（见下一条）。 */
+.now-month .vp-doc > div > h2:not(:first-child) {
+  margin-top: var(--now-row-pad);
+}
+
+/* 锚点跟标签的首行对齐（覆盖第 5 节按 padding-top 算的 1.75rem） */
+.now-month .vp-doc > div > h2 .header-anchor {
+  top: 0;
+}
+
+/* 嵌套层级用左侧细线表达，不靠字号 */
+.now-month .vp-doc > div ul ul {
+  margin: 0.5rem 0 0;
+  padding-left: 0.875rem;
+  border-left: 2px solid var(--vp-c-divider);
+  list-style: none;
+}
+
+/* ---- 引言：一言，点击换一句 ----
+
+   用 button 而不是 p：这行有「换一句」的动作语义，键盘 Enter/Space 也能触发。
+   左侧 3px 竖线沿用当月页「每月一句话」的同款语言；文字用品牌渐变（紫→青，
+   两端都压暗过，对比度达标）；hover / 聚焦时文字下方划一条品牌色底线，
+   作为「可点击换一句」的提示 */
+.now-lead {
+  display: block;
+  width: 100%;
+  margin: var(--fx-space-4) 0 0; /* 离 Now 标题远一点 */
+  padding: 0 0 0 var(--fx-space-3);
+  border: 0;
+  border-left: 3px solid var(--vp-c-brand-1);
+  background: none;
+  cursor: var(--fx-cursor-pointer);
+  font-family: inherit;
+  font-size: var(--fx-text-xl);
+  font-weight: 500;
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* 品牌渐变文字：两端用压暗后的紫和青，呼应全站品牌渐变但保证可读 */
+.now-lead .now-lead-text {
+  background: linear-gradient(90deg, var(--vp-c-brand-1), var(--vp-c-tip-1));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* 打字机光标：只在逐字打出时出现，跟着文字末尾走 */
+.now-lead .now-lead-text.is-typing::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 0.125rem;
+  vertical-align: -0.12em;
+  background: var(--vp-c-brand-1);
+  animation: now-caret-blink 0.9s steps(1) infinite;
+}
+
+@keyframes now-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* hover / 聚焦时文字下方划一条品牌色底线，作为「可点击换一句」的提示。
+   text-decoration-color 独立于 color，不会受渐变文字 color: transparent 影响 */
+.now-lead:hover .now-lead-text,
+.now-lead:focus-visible .now-lead-text {
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-brand-1);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3em;
+}
+
+/* 出处：换行挂在句子下方，等打字机打完才出现（模板里用 !typing 控制），
+   没有出处的条目这一行直接不渲染。字号和颜色都比句子低一档，
+   品牌渐变只作用在 .now-lead-text 上，这里用普通文字色 */
+.now-lead .now-lead-from {
+  display: block;
+  margin-top: var(--fx-space-1);
+  color: var(--vp-c-text-3);
+  font-size: var(--fx-text-sm);
+  font-weight: 400;
+  line-height: 1.4;
+  animation: now-from-in var(--fx-dur-slow) var(--fx-ease) both;
+}
+
+@keyframes now-from-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.2em);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-lead .now-lead-from {
+    animation: none;
+  }
+}
+
+/* ---- 索引页：当期板块预览 ----
+   数据来自 now.data.ts 对每期原文的解析：四个板块、每块前两条，
+   让索引页打开就有当期内容，不必再点进月份页才知道这一期写了什么 */
+
+.now-preview {
+  /* 线上方 1.5rem，和线和内容之间那 1.25rem 是一档；原来上面 3.5rem，
+     hitokoto 到这条线就空出一大截 */
+  margin: var(--fx-space-5) 0 4rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.now-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fx-space-4);
+  margin-bottom: 1.75rem;
+}
+
+/* 这个 h2 在视觉上是「眉题」而不是章节：压掉继承自 .vp-doc h2 的字号字重，
+   以及第 5 节那条 h2 上方的发丝线。选择器必须带 pageClass 前缀，
+   否则类选择器(0,1,0)压不过 .vp-doc h2(0,1,1) */
+.now-index .vp-doc .now-preview-title {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* 眉题：中文用黑体，不做字符间距（CJK 加 tracking 会字字散开） */
+  font-family: var(--vp-font-family-base);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.now-index .vp-doc .now-preview-date {
+  margin-left: 0.5em;
+  font-family: var(--vp-font-family-mono);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--vp-c-text-3);
+}
+
+.now-index .vp-doc .now-preview-title::before {
+  display: none;
+}
+
+.now-index .vp-doc a.now-preview-more,
+.now-index .vp-doc a.now-preview-more:hover {
+  flex: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  font-weight: 400;
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: color var(--fx-dur-base);
+}
+
+.now-index .vp-doc a.now-preview-more:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.now-index .vp-doc .now-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem 2.5rem;
+}
+
+@media (min-width: 48rem) {
+  .now-index .vp-doc .now-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.now-index .vp-doc h3.now-preview-label {
+  margin: 0 0 0.6rem;
+  font-size: var(--fx-text-md);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.now-index .vp-doc ul.now-preview-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 缩进要同时容下标记和它后面的一个空格：破折号自己就占约 1em（等于 1rem），
+   以前 padding-left 正好 1rem，标记和文字之间只剩 1px，看着像没空格；
+   以《 这类全角标点开头的条目自带左侧空隙，反而像有——同一列表里就忽有忽无。
+   补到 1.3rem，破折号后稳定留出约一个空格的宽度 */
+.now-index .vp-doc ul.now-preview-items li {
+  position: relative;
+  padding-left: 1.3rem;
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+.now-index .vp-doc ul.now-preview-items li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--vp-c-text-3);
+}
+
+/* ---- 索引页：年份分组 + 目次式月份行 ---- */
+
+/* 这里必须带上 .vp-doc：pageClass 是挂在 .Layout 根元素上的（VitePress 2 的行为），
+   裸 .now-index 会连整页根节点一起命中，给 /now 全页多加一份外边距。
+   下面的 `.now-index X` 是后代选择器，不受影响。 */
+.vp-doc .now-index {
+  margin-top: var(--fx-space-5);
+}
+
+.now-index .now-year + .now-year {
+  margin-top: 2.25rem;
+}
+
+/* 年份标题：覆盖 .vp-doc h2 自带的上边框、渐变分隔线与大间距 */
+.now-index .now-year-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 0.25rem;
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-text-1);
+  padding: 0 0 0.5rem;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+
+.now-index .now-year-head::before {
+  content: none;
+}
+
+.now-index .now-year-count {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  /* 小字用 text-2：text-3 只有 3.1:1，达不到 AA */
+  color: var(--vp-c-text-2);
+}
+
+.now-index .now-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* .vp-doc li + li 会给第二条起加 0.5rem 上边距，那会让分隔线偏贴下面一行；
+   清零后上下各 0.875rem，线才落在两行正中（与第 6 节 .post-item 的处理一致） */
+.now-index .now-item {
+  margin: 0;
+  /* hover / 键盘聚焦时整行右移，让位给左侧那条品牌色竖线 */
+  position: relative;
+  padding-left: 0;
+  transition: padding-left var(--fx-dur-base) var(--fx-ease);
+}
+
+.now-index .now-item + .now-item {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* 选中某一期时行首亮起一条品牌色竖线——和当月页「每月一句话」左侧那条
+   3px 竖线是同一套语言，不是新造一种高亮。:focus-within 让键盘 Tab 到
+   这一期时也有和鼠标一样的反馈（颜色对辅助技术无效，位置变化则通用） */
+.now-index .now-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.875rem;
+  bottom: 0.875rem;
+  width: 3px;
+  background: var(--vp-c-brand-1);
+  transform: scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.now-index .now-item:hover,
+.now-index .now-item:focus-within {
+  padding-left: var(--fx-space-3);
+}
+
+.now-index .now-item:hover::before,
+.now-index .now-item:focus-within::before {
+  transform: scaleY(1);
+}
+
+.now-index .now-entry {
+  display: grid;
+  grid-template-columns: 4.625rem minmax(0, 1fr) auto;
+  gap: 0 1.25rem;
+  align-items: baseline;
+  padding: 0.875rem 0;
+  /* .vp-doc a 默认带下划线和 500 字重，整条行已经是可点区域，不需要它们 */
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.now-index .now-num {
+  font-size: 1.8125rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  /* 29px 粗体算大字号，text-3 的 3.1:1 满足 AA 对大字的 3:1 */
+  color: var(--vp-c-text-3);
+  transition: color var(--fx-dur-base) var(--fx-ease);
+}
+
+.now-index .now-entry:hover .now-num,
+.now-index .now-entry.is-current .now-num {
+  color: var(--vp-c-brand-1);
+}
+
+.now-index .now-line {
+  font-size: var(--fx-text-md);
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+.now-index .now-current {
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-brand-1);
+}
+
+/* 空态提示。加 .now-index 前缀限定作用域，避免和别的页面里的同名 class 撞上 */
+.now-index .now-empty {
+  color: var(--vp-c-text-2);
+}
+
+/* 窄屏：退成单列，标签变成内容上方的小字。
+   断点用 rem 跟着用户根字号走，与文件里其它断点一致 */
+@media (max-width: 48rem) {
+  .now-month .vp-doc > div {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0;
+  }
+
+  .now-month .vp-doc > div > h2,
+  .now-month .vp-doc > div > :not(h2) {
+    grid-column: 1;
+  }
+
+  /* 单列下标签紧挨着下一条点线，会读成「标签的下划线」而不是分隔线，
+     所以给标签留出下边距把它推离那条线 */
+  .now-month .vp-doc > div > h2 {
+    margin-bottom: var(--fx-space-3);
+  }
+
+  .now-month .vp-doc > div > h2:not(:first-child) {
+    margin-top: var(--fx-space-5);
+  }
+}
+
+/* 关掉本次的位移动画：竖线直接亮、行不再缓动位移。
+   状态反馈（竖线 + 右移 + 月份变色）都保留，只去掉运动过程 */
+@media (prefers-reduced-motion: reduce) {
+  .now-index .now-item,
+  .now-index .now-item::before {
+    transition: none;
+  }
+}
+

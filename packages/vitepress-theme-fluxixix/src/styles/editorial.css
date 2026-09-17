@@ -1,0 +1,420 @@
+/* --------------------------------------------------------------------------
+   13. 页头、经历篇章与邮箱复制按钮
+   -------------------------------------------------------------------------- */
+
+/* ---- 页头：结构来自 theme/head/PageMasthead.vue ----
+   与 Now 页页头（第 11 节）同一套语言：大标题 → 等宽小标签 → 渐变细线 → 等宽元信息。
+   关于页与项目页共用同一个组件，差别只在 frontmatter 里的文案。
+   进场是一次性的四步：名字 → 标签 → 细线 → 元信息，一步比一步晚一点点 */
+
+.masthead {
+  margin-bottom: var(--fx-space-5);
+}
+
+.masthead-name {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(2rem, 4.6vw, 2.75rem);
+  /* 宋体只引了 700；中文衬线不宜负字距，微松一点更有刊名感 */
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.02em;
+  animation: masthead-rise 0.6s var(--fx-ease) both;
+}
+
+.masthead-tag {
+  margin: 0.5rem 0 0;
+  font-size: 0.65625rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  /* 同 .now-head-tag：10.5px 不是大字号，text-3 只有 3.1:1，达不到 AA 的 4.5:1 */
+  color: var(--vp-c-text-2);
+  animation: masthead-rise 0.6s var(--fx-ease) 0.08s both;
+}
+
+/* 品牌渐变细线：全站的渐变信号在这两页各只出现一次，进场方式是「从左画到右」 */
+.masthead-rule {
+  width: 4rem;
+  height: 2px;
+  margin-top: 0.6rem;
+  border-radius: 1px;
+  transform-origin: left center;
+  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+  animation: masthead-draw 0.5s var(--fx-ease) 0.16s both;
+}
+
+.masthead-meta {
+  margin: 0.6rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  /* 同 .entry-meta：13px 的小字用 text-2 才够 AA 的 4.5:1 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  animation: masthead-rise 0.6s var(--fx-ease) 0.24s both;
+}
+
+@keyframes masthead-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes masthead-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* 减少动效：页头直接到位，四步入场全部取消 */
+@media (prefers-reduced-motion: reduce) {
+  .masthead-name,
+  .masthead-tag,
+  .masthead-rule,
+  .masthead-meta {
+    animation: none;
+  }
+}
+
+/* ---- 经历：两张卡片，阶段摘要在外、详情收在卡里 ----
+   卡片外壳复用作品页那套（.work-poster 给边框、圆角、底部渐隐与展开键），这里只管
+   里面的版式：卡头两栏（机构名在左、时间在右），01–03 的阶段摘要行当骨架，
+   点展开才把每段的正文、技术栈和五款工具摊开。
+   选择器一律挂 .career-card 作用域：VP 默认的 .vp-doc p/h3/h4/ul 是 (0,1,1)，
+   第 12 节的 .about .vp-doc h3 更高到 (0,2,1)，单类选择器抢不过 */
+
+/* 高度得压过 .work-poster 上那份默认值（33rem）：两条同特异性，而它在后面，
+   所以这里把选择器写成两个类。
+   底部留白是照展开键的落位算的：键用绝对定位钉在卡底（bottom 1.25rem），
+   自身约 1.65rem 高，所以它的顶边线恒定在距卡底 2.9rem 处；内容得停在这条线
+   上面 0.5rem，于是 2.9rem + 0.5rem = 3.4rem。少给一分，线就划过最后一行字 */
+.work-poster.career-card {
+  /* 收起态的高度。展开键的顶边线恒定在距卡底 2.9rem 处，所以卡有多高就决定了
+     这条线离第三行阶段多远：19rem 会空出 17.4px，和展开后那条分隔线的 8px 对不上；
+     18.4rem 收口到 7.8px，两边看着才是同一条线 */
+  --fx-poster-h: 18.4rem;
+  margin-top: var(--fx-space-5);
+  padding-bottom: 3.4rem;
+}
+
+/* 上面那份底距要精确，就不能让最后一个元素的下外边距再插一脚 */
+.career-card .poster-more > div :last-child {
+  margin-bottom: 0;
+}
+
+/* 第二张（爬虫那段）内容短，卡面跟着矮一档，省得留一大片空 */
+.work-poster.career-card + .career-card {
+  --fx-poster-h: 11rem;
+  margin-top: 1.25rem;
+}
+
+/* 经历卡不用那层渐隐：收起时三行阶段全在卡里（内容没被裁），
+   留着它反而把第三行罩成半透明。渐隐是给「下面还有」的卡交代用的 */
+.career-card::after {
+  display: none;
+}
+
+.career-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.5rem;
+  align-items: end;
+}
+
+.career-card .career-when {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.5;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.career-card .career-where {
+  margin-left: 0.6rem;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--vp-c-divider);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+}
+
+/* (0,3,0) 才能盖过第 12 节的 .about .vp-doc h3 */
+.career-card .career-head .career-org {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  /* 宋体只引了 700 一档 */
+  font-weight: 700;
+  font-size: clamp(1.375rem, 2.4vw, 1.625rem);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.career-card .career-role {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 0.35rem 0 0;
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.career-card .career-lead {
+  margin: 0.8rem 0 0;
+  font-size: var(--fx-text-base);
+  line-height: 1.8;
+  color: var(--vp-c-text-2);
+}
+
+/* 阶段摘要：一行一段，编号在左、年份靠右 */
+.career-phases {
+  margin-top: 0.85rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.career-card .phase-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.career-card .phase-row + .phase-row {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.career-card .phase-row .phase-no {
+  flex: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.career-card .phase-row .phase-name {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+
+.career-card .phase-row .phase-year {
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 展开后的详情与上面的摘要行之间拉一条线：两边都有阶段标题，
+   不隔开的话第一段详情会被误读成摘要的第四行。
+   线的上下各留 0.5rem，和摘要行之间那两条同款发丝线（.phase-row + .phase-row）
+   是同一把尺子：上方那 0.5rem 由 03 行自己的行内边距出，下方由这里的行内边距出 */
+.career-card.is-open .poster-more > div {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+/* 展开后的详情：编号已经在摘要行里出现过，这里只留标题、技术栈与正文 */
+.career-card .career-phase {
+  margin-top: 1.75rem;
+}
+
+/* 分隔线下面那一条的 1.75rem 会顶到线上，第一条要归零 */
+.career-card.is-open .poster-more > div > .career-phase:first-child {
+  margin-top: 0;
+}
+
+.career-card .phase-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--vp-c-text-1);
+}
+
+/* 技术栈在左、年份在右（.phase-year 自己靠右） */
+.career-card .phase-meta {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1rem;
+  align-items: baseline;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.career-card .phase-meta .phase-year {
+  margin-left: auto;
+  color: var(--vp-c-text-3);
+}
+
+.career-card .phase-body {
+  margin-top: 0.5rem;
+}
+
+.career-card .career-list {
+  margin-top: 0.5rem;
+}
+
+/* 五款工具：名在上、注在下，发丝线分行 */
+.career-card .career-tools {
+  margin: 1rem 0;
+  border-top: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.career-card .tool-row {
+  padding: 1rem 0;
+}
+
+.career-card .tool-row + .tool-row {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.career-card .tool-name,
+.career-card .tool-desc {
+  margin: 0;
+}
+
+.career-card .tool-name {
+  font-size: var(--fx-text-base);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.career-card .tool-desc {
+  margin-top: 0.15rem;
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  color: var(--vp-c-text-2);
+}
+
+/* 窄屏：卡头收成单列，时间回到机构名上方 */
+@media (max-width: 40rem) {
+  .career-card .career-head {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.2rem;
+  }
+
+  .career-card .career-when {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .career-card .career-head .career-org {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .career-card .career-role {
+    grid-row: 3;
+  }
+}
+
+/* ---- 条目悬停微交互 ----
+   只作用于「**标签** ——描述」这种行（作品页的技术栈表就是这个形状）。反馈语言与
+   文章列表、归档页一致：整行轻微右移、底色变浅，加上圆环标记被填满（见第 12 节） */
+
+.about .vp-doc li:has(> strong:first-child),
+.works .vp-doc li:has(> strong:first-child) {
+  /* 背景块往左溢出一点、文字位置不动：负外边距与左内边距相抵。
+     左内边距里还要再让出标记那一列（标记自己绝对定位在 left: 0），
+     圆环才会和其它列表落在同一列 */
+  margin-left: calc(-1 * var(--fx-space-3));
+  padding: var(--fx-space-1) var(--fx-space-3) var(--fx-space-1)
+    calc(var(--fx-mark-gap) + var(--fx-space-3));
+  border-radius: 6px;
+  /* 标签留正文色、描述压到次级：不加装饰，只靠明度分主次 */
+  color: var(--vp-c-text-2);
+  transition:
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.about .vp-doc li:has(> strong:first-child) > strong,
+.works .vp-doc li:has(> strong:first-child) > strong {
+  color: var(--vp-c-text-1);
+}
+
+/* 这类行比别的行多了一层内边距，标记要跟着挪：横向挪回被负外边距带走的距离，
+   纵向加上这层的上内边距——否则圆环会浮在文字上半行 */
+.about .vp-doc li:has(> strong:first-child)::before,
+.works .vp-doc li:has(> strong:first-child)::before {
+  left: var(--fx-space-3);
+  top: calc(var(--fx-space-1) + 0.875em - var(--fx-mark-size) / 2);
+  top: calc(var(--fx-space-1) + 0.5lh - var(--fx-mark-size) / 2);
+}
+
+.about .vp-doc li:has(> strong:first-child):hover,
+.works .vp-doc li:has(> strong:first-child):hover {
+  background-color: var(--vp-c-bg-soft);
+  transform: translateX(3px);
+}
+
+/* ---- 邮箱复制按钮（结构来自 pages/about.md 的 script setup） ---- */
+
+.about .about-copy {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: inherit;
+  color: var(--vp-c-text-1);
+  transition: color var(--fx-dur-base);
+}
+
+.about .about-copy:hover {
+  color: var(--vp-c-brand-1);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+/* 不删 outline，只限定在键盘交互上 */
+.about .about-copy:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* 提示默认不占位（空串也有宽度，会把地址往左推），有内容时才让出间距 */
+.about .about-copy-hint {
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-brand-1);
+}
+
+.about .about-copy-hint.is-on {
+  margin-left: var(--fx-space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc ul > li::before,
+  .works .vp-doc ul > li::before,
+  .about .vp-doc li:has(> strong:first-child),
+  .works .vp-doc li:has(> strong:first-child),
+  .about .about-copy {
+    transition: none;
+  }
+
+  .about .vp-doc li:has(> strong:first-child):hover,
+  .works .vp-doc li:has(> strong:first-child):hover {
+    transform: none;
+  }
+}
+

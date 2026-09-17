@@ -1,0 +1,53 @@
+/* --------------------------------------------------------------------------
+   9. 入场与滚动揭示
+   -------------------------------------------------------------------------- */
+
+@keyframes fx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* fx-rise：首屏刊头陈述用的一次性上浮（见第 3 节 .home-cover-statement） */
+
+/* 滚动揭示：列表与卡片进入视口时分批淡入。
+   初始的隐藏态挂在 html.fx-reveal-ready 上，由脚本决定何时打开——
+   脚本没跑（禁用 JS / 太老的浏览器）时页面就是普通的静态内容。
+   过渡只写在 .fx-in 上，所以隐藏这一步是瞬时的，不会先闪一下再淡出 */
+html.fx-reveal-ready .vp-doc .post-list .post-item,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
+  opacity: 0;
+  transform: translateY(0.75rem);
+}
+
+html.fx-reveal-ready .vp-doc .post-list .post-item.fx-in,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item.fx-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms),
+    transform var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms);
+}
+
+/* 键盘 Tab 到还没揭示的条目时立刻放出来。
+   少了这条，用键盘的人会聚焦到一个看不见的链接上 */
+html.fx-reveal-ready .vp-doc .post-list .post-item:focus-within,
+html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item:focus-within {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.fx-reveal-ready .vp-doc .post-list .post-item,
+  html.fx-reveal-ready .archive-timeline .timeline-year .timeline-item {
+    opacity: 1;
+    transform: none;
+  }
+}
+

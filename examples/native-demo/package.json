@@ -1,0 +1,1 @@
+{"type":"module","private":true,"scripts":{"build":"vitepress build"},"name":"native-demo"}

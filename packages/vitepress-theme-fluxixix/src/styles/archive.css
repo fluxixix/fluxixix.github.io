@@ -1,0 +1,188 @@
+/* --------------------------------------------------------------------------
+   7. 归档页时间轴
+   -------------------------------------------------------------------------- */
+.archive-timeline {
+  /* 内容相对轨道缩进，圆点的负偏移也由它推导 */
+  --indent: 1.75rem;
+  position: relative;
+  margin-top: var(--fx-space-5);
+}
+
+/* 贯穿整条的轨道，两端渐隐，避免生硬的起止 */
+.archive-timeline::before {
+  content: '';
+  position: absolute;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  left: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--vp-c-divider) 1.5rem,
+    var(--vp-c-divider) calc(100% - 1.5rem),
+    transparent
+  );
+}
+
+.archive-timeline .timeline-year + .timeline-year {
+  margin-top: 2.25rem;
+}
+
+.archive-timeline .timeline-year-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: var(--indent);
+  margin-bottom: 0.4rem;
+}
+
+/* 年份节点做成实心圆环，压住轨道形成分段感 */
+.archive-timeline .timeline-year-head::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  /* 12px 圆环，圆心对准轨道（轨道中心距容器左边 1px） */
+  left: calc(-1 * var(--indent) - 5px);
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--vp-c-brand-1);
+  border-radius: 50%;
+  background-color: var(--vp-c-bg);
+  box-sizing: border-box;
+  transform: translateY(-50%);
+}
+
+/* 覆盖 .vp-doc h2 自带的上下边框、大间距和上面那条渐变分隔线 */
+.archive-timeline .timeline-year-text {
+  margin: 0;
+  border: 0;
+  padding: 0;
+  font-size: 1.15rem;
+  line-height: 2;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.archive-timeline .timeline-year-text::before {
+  content: none;
+}
+
+.archive-timeline .timeline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.archive-timeline .timeline-item {
+  position: relative;
+  margin-left: var(--indent);
+}
+
+/* 行首小圆点 */
+.archive-timeline .timeline-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  /* 8px 圆点，圆心对准轨道 */
+  left: calc(-1 * var(--indent) - 3px);
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--vp-c-divider);
+  border-radius: 50%;
+  background-color: var(--vp-c-bg);
+  box-sizing: border-box;
+  transform: translateY(-50%);
+  transition:
+    border-color var(--fx-dur-base),
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base);
+}
+
+.archive-timeline .timeline-item:hover::after {
+  border-color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-1);
+  transform: translateY(-50%) scale(1.35);
+}
+
+.archive-timeline .timeline-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.archive-timeline .timeline-entry:hover {
+  transform: translateX(3px);
+}
+
+.archive-timeline .timeline-day {
+  flex: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fx-dur-base);
+}
+
+.archive-timeline .timeline-title {
+  color: var(--vp-c-text-1);
+  transition: color var(--fx-dur-base);
+}
+
+/* 悬停时在标题后滑出一个箭头；常驻占位，避免触发时发生重排 */
+.archive-timeline .timeline-entry::after {
+  content: '→';
+  flex: none;
+  font-size: 0.85rem;
+  color: var(--vp-c-brand-1);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity var(--fx-dur-base),
+    transform var(--fx-dur-base);
+}
+
+.archive-timeline .timeline-entry:hover::after {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.archive-timeline .timeline-entry:hover .timeline-day,
+.archive-timeline .timeline-entry:hover .timeline-title {
+  color: var(--vp-c-brand-1);
+}
+
+@media (max-width: 40rem) {
+  .archive-timeline {
+    --indent: 1.25rem;
+  }
+
+  .archive-timeline .timeline-entry {
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-timeline .timeline-entry,
+  .archive-timeline .timeline-entry::after,
+  .archive-timeline .timeline-item::after,
+  .archive-timeline .timeline-day,
+  .archive-timeline .timeline-title {
+    transition: none;
+  }
+
+  .archive-timeline .timeline-entry:hover {
+    transform: none;
+  }
+
+  .archive-timeline .timeline-item:hover::after {
+    transform: translateY(-50%);
+  }
+}
+

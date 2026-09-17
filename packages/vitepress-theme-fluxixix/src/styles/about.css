@@ -1,0 +1,610 @@
+/* --------------------------------------------------------------------------
+   14. 作品集排版（关于页与项目页）
+
+   这两页按「编辑体」的规矩来：靠尺度差、留白和发丝线建立层级，不加卡片、不用图。
+   章节标题上方一条发丝线，随滚动画出来；正文压到中文舒服的行宽；元信息一律等宽字。
+   动效只做三件：页头四步入场（第 13 节）、章节线画出、索引行的悬停与当前态。
+
+   约定与第 9 节一致：隐藏态挂在 html.fx-reveal-ready 下，由脚本决定何时打开；
+   脚本没跑（禁用 JS、报错、减少动效）时页面就是普通的静态文档。
+   -------------------------------------------------------------------------- */
+
+/* ---- 作品版画的纸与墨 ----
+   浅色是略暖的旧纸（纸色要和白页面拉开一点，否则纸片会整个融进背景），
+   暗色是比页面底色高半档的深灰；墨色一律压淡，只让锚点那一个色相保持满饱和
+   ——整张版画的色彩策略就这一句 */
+:root {
+  --fx-plate-paper: #f5f2ec;
+  --fx-plate-ink: #b0aaa2;
+  --fx-plate-anchor: var(--fx-brand-a);
+}
+
+.dark {
+  --fx-plate-paper: #232228;
+  --fx-plate-ink: #56545d;
+}
+
+.about .vp-doc,
+.works .vp-doc {
+  /* 正文行宽：用满整列。这两页的正文列本身就有上限（VitePress 给的 688px），
+     再往里压一截，右边就会空出一大片、离目录很远。想收窄只改这一个值即可 */
+  --fx-measure: 100%;
+}
+
+/* ---- 章节：一条发丝线 ----
+   线用 background-size 画而不是 border：这样才能「从左画到右」 */
+
+.about .vp-doc h2,
+.works .vp-doc h2 {
+  /* 兜底值：脚本没跑时线是实打实画好的 */
+  --fx-rule: 100%;
+  /* 线上方的留白。锚点 # 的落点也要跟这条走（见下面 .header-anchor 规则），
+     所以留个变量，改一处就够 */
+  --fx-h2-pad: 0.9rem;
+  margin-top: 4.5rem;
+  padding-top: var(--fx-h2-pad);
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  background-image: linear-gradient(var(--vp-c-divider), var(--vp-c-divider));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: var(--fx-rule) 1px;
+  transition: background-size var(--fx-dur-slow) var(--fx-ease);
+}
+
+/* 刊头下面那第一个标题：4.5rem 是章节之间的气口，搁在页头下面就成了断档。
+   收到与 .masthead 下边距同一档，页头才像是带着第一个章节走 */
+.about .vp-doc > div > h2:first-child {
+  margin-top: var(--fx-space-5);
+}
+
+/* VitePress 把 h2 的 # 钉在 top: 1.5rem —— 那是它自己给 h2 的上内边距。这里的
+   留白更薄，锚点不跟着挪就会落到标题文字下面 */
+.about .vp-doc h2 .header-anchor,
+.works .vp-doc h2 .header-anchor {
+  top: var(--fx-h2-pad);
+}
+
+/* ---- 标题尺度 ----
+   关于页的 h3 是机构名；作品页里只有「后面跟着一行元信息」的 h3 才是作品名
+   （技术栈那节的 h3 是分组名，不吃作品的尺度） */
+
+.about .vp-doc h3,
+.works .vp-doc h3 {
+  margin-top: 3rem;
+  font-size: 1.3125rem;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* 作品名：改成衬线大字，与关于页的机构名同一尺度、同一语言；行首挂一枚 mono
+   编号，和页首那条作品索引一一对应——滚到正文里也能认出「这是第几个」。
+   编号交给 CSS 计数器，增删作品不用回来改数字。
+   留白也放到 4rem：一整页九个作品，靠间距分组，不靠分隔线 */
+.works .vp-doc h3:has(+ .entry-meta) {
+  margin-top: 4rem;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(1.5rem, 2.6vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  counter-increment: fx-work;
+}
+
+.works .vp-doc h3:has(+ .entry-meta)::before {
+  content: counter(fx-work, decimal-leading-zero);
+  margin-right: 0.7rem;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-brand-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 作品页的两套计数器：章节编号（h2 右侧）与作品编号（h3 行首）。
+   两个计数器都在这里起头，全页连续 —— 不与分组绑定 */
+.works .vp-doc {
+  counter-reset: fx-section fx-work;
+}
+
+/* 章节标题右侧的编号：与关于页同一套做法，那份只作用于 .about，这里补上。
+   h2 变 flex 只影响内部排版，发丝线在背景上、锚点绝对定位，都不参与 */
+.works .vp-doc h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  counter-increment: fx-section;
+}
+
+.works .vp-doc h2::after {
+  content: counter(fx-section, decimal-leading-zero);
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- 作品版画 ----
+   每件作品配一张竖版纸片（3:5）：内联 SVG 画的极简图形，大面积留白，整幅
+   只放一个高饱和色锚点，脚边一行等宽微文字。它浮在条目右上角、正文绕排——
+   图与文并排是编辑体的老办法，用不着再加卡片。
+   纸色与墨色都吃变量，明暗各一套；锚点色只换色相，饱和度不动 */
+.work-plate {
+  float: right;
+  width: 6.75rem;
+  margin: 0.4rem 0 1rem 1.75rem;
+  --fx-plate-anchor: var(--fx-brand-a);
+}
+
+.work-plate.is-cyan {
+  --fx-plate-anchor: var(--fx-brand-b);
+}
+
+.work-plate svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.plate-paper {
+  fill: var(--fx-plate-paper);
+  stroke: var(--vp-c-divider);
+  stroke-width: 1;
+}
+
+.plate-dot {
+  fill: var(--fx-plate-ink);
+}
+
+.plate-wire,
+.plate-trace {
+  fill: none;
+  stroke: var(--fx-plate-ink);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+/* 虚线那根代表推算/回放出来的轨迹，与实测的实线区分开 */
+.plate-trace {
+  stroke-dasharray: 3 2;
+}
+
+.plate-anchor {
+  fill: var(--fx-plate-anchor);
+}
+
+/* 网格、层叠、积木、框架这几个母题用描边方框搭骨架，
+   色锚点则是一块实心方块——都只有一档色相，与圆点母题同一套规矩 */
+.plate-box {
+  fill: none;
+  stroke: var(--fx-plate-ink);
+  stroke-width: 1;
+}
+
+.plate-anchor-block {
+  fill: var(--fx-plate-anchor);
+}
+
+.plate-rule {
+  stroke: var(--vp-c-divider);
+  stroke-width: 1;
+}
+
+.plate-code,
+.plate-note {
+  font-family: var(--vp-font-family-mono);
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  fill: var(--vp-c-text-3);
+}
+
+/* 窄屏正文列本来就窄，绕排会把行压成一条条细缝，改成整块居中 */
+@media (max-width: 48rem) {
+  .work-plate {
+    float: none;
+    width: 5.5rem;
+    margin: 1.25rem auto 1.5rem;
+  }
+}
+
+/* ---- 作品海报 ----
+   作品页不要右侧目录（frontmatter 里 aside: false），省下的宽度交给作品本身。
+   但列宽一放开，正文段落会长到读不动，所以文字自己收在 44rem 上，海报卡用满整列
+   ——版面上「文字有它的尺度、图版可以破格」 */
+
+.works .vp-doc.vp-doc {
+  --fx-measure: 44rem;
+}
+
+/* 目录撤掉之后，VitePress 给「没有内容侧边栏」的页面留了一道宽度：.container 是
+   62rem（90rem 视口以上 69rem）、.content 是 47rem，两条都挂在 scoped 属性上、
+   特异性 (0,4,0)，光靠 .works .VPDoc .container（(0,3,0)）压不住，这里用重复
+   类名提到 (0,5,0)。
+   66rem 是按版面反推的：container 1056 − content 两侧 4rem = 卡片 992，
+   卡片去掉内边距 936，再减版画 12rem 与栏距 2.5rem —— 右栏正好落在 44rem 的行宽上，
+   段落的右缘与卡片内边距对齐，不会多出一条参差的留白 */
+.works.works .VPDoc .container.container {
+  max-width: 66rem;
+}
+
+.works.works .VPDoc .content.content {
+  max-width: none;
+}
+
+/* ---- 作品墙 ----
+   作品不再是一条条文字，而是一面墙：两列网格，每张海报尺寸定死（宽半列、高 33rem），
+   卡面装不下的内容收在里面，点「展开」就地铺满整行摊开看。
+   没有用瀑布流：规格统一才有「墙」的感觉，参差交给卡片之间的留白；而且瀑布流按列
+   填充，九件作品的阅读顺序会乱。
+   网格直接铺在 .vp-doc 的内容容器上：默认所有直接子元素通栏，只有海报卡占一列——
+   页面现在通篇都是卡片，这两条留着，以后往网格里插别的东西也不用改 */
+
+.works .vp-doc > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 2rem;
+}
+
+.works .vp-doc > div > * {
+  grid-column: 1 / -1;
+}
+
+.works .vp-doc > div > .work-poster {
+  grid-column: auto;
+}
+
+.work-poster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* 卡面高度固定：装不下的内容由 ::after 那条渐隐交代。
+     展开时 JS 会量出目标高度写进来，所以这里得有 height 的过渡 */
+  --fx-poster-h: 33rem;
+  height: var(--fx-poster-h);
+  padding: 1.5rem 1.5rem 3.75rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 1.25rem;
+  background-color: var(--vp-c-bg-alt);
+  overflow: hidden;
+  transition: height 0.42s var(--fx-ease);
+}
+
+/* 展开态：跨满整行、高度放开，卡面裁掉的部分全都摊开。
+   选择器得压过上面那条「网格项占一列」的规则（它多一个 .vp-doc，特异性更高） */
+.works .vp-doc > div > .work-poster.is-open {
+  grid-column: 1 / -1;
+}
+
+.work-poster.is-open {
+  height: auto;
+}
+
+/* 没有展开键的卡（内容是导语就说完的），不必给底部的键留位置 */
+.work-poster:not(:has(.poster-toggle)) {
+  padding-bottom: 1.5rem;
+}
+
+/* 量高度的那一帧：所有过渡先停下，量完立刻摘掉（见 index.ts 的 setupWorkPosters） */
+.work-poster.is-measuring,
+.work-poster.is-measuring * {
+  transition: none !important;
+}
+
+/* 卡面底部：一条从透明过渡到卡面底色的渐隐。它做两件事——交代「下面还有」，
+   以及把被裁内容的尾巴盖干净：overflow 只裁到边框盒，卡面下边距那一带属于
+   padding，溢出的文字会钻进去，光靠裁剪盖不住。所以下半段是实色，
+   展开键用 z-index 压在这层之上 */
+.work-poster::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 8rem;
+  background: linear-gradient(to bottom, transparent 0, var(--vp-c-bg-alt) 45%);
+  pointer-events: none;
+  transition: opacity var(--fx-dur-base) var(--fx-ease);
+}
+
+.work-poster.is-open::after {
+  opacity: 0;
+}
+
+/* 展开键钉在卡面底部：卡片被裁时它也得看得见 */
+.poster-toggle {
+  position: absolute;
+  z-index: 1;
+  inset: auto 1.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0 0;
+  border: 0;
+  border-top: 1px solid var(--vp-c-divider);
+  background: none;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  transition: color var(--fx-dur-base) var(--fx-ease);
+}
+
+.poster-toggle:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* 加号展开时转成叉，收起再转回来 */
+.poster-toggle::after {
+  content: '+';
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.work-poster.is-open .poster-toggle::after {
+  transform: rotate(45deg);
+}
+
+/* 眉题那两条外边距一直没生效：VitePress 的 .vp-doc p 是 (0,1,1)，单类比不过它，
+   于是白顶了 16px 下来，和卡片的左内边距对不齐。按这片区的写法补 .works 前缀 */
+.works .work-poster .poster-kind {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+/* 卡面标题：编号仍是正文那份 CSS 计数器（与页首索引同号），只是排得小一号 */
+.works .vp-doc .work-poster .poster-title {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.works .vp-doc .work-poster .poster-title::before {
+  margin-right: 0.6rem;
+  font-size: 0.6875rem;
+  vertical-align: 0.75em;
+}
+
+.poster-sub {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--vp-c-text-2);
+}
+
+.works .work-poster .entry-meta {
+  margin-top: 0.75rem;
+  font-size: 0.6875rem;
+  line-height: 1.6;
+}
+
+.works .work-poster .entry-meta + .entry-meta {
+  margin-top: 0.1rem;
+}
+
+/* 卡面主体：左栏版画与数字并排，右栏留给导语 */
+.poster-body {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  align-items: start;
+}
+
+.work-poster .work-plate {
+  float: none;
+  width: 100%;
+  margin: 0;
+}
+
+.poster-metrics {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.poster-metrics > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.poster-metrics dt {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-3);
+}
+
+.poster-metrics dd {
+  margin: 0;
+  font-family: var(--fx-font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.poster-metrics dd span {
+  margin-left: 0.12em;
+  font-family: var(--vp-font-family-sans);
+  font-size: 0.5625rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+}
+
+.poster-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.poster-lead {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: var(--vp-c-text-2);
+}
+
+/* 详情：收起时零高度（grid-template-rows 0fr→1fr 那套，能真的过渡），展开才占位。
+   里面只放一个直接子元素——grid 的 1fr 行会等分容器高度，若摊成好几行（段落 + 列表 +
+   段落），每行都会被拉成一样高，短的那几行下面就白出一大片。多的内容自己包一层 */
+.poster-more {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.42s var(--fx-ease);
+}
+
+.poster-more > * {
+  overflow: hidden;
+}
+
+/* 收起时详情零高度，但子元素的 margin 不归轨道管，会白白占住一段——
+   留着的话卡面底部多出一块空白，渐隐线也跟着错位 */
+.work-poster:not(.is-open) .poster-more > *:first-child {
+  margin-top: 0;
+}
+
+.work-poster.is-open .poster-more {
+  grid-template-rows: 1fr;
+}
+
+.poster-more ul {
+  margin: 1.5rem 0 0;
+}
+
+/* 展开后版面跟着铺开：版画回到 12rem，导语也回到正文的尺度 */
+.work-poster.is-open .poster-body {
+  grid-template-columns: 12rem minmax(0, 1fr);
+  gap: 2.5rem;
+  margin-top: 2rem;
+}
+
+.work-poster.is-open .poster-lead {
+  margin-bottom: 0;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: inherit;
+}
+
+/* 窄屏：一列到底，卡面高度放开——手机上不适合再裁一刀，展开键也回到流末尾 */
+@media (max-width: 60rem) {
+  .works .vp-doc > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .work-poster,
+  .work-poster.is-open {
+    grid-column: auto;
+    height: auto;
+  }
+
+  .work-poster {
+    padding-bottom: 1.5rem;
+  }
+
+  .work-poster::after {
+    display: none;
+  }
+
+  .poster-toggle {
+    position: static;
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .work-poster {
+    padding: 1.25rem 1.25rem 1.25rem;
+  }
+
+  /* 压成一栏后版画会跟着卡片铺满整行（390px 上是 302×503），比卡片里任何
+     文字都抢。按卡片宽度的比例收回来：桌面那档是 8rem 占 480px 卡宽（27%），
+     这里用同一个比例，最小 5.5rem 兜住 320px 的小屏 */
+  .work-poster .work-plate {
+    width: clamp(5.5rem, 27%, 8rem);
+  }
+
+  .poster-body,
+  .work-poster.is-open .poster-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ---- 正文尺度 ----
+   页头下面那段是导语，比正文大一档、行距再放开一点，并且比正文短两字——用来把
+   导语和正文的块区分开。
+   注意正文外面还有一层 VitePress 编出来的 div（第 11 节记过同一件事），
+   所以取首段要用 .vp-doc > div > p */
+
+.about .vp-doc p,
+.about .vp-doc ul,
+.works .vp-doc p,
+.works .vp-doc ul {
+  max-width: var(--fx-measure);
+}
+
+.about .vp-doc > div > p:first-of-type,
+.works .vp-doc > div > p:first-of-type {
+  max-width: calc(var(--fx-measure) - 2em);
+  margin-bottom: var(--fx-space-6);
+  font-size: 1.125rem;
+  line-height: 1.9;
+}
+
+/* ---- 滚动揭示：章节标题的发丝线 ----
+   与第 9 节同一套开关。注意标题本身不做透明度/位移——它是结构（读屏、锚点、
+   页内目录都靠它），万一观察者没跑起来，标题必须还在。所以这里只让线画出来 */
+
+html.fx-reveal-ready .about .vp-doc h2,
+html.fx-reveal-ready .works .vp-doc h2 {
+  --fx-rule: 0%;
+}
+
+html.fx-reveal-ready .about .vp-doc h2.fx-in,
+html.fx-reveal-ready .works .vp-doc h2.fx-in {
+  --fx-rule: 100%;
+  transition: background-size var(--fx-dur-slow) var(--fx-ease) var(--fx-reveal-delay, 0ms);
+}
+
+@keyframes folio-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc h2,
+  .works .vp-doc h2 {
+    transition: none;
+  }
+
+  html.fx-reveal-ready .about .vp-doc h2,
+  html.fx-reveal-ready .works .vp-doc h2 {
+    --fx-rule: 100%;
+  }
+}
+

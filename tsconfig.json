@@ -1,10 +1,10 @@
 {
   // 只给编辑器用的类型配置：noEmit，不产出、不参与构建。
   //
-  // 这里刻意没有 include 整个仓库：`.vitepress/config.mts` 与 `.vitepress/rss.ts`
-  // 都用了 `node:` 内置模块，而项目没装 `@types/node`（依赖清单只留两项是刻意的），
-  // 把它们纳进来会立刻多出一批「找不到模块 node:fs/promises」的新报错。
-  // 哪天要覆盖这两个文件，先装 @types/node，再把 '.vitepress/**/*' 加进 include。
+  // 这里刻意没有 include 整个仓库：`packages/vitepress-theme-fluxixix/src/rss.ts`
+  // 用了 `node:` 内置模块，而项目没装 `@types/node`（依赖清单只留必要项是刻意的），
+  // 把它纳进来会立刻多出一批「找不到模块 node:fs/promises」的新报错。
+  // 哪天要覆盖它，先装 @types/node，再把 rss.ts 加进 include。
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -15,10 +15,19 @@
     "skipLibCheck": true
   },
   "include": [
-    // 主题：index.ts 与 cursor.ts
+    // 站点主题入口
     ".vitepress/theme/**/*.ts",
+    // 示例站的主题入口
+    "examples/**/*.ts",
+    // 主题包的客户端脚本、选项与随包发布的类型声明
+    "packages/vitepress-theme-fluxixix/src/**/*.ts",
+    "packages/vitepress-theme-fluxixix/*.d.ts",
     // 构建期数据加载器
     "pages/**/*.ts",
     "posts/**/*.ts"
-  ]
+  ],
+  // rss.ts 是唯一依赖 node: 内置模块的文件（构建期用），项目没装 @types/node，
+  // 纳入检查会稳定报两条「找不到 node:fs/promises / node:path」。构建不受影响，
+  // 所以这里显式排除，并把「本仓库类型检查干净」作为可断言的状态。
+  "exclude": ["packages/vitepress-theme-fluxixix/src/rss.ts"]
 }

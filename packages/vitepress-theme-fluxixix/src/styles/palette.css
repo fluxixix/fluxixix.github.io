@@ -1,0 +1,82 @@
+/* --------------------------------------------------------------------------
+   1b. 设计令牌（品牌与颜色）—— 换站要改的颜色只有这里
+
+   取值与 tokens.css 同为未分层的 :root，只是按「颜色 / 版式」分了两册。
+   使用方要在自己站点上换色，写在主题样式**之后**的 CSS 里即可（同特异性
+   后者胜出），不需要堆选择器特异性。
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* 品牌渐变：全站唯一的高饱和信号。hero 标题、光晕、光标拖尾、引用条
+     都取自这两端，改这两行就能整体换色 */
+  --fx-brand-a: #bd34fe;
+  --fx-brand-b: #41d1ff;
+
+  /* 由渐变两端推导出的功能色。链接和按钮要长期停留在屏幕上，
+     不能直接用 #bd34fe —— 它在白底上对比度只有 2.3:1，
+     所以按同色相压暗到下面这组（链接色 6.3:1，按钮底 5.2:1） */
+  --vp-c-brand-1: #8b2bd1;
+  --vp-c-brand-2: #a53ce4;
+  --vp-c-brand-3: #9c33d8;
+  --vp-c-brand-soft: rgba(155, 51, 216, 0.12);
+  --vp-c-brand: var(--vp-c-brand-1);
+
+  /* tip 容器改用渐变另一端的青色。品牌色变成紫之后，tip 如果继续跟着品牌走，
+     就和正文里的链接同色了，提示框也就失去了辨识度 */
+  --vp-c-tip-1: #0e7490;
+  --vp-c-tip-2: #0891b2;
+  --vp-c-tip-3: #06b6d4;
+  --vp-c-tip-soft: rgba(14, 165, 233, 0.12);
+  --vp-custom-block-tip-bg: var(--vp-c-tip-soft);
+  --vp-custom-block-tip-code-bg: var(--vp-c-tip-soft);
+
+  /* 次要按钮做成描边幽灵按钮：hero 上两块实心色块会互相抢注意力 */
+  --vp-button-alt-border: var(--vp-c-border);
+  --vp-button-alt-bg: transparent;
+  --vp-button-alt-text: var(--vp-c-text-1);
+  --vp-button-alt-hover-border: var(--vp-c-brand-1);
+  --vp-button-alt-hover-bg: var(--vp-c-brand-soft);
+  --vp-button-alt-hover-text: var(--vp-c-brand-1);
+  --vp-button-alt-active-border: var(--vp-c-brand-1);
+  --vp-button-alt-active-bg: var(--vp-c-brand-soft);
+  --vp-button-alt-active-text: var(--vp-c-brand-1);
+
+  /* 字号阶梯：1.25 倍率。正文锁在 1rem —— 中文在 16px / 1.8 行高下最稳 */
+  --fx-text-sm: 0.8125rem;
+  --fx-text-md: 0.875rem;
+  --fx-text-lg: 1.125rem;
+  --fx-text-xl: 1.375rem;
+  --fx-text-2xl: 1.625rem;
+  --fx-text-3xl: 2.25rem;
+  /* 品牌名专用：视口宽时封顶，窄屏回到 3rem，避免中文/长词换行 */
+  --fx-text-display: clamp(3rem, 7vw, 4.5rem);
+}
+
+.dark {
+  /* 深色下链接要往亮的方向走，白底那组压暗的取值在 #1b1b1f 上会糊掉 */
+  --vp-c-brand-1: #c98cfb;
+  --vp-c-brand-2: #d9a6ff;
+  --vp-c-brand-3: #9b3ae8;
+  --vp-c-brand-soft: rgba(168, 85, 240, 0.16);
+
+  --vp-c-tip-1: #38bdf8;
+  --vp-c-tip-2: #0ea5e9;
+  --vp-c-tip-3: #0284c7;
+  --vp-c-tip-soft: rgba(56, 189, 248, 0.14);
+  --vp-custom-block-tip-bg: var(--vp-c-tip-soft);
+  --vp-custom-block-tip-code-bg: var(--vp-c-tip-soft);
+
+  /* 实心按钮底上的白字同样要够对比度，hover 态也不能掉到 4.5:1 以下 */
+  --vp-button-brand-bg: #9b3ae8;
+  --vp-button-brand-hover-bg: #a049ea;
+  --vp-button-brand-active-bg: #8b2bd1;
+}
+
+/* 划词选中：淡品牌紫，不喧宾夺主；深浅两套透明度不同 */
+::selection {
+  background-color: rgba(139, 43, 209, 0.16);
+}
+
+.dark ::selection {
+  background-color: rgba(201, 140, 251, 0.26);
+}

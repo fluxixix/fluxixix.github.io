@@ -5,6 +5,11 @@ node_modules/
 .vitepress/dist/
 .vitepress/cache/
 
+# 示例站（最小宿主站，用来验证主题不污染原生样式）
+examples/*/.vitepress/dist/
+examples/*/.vitepress/cache/
+examples/*/.vitepress/theme-off/
+
 # Obsidian
 .obsidian/
 
@@ -26,3 +31,6 @@ npm-debug.log*
 
 # 本地草稿与设计文档（不入库）
 .superpowers/
+
+# 渲染对比用的"改造前"基线（scripts/make-baseline.sh 生成在 /tmp，这里兜一层）
+.fx-baseline/

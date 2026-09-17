@@ -28,21 +28,41 @@
 | --- | --- |
 | 框架 | [VitePress](https://vitepress.dev) `2.0.0-alpha.20` — 扩展默认主题，不另起一套 |
 | 交互 | Vue 3 + TypeScript |
-| 样式 | 原生 CSS，无预处理器；全部取值收敛在 `.vitepress/theme/custom.css` 的令牌层 |
-| 字体 | Fontsource 自托管：Fraunces Variable（拉丁衬线）+ Noto Serif SC 700（中文宋体，unicode-range 切片按需下载）+ IBM Plex Mono（等宽） |
+| 样式 | 原生 CSS，无预处理器；版式令牌在主题包的 `styles/tokens.css`，品牌色在 `styles/palette.css` |
+| 字体 | Fontsource 自托管：Noto Serif SC 700（中文与拉丁展示字，unicode-range 切片按需下载）+ IBM Plex Mono（等宽） |
 | 图标 | `@iconify-json/mdi` |
 | 部署 | GitHub Actions → GitHub Pages；Vercel 走同一份构建 |
 
-依赖刻意压在五项：三款字体、一套图标、框架本体；构建链路越短，越不容易某天因为一个传递依赖而构建失败。
+依赖刻意压在四项：两款字体、一套图标、框架本体；构建链路越短，越不容易某天因为一个传递依赖而构建失败。
+（早先还有第三款字体 Fraunces 专门撑拉丁展示字，每页 36 KB；去掉后拉丁字形交给思源宋体，
+实测每页净省约 18 KB——思源宋体自己会多加载一片 18 KB 的拉丁切片。）
 
 ## 快速开始
 
 ```bash
 npm install
-npm run docs:dev      # 本地开发，默认 http://localhost:5173
-npm run docs:build    # 构建到 .vitepress/dist
-npm run docs:preview  # 预览构建产物
+
+# 本站（内容 + 主题的活体 demo）
+npm run docs:dev          # 默认 http://localhost:5173
+npm run docs:build        # 构建到 .vitepress/dist
+npm run docs:preview      # 预览构建产物
+
+# 主题的示例站（examples/native-demo：只装主题、什么都不配）
+npm run example:dev       # http://localhost:5175
+npm run example:build
+npm run example:preview
 ```
+
+**改了主题包（`packages/vitepress-theme-fluxixix`）后，dev server 会自动热更新**——
+包是以符号链接装进 `node_modules` 的，改源码即生效，不用重启。改了
+`.vitepress/config.mts` 才需要重启。
+
+看两个站的区别：本站是"主题被用到极致"的样子（首页刊头、作品墙、Now 月度留档、
+杂志化关于页），示例站是"一个普通博客装了这个主题"的样子——**只有文章列表、
+文章页、归档页**，2 篇虚构文章，没有作品墙也没有 Now、没有自定义组件。
+技术那篇《Markdown 全格式总览》把标题、列表、表格、代码块（行高亮 / 差分 / 代码组 /
+行号）、七种提示容器、脚注、任务列表都演示了一遍，是"只写 Markdown 会得到什么"
+最直接的答案；随笔那篇演示普通正文的排版。
 
 Node 24，与 CI 保持一致。
 
@@ -60,22 +80,39 @@ Node 24，与 CI 保持一致。
 │   └── now/
 │       ├── now.data.ts       月度留档的数据源（构建期读取各期 frontmatter）
 │       └── 2026-09.md        当月一页
+├── packages/
+│   └── vitepress-theme-fluxixix/   主题插件（本站通过 npm workspaces 消费它）
+│       ├── README.md         安装 / 接入 / 参数 / 覆盖主题的说明
+│       └── src/
+│           ├── index.ts      主题入口：fluxixixTheme()、交互挂载、组件注册
+│           ├── options.ts    站点参数与默认值（本站现值）
+│           ├── site.ts       fluxixixSite()：补齐界面文案与搜索翻译
+│           ├── rss.ts        rss()：buildEnd 钩子，生成 feed.xml
+│           ├── Layout.vue    布局扩展：首页刊头、全站页脚，按 frontmatter 挂载页头
+│           ├── components/   HomeCover / WorkPlate / NowHeader / PageMasthead / SiteFooter
+│           ├── cursor.ts     点击迸发的粒子
+│           ├── reveal.ts     滚动揭示
+│           ├── theme-transition.ts  明暗切换扩散
+│           ├── work-posters.ts      作品墙展开
+│           ├── reading-progress.ts  阅读进度条与进度环
+│           ├── theme/index.ts 推荐入口：主题本体 + 样式总表，顺序由包固定
+│           └── styles/       17 册样式（不写 @layer，靠排在默认主题之后取胜）
+├── examples/native-demo/     主题示例站（虚构内容）：装好主题的普通博客
+│   ├── index.md              首页（layout: home + 最新文章）
+│   ├── archive.md            归档页（archive-timeline 时间轴）
+│   ├── about.md              关于页（pageClass: about + masthead 页头）
+│   └── posts/
+│       ├── posts.data.ts     列表数据源
+│       ├── index.md          文章列表页
+│       ├── tech/             技术 1 篇：《Markdown 全格式总览》
+│       └── notes/            随笔 1 篇：《笔记写给三个月后的自己》
+├── scripts/                  层约定检查、示例站隔离检查、真实渲染对比
 ├── public/robots.txt
 ├── tsconfig.json             只给编辑器做类型检查（noEmit，不参与构建）
 ├── .vitepress/
 │   ├── config.mts            站点配置
-│   ├── rss.ts                构建结束后生成 feed.xml
 │   └── theme/
-│       ├── index.ts          主题扩展：点击粒子、明暗扩散、滚动揭示、作品墙展开、阅读进度
-│       ├── Layout.vue        布局扩展：首页刊头、全站页脚，按 frontmatter 挂载 Now 页头与编辑体页头
-│       ├── cursor.ts         点击迸发的粒子（圆环涟漪已去掉）
-│       ├── home/HomeCover.vue     首页刊头：眉题 / 衬线英文口号 / 四条索引
-│       ├── works/WorkPlate.vue    作品版画：内联 SVG 的竖版纸片（八个母题）
-│       ├── now/NowHeader.vue Now 当月页的页头
-│       ├── head/PageMasthead.vue  编辑体页头（关于页、作品页共用）
-│       ├── head/SiteFooter.vue    全站页脚（刊物版权页）
-│       ├── vue-shim.d.ts     让 TS 认识 .vue 单文件组件
-│       └── custom.css        全站样式，按 15 个章节分层
+│       └── index.ts          引主题包入口 + 自托管字体
 ├── vercel.json
 └── .github/workflows/deploy.yml
 ```
@@ -83,6 +120,48 @@ Node 24，与 CI 保持一致。
 `pages/` 下的页面通过 `rewrites` 去掉了 URL 前缀：`pages/about.md` 对应 `/about`，
 不是 `/pages/about`；嵌套目录同理，`pages/now/2026-09.md` 对应 `/now/2026-09`。
 加新页面时不用管这一步。
+
+## 主题插件
+
+主题（样式、交互、组件、页面形态）都在 `packages/vitepress-theme-fluxixix`，
+本站是它的第一个使用者，通过 npm workspaces 依赖（`npm install` 后以符号链接
+出现在 `node_modules` 下）。
+
+- 换站要改的品牌色与功能色：包的 `src/styles/palette.css`；第三方站点在**主题样式之后**
+  写自己的 CSS 覆盖即可（见包内 README 的「样式与层」）。
+- 站点差异（站名、首页索引、页脚、目录约定）：`fluxixixTheme({...})` 的参数，
+  默认值就是本站现值，所以本站的 `.vitepress/theme/index.ts` 只引包入口 + 字体。
+- 加新样式时注意：**主题样式不能写 @layer**。VitePress 默认主题的 vars.css 与组件
+  样式都是未分层的，而未分层胜过任何命名层——主题一进层就会被默认主题反压
+  （品牌色、导航胶囊、进度环、作品卡会同时失效且不报错）。`npm run check:layers`
+  会挡住这个退化。
+
+验证：
+
+```bash
+npm run check:layers     # 样式层约定（构建前跑，含产物顺序断言）
+npm run verify           # 层约定检查 + 构建本站 + 示例站 A/B 隔离检查
+npm run verify:rendered  # 最强的一道：真实渲染对比（需要无头 Chromium）
+npm run typecheck        # 需要 tsc 在 PATH 上（本仓库没装 typescript）
+```
+
+`check:isolation` 会对 `examples/native-demo` 做两次构建（摘掉主题 / 装上主题），
+逐字比较页面 DOM。主题只被允许加四种节点，且都必须由页面主动触发或属于全站部件：
+页脚（总在）、首页刊头（`layout: home`）、编辑体页头（`masthead: true`）、
+Now 页头（`now: true`）。除此之外多一个类名都算失败——示例站现在有 10 个页面
+（首页 / 文章列表 / 2 篇文章 / 归档 / 关于 / 404），覆盖面比只放两页时大得多。
+
+`check:rendered` 才是抽包这件事的验收标准：它用无头 Chromium（CDP 直连）把
+「改造前 / 改造后」两套产物在 3 个视口宽度下逐页对比**计算样式与元素几何**，
+而不是只比 HTML。因为 HTML 逐字一致并不能说明还原度——被默认主题反压时 HTML
+一模一样、页面却是坏的。这件事真的发生过：主题样式一旦进 `@layer`，悬浮导航胶囊、
+阅读进度环、侧边栏卡片与作品卡尺寸会同时失守，而且不报任何错。用法：
+
+```bash
+npm run baseline:make    # 把某个 git ref（默认 HEAD）检出到 /tmp/fx-baseline-site 并构建
+npm run docs:build
+npm run check:rendered   # 8 个页面 × 3 个视口，差异数必须为 0
+```
 
 ## 写一篇新文章
 
@@ -98,7 +177,7 @@ Node 24，与 CI 保持一致。
 
 2. 到 `.vitepress/config.mts` 的 `sidebar` 里补一条链接。
 
-RSS 和文章列表都不用管，它们分别由 `rss.ts` 和 `posts.data.ts` 在构建期扫 `posts/` 自动生成。
+RSS 和文章列表都不用管，它们分别由主题包的 `rss()` 和站点的 `posts.data.ts` 在构建期扫 `posts/` 自动生成。
 日期会被统一归一到 UTC 中午，避免时区把「今天」推前一天。
 
 ## 写一页 Now
@@ -116,7 +195,7 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 ```
 
 正文只写板块与清单（`## 在做` / `## 在学` / `## 在读 / 在看` / `## 在玩`）：
-页头（大月份数字 + 每月一句话）由 `theme/now/NowHeader.vue` 按 frontmatter 生成，
+页头（大月份数字 + 每月一句话）由主题包的 `components/NowHeader.vue` 按 frontmatter 生成，
 不用手写；`/now` 的索引（年份分组、期数、当前标记、当期四个板块各前两条的预览）由
 `pages/now/now.data.ts` 在构建期扫各期生成（`includeSrc` 拿原文解析 h2 与顶层清单），
 不用改导航或侧边栏。
@@ -133,10 +212,11 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 ## 主题里做了什么
 
 首页没有用默认 hero，`home-hero-before` 插槽里挂的是 `home/HomeCover.vue` 刊头：
-眉题一行、衬线英文口号、四条目次式索引；字体三层体系（Fraunces + 思源宋体衬线 /
-系统黑体正文 / IBM Plex Mono 等宽）在 `custom.css` 第 1 节定义，全站 h1/h2 与刊名走衬线。
+眉题一行、衬线英文口号、四条目次式索引；字体两层体系（思源宋体衬线 / IBM Plex Mono 等宽，
+正文走 VitePress 默认栈）在主题包的 `styles/tokens.css`（字体栈）与 `styles/palette.css`（颜色）
+里定义，全站 h1/h2 与刊名走衬线。
 
-`.vitepress/theme/index.ts` 里五个交互，都做了降级：
+主题包的入口 `src/index.ts` 挂五个交互，都做了降级：
 
 - **点击迸发的粒子** — 一个 canvas、一个 rAF 循环，粒子池空了循环彻底停掉。点下去从落点
   迸出 16 颗粒子：均匀铺开再叠随机扰动，紫青两色按颗粒随机取色，带阻力与一点重力，
@@ -155,7 +235,7 @@ line: 这个月想说的话   # 可选，渲染在页头下方
   套在胶囊外圈的一圈 SVG 描边，颜色是品牌紫→青渐变、读到哪画到哪（尺寸由 ResizeObserver
   喂 viewBox，进度用 `pathLength="1"` 归一化，不必算周长）。只在 `/posts/` 下出现，回顶后淡出。
 
-`custom.css` 第 14 节是这两页的「作品集排版」：章节标题上方那条发丝线在标题进入视口时
+主题包的 `styles/editorial.css` 与 `styles/works.css` 是这两页的「作品集排版」：章节标题上方那条发丝线在标题进入视口时
 从左画出，正文用满整列（VitePress 给的上限），页头下面那段按导语放大一档。
 
 作品页还有几处自己的规矩：
@@ -184,8 +264,8 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 
 另外几处不在这个文件里：
 
-- **关于页「经历」是两张卡片** —— `custom.css` 第 13 节：卡片外壳复用作品页那套（`.work-poster` + `.poster-toggle`），里面是卡头（机构名在左，时间与地点在右）、导语、01–03 的阶段摘要行，点展开才摊开每段的正文、技术栈与五款工具。卡面高度按内容分别定（18.4rem / 11rem），底距按展开键的落位算（3.4rem），收起时展开键的视口位置由脚本逐帧回拉。早期那版由脚本量测的滚动轨道早已删除。
-- **关于页其余各节各有一个形态** —— `custom.css` 第 15 节：章节标题右侧自动编号；「关注」是编号格言格（编号在左，品牌色竖线起头），「技能」是分类标签表，「玩 AI」是两列小卡（衬线名字 + 一句评），教育与联系收成版权页式双栏页尾。正文里对应写成 `<dl>` / `<div>` / 直接写的卡片，没有新增组件。
+- **关于页「经历」是两张卡片** —— 主题包 `styles/editorial.css` 第 13 节：卡片外壳复用作品页那套（`.work-poster` + `.poster-toggle`），里面是卡头（机构名在左，时间与地点在右）、导语、01–03 的阶段摘要行，点展开才摊开每段的正文、技术栈与五款工具。卡面高度按内容分别定（18.4rem / 11rem），底距按展开键的落位算（3.4rem），收起时展开键的视口位置由脚本逐帧回拉。早期那版由脚本量测的滚动轨道早已删除。
+- **关于页其余各节各有一个形态** —— 主题包 `styles/colophon.css` 第 15 节：章节标题右侧自动编号；「关注」是编号格言格（编号在左，品牌色竖线起头），「技能」是分类标签表，「玩 AI」是两列小卡（衬线名字 + 一句评），教育与联系收成版权页式双栏页尾。正文里对应写成 `<dl>` / `<div>` / 直接写的卡片，没有新增组件。
 - **全站页脚** — `head/SiteFooter.vue` 挂在 `layout-bottom` 插槽，一行等宽版权页小字。
 - **顶栏滚动后收成浮动胶囊** — 全站通用（原先只挂在首页）。纯 CSS，搭在默认主题自己的
   `.top` class 上，没有滚动监听；未滚动时内页顶栏也统一透明、不画分隔线。标题列一律按
@@ -193,12 +273,12 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 - **文章页侧边栏：一块悬浮卡片** — 主题让侧边栏从视口顶一直铺到页尾、顶栏让出左侧那一列
   （`--vp-nav-col-offset`），顶栏因此被切开，站点标题也被拉成与侧边栏同宽、看着像侧边栏的
   一部分。这里反过来：顶栏从最左铺到最右、自成一条；侧边栏收成一块悬浮的圆角卡片
-  （`custom.css` 第 2 节）——半透明底 + 发丝描边 + 顶边内高光 + 三层投影 + 左上角一抹品牌紫的
+  （主题包 `styles/nav.css`）——半透明底 + 发丝描边 + 顶边内高光 + 三层投影 + 左上角一抹品牌紫的
   反射光，与顶栏胶囊同一套玻璃语言；卡片里分组名收成小眉题，当前项点亮左侧指示条，
   悬停整行轻微右移。主题原本塞在侧边栏里的那块 sticky 幕布（挡滚上来内容的色块）已去掉——
   滚动交给卡片自己的圆角裁切。
-- **划词选中色、日期等宽数字** — 都在第 1 节，一处定义全站生效。
-- **全文搜索** — VitePress 本地搜索，界面文案已中文化。
+- **划词选中色、日期等宽数字** — 都在主题令牌层（`palette.css` / `tokens.css`）里，一处定义全站生效。
+- **全文搜索** — VitePress 本地搜索，界面文案由 `fluxixixSite()` 中文化（默认主题的界面文案是写死的英文）。
 
 ## 部署
 

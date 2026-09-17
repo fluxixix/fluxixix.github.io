@@ -1,0 +1,214 @@
+/* --------------------------------------------------------------------------
+   5. 正文排版
+   -------------------------------------------------------------------------- */
+
+/* 阅读区宽度交给默认的 43rem（≈688px，中文一行 40 字上下），
+   这里只调字号阶梯、行高和分隔方式 */
+
+.vp-doc h1 {
+  font-family: var(--fx-font-serif);
+  font-size: var(--fx-text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.vp-doc h2 {
+  position: relative;
+  margin: var(--fx-space-7) 0 var(--fx-space-4);
+  border-top: 0;
+  padding-top: 1.75rem;
+  font-family: var(--fx-font-serif);
+  font-size: var(--fx-text-2xl);
+  /* 宋体只引了 700 一档：h2 全部收到 700，层级已由字号区分 */
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+/* 用一条向右淡出的细线代替默认贯穿整行的分隔线：
+   起点清晰、末端消失，比一条等宽的线更像「新章节开始」而不是「上一节结束」 */
+.vp-doc h2::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    var(--vp-c-divider) 0%,
+    var(--vp-c-divider) 30%,
+    transparent 100%
+  );
+}
+
+/* 锚点的位置跟着 h2 新的 padding-top 走，否则悬停时 # 会飘在半空 */
+.vp-doc h2 .header-anchor {
+  top: 1.75rem;
+}
+
+.vp-doc h3 {
+  margin: var(--fx-space-5) 0 0;
+  font-size: var(--fx-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+.vp-doc h4 {
+  font-size: var(--fx-text-lg);
+}
+
+/* 标题旁的 # 沿用品牌色，和正文链接同一套色 */
+.vp-doc .header-anchor {
+  color: var(--vp-c-brand-1);
+}
+
+/* 中文正文的行高比默认的 1.75 再松一点，长段落才不会挤成一片 */
+.vp-doc p {
+  margin: var(--fx-space-4) 0;
+  line-height: 1.8;
+}
+
+.vp-doc li {
+  line-height: 1.75;
+}
+
+/* 引用：默认的灰竖条辨识度太低，换成品牌渐变竖条 */
+.vp-doc blockquote {
+  position: relative;
+  margin: var(--fx-space-5) 0;
+  border-left: 0;
+  padding: var(--fx-space-1) 0 var(--fx-space-1) 1.25rem;
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc blockquote::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background-image: linear-gradient(180deg, var(--fx-brand-a), var(--fx-brand-b));
+}
+
+.vp-doc blockquote > p {
+  line-height: 1.8;
+}
+
+/* 行内代码：收紧内边距、加大圆角，读起来更像一段代码而不是一个色块 */
+.vp-doc :not(pre) > code {
+  border-radius: 0.375rem;
+  padding: 0.15em 0.4em;
+}
+
+/* 代码块：加一圈很淡的描边和大一点的圆角，和页面背景分开 */
+@media (min-width: 40rem) {
+  .vp-doc div[class*='language-'] {
+    border: 1px solid var(--vp-c-divider);
+    border-radius: 0.75rem;
+  }
+}
+
+/* 默认主题让相邻代码块上移 0.5rem 拼在一起。加了描边之后拼接处会出现
+   双线，改成正常间距 */
+.vp-doc div[class*='language-'] + div[class*='language-'] {
+  margin-top: 0.75rem;
+}
+
+/* 表格：去掉竖线和斑马纹，只留横向分隔。默认把每格都框起来，
+   在窄栏里噪点太多 */
+.vp-doc table {
+  margin: var(--fx-space-5) 0;
+}
+
+.vp-doc tr {
+  border-top: 0;
+  background-color: transparent;
+}
+
+.vp-doc tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  padding: 0.625rem 1rem;
+}
+
+.vp-doc thead th {
+  border-bottom-color: var(--vp-c-border);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+  background-color: transparent;
+}
+
+.vp-doc tbody tr:hover {
+  background-color: var(--vp-c-bg-soft);
+}
+
+/* 自定义容器：左侧补一条类型色竖条，比整块淡淡铺色更能一眼看出是哪一类 */
+.vp-doc .custom-block {
+  border-left: 3px solid transparent;
+  border-radius: 0.625rem;
+  padding: 0.875rem 1.125rem;
+}
+
+.vp-doc .custom-block.tip {
+  border-left-color: var(--vp-c-tip-1);
+}
+
+.vp-doc .custom-block.info,
+.vp-doc .custom-block.details {
+  border-left-color: var(--vp-c-default-1);
+}
+
+.vp-doc .custom-block.warning {
+  border-left-color: var(--vp-c-warning-1);
+}
+
+.vp-doc .custom-block.danger {
+  border-left-color: var(--vp-c-danger-1);
+}
+
+.vp-doc .custom-block.caution {
+  border-left-color: var(--vp-c-caution-1);
+}
+
+.vp-doc .custom-block.important {
+  border-left-color: var(--vp-c-important-1);
+}
+
+.vp-doc .custom-block-title {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* 图片：圆角 + 一像素描边，避免深色背景下白底图直接糊在页面上；
+   图文块统一宽度，视觉上更稳 */
+.vp-doc img {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.625rem;
+}
+
+.vp-doc hr {
+  margin: var(--fx-space-6) 0;
+}
+
+/* 键盘按键：默认没有任何样式，补一个实心底 */
+.vp-doc kbd {
+  border: 1px solid var(--vp-c-border);
+  border-bottom-width: 2px;
+  border-radius: 0.375rem;
+  padding: 0.1em 0.4em;
+  font-size: 0.8125em;
+  color: var(--vp-c-text-1);
+  background-color: var(--vp-c-bg-soft);
+}
+

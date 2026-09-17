@@ -1,9 +1,11 @@
-<script setup>
-import { computed } from 'vue'
+<script setup lang="ts">
+import { computed, inject } from 'vue'
 import { useData } from 'vitepress'
+import { OPTIONS_KEY, type ResolvedFluxixixOptions } from '../options'
 
 // 页头完全由 frontmatter 生成：月页正文里不写月份数字，也不用重复那句话
 const { frontmatter } = useData()
+const options = inject(OPTIONS_KEY) as ResolvedFluxixixOptions
 
 const month = computed(() => String(frontmatter.value.month ?? ''))
 const year = computed(() => month.value.slice(0, 4))
@@ -21,7 +23,7 @@ const line = computed(() => frontmatter.value.line ?? '')
       <span class="now-head-year">{{ year }}</span>
       <span class="now-head-month">{{ monthNum }}</span>
     </h1>
-    <p class="now-head-tag">NOW · 当下快照</p>
+    <p class="now-head-tag">{{ options.i18n.nowTag }}</p>
     <div class="now-head-rule" />
     <p v-if="line" class="now-head-line">{{ line }}</p>
   </div>

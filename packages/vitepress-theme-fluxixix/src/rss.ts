@@ -2,10 +2,28 @@ import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { SiteConfig } from 'vitepress'
 
-/** 站点线上地址，用于生成绝对链接（RSS 规范要求绝对 URL） */
-const SITE_URL = 'https://fluxixix.github.io'
-const FEED_FILE = 'feed.xml'
-const MAX_ITEMS = 20
+/** 生成 RSS 需要的站点信息。除 siteUrl 外都给了与 fluxixix 本站一致的默认值 */
+export interface RssOptions {
+  /** 站点线上地址（RSS 规范要求绝对 URL），必填 */
+  siteUrl: string
+  /** feed 文件名，默认 feed.xml */
+  feedFile?: string
+  /** 文章目录（相对 srcDir），默认 posts */
+  postDir?: string
+  /** 频道标题，默认取 VitePress 的 site.title */
+  title?: string
+  /** 频道描述，默认取 VitePress 的 site.description */
+  description?: string
+  /** 站点语言，默认 zh-CN */
+  language?: string
+  /** 最多收录几篇，默认 20 */
+  maxItems?: number
+}
+
+const DEFAULT_FEED_FILE = 'feed.xml'
+const DEFAULT_POST_DIR = 'posts'
+const DEFAULT_LANGUAGE = 'zh-CN'
+const DEFAULT_MAX_ITEMS = 20
 
 interface FeedItem {
   title: string
@@ -56,8 +74,13 @@ async function collectMarkdownFiles(dir: string): Promise<string[]> {
   return files
 }
 
-async function collectItems(srcDir: string): Promise<FeedItem[]> {
-  const files = await collectMarkdownFiles(path.join(srcDir, 'posts'))
+async function collectItems(
+  srcDir: string,
+  siteUrl: string,
+  postDir: string,
+  maxItems: number
+): Promise<FeedItem[]> {
+  const files = await collectMarkdownFiles(path.join(srcDir, postDir))
   const items: FeedItem[] = []
 
   for (const file of files) {
@@ -71,7 +94,7 @@ async function collectItems(srcDir: string): Promise<FeedItem[]> {
 
     items.push({
       title: fields.title || slug,
-      link: `${SITE_URL}/${slug}.html`,
+      link: `${siteUrl}/${slug}.html`,
       date,
       description: fields.description || ''
     })
@@ -84,10 +107,18 @@ async function collectItems(srcDir: string): Promise<FeedItem[]> {
       if (diff !== 0) return diff
       return a.link < b.link ? -1 : a.link > b.link ? 1 : 0
     })
-    .slice(0, MAX_ITEMS)
+    .slice(0, maxItems)
 }
 
-function renderFeed(items: FeedItem[]): string {
+interface RssChannel {
+  siteUrl: string
+  feedFile: string
+  title: string
+  description: string
+  language: string
+}
+
+function renderFeed(items: FeedItem[], channel: RssChannel): string {
   const updated = items[0]?.date ?? new Date()
   const entries = items
     .map(
@@ -104,21 +135,45 @@ function renderFeed(items: FeedItem[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>fluxixix</title>
-    <link>${SITE_URL}/</link>
-    <description>less is more</description>
-    <language>zh-CN</language>
+    <title>${escapeXml(channel.title)}</title>
+    <link>${channel.siteUrl}/</link>
+    <description>${escapeXml(channel.description)}</description>
+    <language>${channel.language}</language>
     <lastBuildDate>${updated.toUTCString()}</lastBuildDate>
-    <atom:link href="${SITE_URL}/${FEED_FILE}" rel="self" type="application/rss+xml" />
+    <atom:link href="${channel.siteUrl}/${channel.feedFile}" rel="self" type="application/rss+xml" />
 ${entries}
   </channel>
 </rss>
 `
 }
 
-/** 构建结束后生成 RSS feed，产物直接随站点发布，无需额外插件 */
-export async function generateRssFeed(siteConfig: SiteConfig): Promise<void> {
-  const items = await collectItems(siteConfig.srcDir)
-  await writeFile(path.join(siteConfig.outDir, FEED_FILE), renderFeed(items), 'utf-8')
-  siteConfig.logger.info(`generated ${FEED_FILE} with ${items.length} item(s)`)
+/**
+ * 生成 buildEnd 钩子：构建结束后把 RSS feed 写进产物目录，随站点一起发布，
+ * 无需额外插件。默认值等于 fluxixix 本站的约定，换站只需传 siteUrl。
+ *
+ *   buildEnd: rss({ siteUrl: 'https://example.com' })
+ */
+export function rss(options: RssOptions) {
+  const feedFile = options.feedFile ?? DEFAULT_FEED_FILE
+  const postDir = options.postDir ?? DEFAULT_POST_DIR
+  const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS
+
+  return async (siteConfig: SiteConfig): Promise<void> => {
+    const channel: RssChannel = {
+      siteUrl: options.siteUrl.replace(/\/$/, ''),
+      feedFile,
+      title: options.title ?? siteConfig.site.title,
+      description: options.description ?? siteConfig.site.description ?? '',
+      language: options.language ?? DEFAULT_LANGUAGE
+    }
+
+    const items = await collectItems(
+      siteConfig.srcDir,
+      channel.siteUrl,
+      postDir,
+      maxItems
+    )
+    await writeFile(path.join(siteConfig.outDir, feedFile), renderFeed(items, channel), 'utf-8')
+    siteConfig.logger.info(`generated ${feedFile} with ${items.length} item(s)`)
+  }
 }

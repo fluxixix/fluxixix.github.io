@@ -1,0 +1,84 @@
+/* --------------------------------------------------------------------------
+   12. 关于页与作品页（/about、/works）
+   -------------------------------------------------------------------------- */
+
+/* 作品页的正文是纯 Markdown：作品名下方跟一行等宽元信息（技术栈、年份）。
+   关于页的经历已经改成第 13 节的篇章结构，不再走这套规则。 */
+
+/* 元信息行：作品名的注脚。与标题之间留一口气，多行之间反而收紧——
+   这样它读成「一块注脚」，而不是几行独立的正文 */
+.works .entry-meta {
+  margin: 0.7rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.7;
+  /* 同 .post-date：13px 的小字用 text-2 才够 AA 的 4.5:1，text-3 只有 3.1:1 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.works .entry-meta + .entry-meta {
+  margin-top: 0.15rem;
+}
+
+/* ---- 无序列表：环形标记 ----
+
+   这两页的列表密度最高，默认的小圆点在中文正文里太软。换成一枚细圆环，
+   悬停时被品牌色填满（等于「这一条被点亮」）。
+
+   纵向位置用「行高的一半减去半径」算出来，而不是交给 vertical-align: middle：
+   后者对齐的是西文的 x 高度中线，中文正文里会明显偏低。行高的一半正好是首行
+   的中线（行盒把字身框居中），取 lh 单位写，以后改行高标记会跟着走。
+
+   只作用于这两页：文章与 Now 页保持默认标记（Now 页的嵌套列表另有一套画法）。
+   标记是装饰，靠 ::before 画，ul/li 的语义不受影响。 */
+
+.about .vp-doc > div,
+.works .vp-doc > div {
+  /* 圆环的直径，以及标记列的总宽（圆环 + 与文字之间的空隙）。
+     线宽 1.5px 配 0.45rem 是环孔还看得见的上限，再粗就成小色块了 */
+  --fx-mark-size: 0.45rem;
+  --fx-mark-gap: 1.4rem;
+}
+
+.about .vp-doc ul,
+.works .vp-doc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.about .vp-doc ul > li,
+.works .vp-doc ul > li {
+  position: relative;
+  /* 原本由 ul 的默认内边距让出的位置，改由条目自己让：标记正好落在这一列，
+     条目的背景块（带标签的行才有）也才能贴着文字算 */
+  padding-left: var(--fx-mark-gap);
+}
+
+.about .vp-doc ul > li::before,
+.works .vp-doc ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  /* 0.875em 是行高 1.75 的一半，给不认 lh 单位的浏览器兜底 */
+  top: calc(0.875em - var(--fx-mark-size) / 2);
+  top: calc(0.5lh - var(--fx-mark-size) / 2);
+  box-sizing: border-box;
+  width: var(--fx-mark-size);
+  height: var(--fx-mark-size);
+  border: 1.5px solid var(--vp-c-text-2);
+  border-radius: 50%;
+  transition:
+    border-color var(--fx-dur-base),
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+/* 悬停时圆环被填满，等于「这一条被点亮」 */
+.about .vp-doc ul > li:hover::before,
+.works .vp-doc ul > li:hover::before {
+  border-color: var(--vp-c-brand-1);
+  background-color: var(--vp-c-brand-1);
+  transform: scale(1.15);
+}
+

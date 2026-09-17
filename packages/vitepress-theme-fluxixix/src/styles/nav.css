@@ -1,0 +1,286 @@
+/* --------------------------------------------------------------------------
+   2. 导航栏
+   -------------------------------------------------------------------------- */
+
+/* 默认主题的顶栏是一块不透明的实色，滚过长文章时上半屏会显得很硬。
+   这里换成半透明 + 毛玻璃。
+
+   做法是改主题自己的两个变量，而不是往 .VPNavBar::before 上写属性：
+   顶栏的每个形态（首页未滚动、移动端菜单展开、60~80rem 下由 local nav
+   接管那一整块）都由主题按变量算出各自的取值，其中几处还显式覆盖成
+   transparent / none。自己写选择器去盖，等于和这套状态机打架，
+   而且那几个例外规则特异性更高，盖不动。 */
+:root {
+  --vp-nav-bg-color: rgba(255, 255, 255, 0.76);
+  --vp-nav-backdrop-filter: saturate(160%) blur(12px);
+}
+
+.dark {
+  --vp-nav-bg-color: rgba(27, 27, 31, 0.72);
+}
+
+/* ---- 首页：往下滚之后收成一条居中悬浮的胶囊 ---- */
+
+:root {
+  /* 胶囊的宽度取 min(上限, 视口 − 两侧留白)，两条边一起算，所以永远居中 */
+  --fx-nav-float-max: 64rem;
+  --fx-nav-float-inset: 1.25rem;
+  /* 整条是 4rem，收到 3rem 才有"收"的感觉 */
+  --fx-nav-float-height: 3rem;
+  /* 胶囊内左右留白 */
+  --fx-nav-float-pad: 1.5rem;
+  /* 侧边栏卡片四周的气口（顶栏胶囊也是这套语言） */
+  --fx-sidebar-inset: 1rem;
+
+  --fx-nav-float-bg: rgba(255, 255, 255, 0.68);
+  --fx-nav-float-ring: rgba(17, 17, 20, 0.07);
+  --fx-nav-float-shadow: 0 8px 28px -12px rgba(17, 17, 20, 0.28);
+
+  /* 侧边栏卡片：比胶囊更"厚"一层——它常驻在页面上，要能压住正文而不抢戏。
+     三层阴影分别管「贴地的暗边、中距的落影、大范围的扩散」，少一层就会
+     看着像贴纸而不是浮起来的板子 */
+  --fx-sidebar-card-bg: rgba(255, 255, 255, 0.72);
+  /* 左上角一抹品牌紫的反射光，玻璃才不像一块塑料 */
+  --fx-sidebar-card-sheen: rgba(189, 52, 254, 0.07);
+  --fx-sidebar-card-top: rgba(255, 255, 255, 0.8);
+  --fx-sidebar-card-shadow:
+    0 1px 2px rgba(17, 17, 20, 0.05),
+    0 10px 24px -12px rgba(17, 17, 20, 0.22),
+    0 32px 56px -32px rgba(17, 17, 20, 0.3);
+}
+
+.dark {
+  --fx-nav-float-bg: rgba(32, 33, 39, 0.72);
+  --fx-nav-float-ring: rgba(255, 255, 255, 0.08);
+  --fx-nav-float-shadow: 0 8px 28px -12px rgba(0, 0, 0, 0.7);
+
+  --fx-sidebar-card-bg: rgba(32, 33, 39, 0.74);
+  --fx-sidebar-card-sheen: rgba(189, 52, 254, 0.13);
+  /* 暗色下没有环境光，顶边高光要压得很低，否则像贴了条白胶带 */
+  --fx-sidebar-card-top: rgba(255, 255, 255, 0.06);
+  --fx-sidebar-card-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    0 10px 24px -12px rgba(0, 0, 0, 0.6),
+    0 32px 56px -32px rgba(0, 0, 0, 0.85);
+}
+
+@media (min-width: 80rem) {
+  :root {
+    --fx-nav-float-inset: 2.5rem;
+  }
+}
+
+/* 只在 ≥60rem 生效：窄屏下 .VPNav 不是 fixed（见 VPNav.vue），
+   顶栏本来就跟着页面滚走，做浮动胶囊没有意义。
+   这套胶囊原先只挂在首页（.VPNavBar.home），现在全站统一——内页滚动后
+   收成同一条胶囊，顶部状态也一起透明，见下面的 .top 规则 */
+@media (min-width: 60rem) {
+  /* 过渡必须挂在静态那条 ::before 上、而不是只挂在滚动态那条规则里。
+     只挂在滚动态的话，滚回顶部时那条选择器不再匹配，transition 会跟着
+     一起失效，胶囊是"啪"地弹回整条而不是收回去——只有一边有动画 */
+  .VPNavBar::before {
+    transition:
+      background-color var(--fx-dur-base),
+      box-shadow var(--fx-dur-base),
+      backdrop-filter 0.4s var(--fx-ease),
+      top 0.4s var(--fx-ease),
+      bottom 0.4s var(--fx-ease),
+      left 0.4s var(--fx-ease),
+      right 0.4s var(--fx-ease),
+      max-width 0.4s var(--fx-ease),
+      border-radius 0.4s var(--fx-ease);
+  }
+
+  /* 内页未滚动时也交给透明处理，和首页顶部一个样：主题只给 .home 留了
+     这个口子（--vp-nav-home-bg-color: transparent），内页要自己补上 */
+  .VPNavBar:not(.home).top::before {
+    background-color: transparent;
+    backdrop-filter: none;
+  }
+
+  /* 触发条件是主题自己的 .top，也就是 useWindowScroll 的 y <= 0。
+     所以这一整块不需要任何脚本 */
+  .VPNavBar:not(.top)::before {
+    /* 纵向上把胶囊从整条里"抠"出来：上下各让出 8px，
+       剩下的高度正好等于 --fx-nav-float-height，圆心也还留在 32px 上 */
+    top: calc((var(--vp-nav-height) - var(--fx-nav-float-height)) / 2);
+    bottom: calc((var(--vp-nav-height) - var(--fx-nav-float-height)) / 2);
+    left: var(--fx-nav-float-inset);
+    right: var(--fx-nav-float-inset);
+    /* left/right 都是 0 侧定位 + margin auto 时，max-width 会把盒子定宽并居中 */
+    max-width: var(--fx-nav-float-max);
+    margin: 0 auto;
+    border-radius: calc(var(--fx-nav-float-height) / 2);
+    background-color: var(--fx-nav-float-bg);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    /* 边缘用 inset 环而不是 border：border-width 从 0 到 1px 只能跳变，
+       box-shadow 才能跟着背景一起淡进来 */
+    box-shadow: var(--fx-nav-float-shadow), inset 0 0 0 1px var(--fx-nav-float-ring);
+  }
+
+  .VPNavBar .wrapper {
+    transition: padding 0.4s var(--fx-ease);
+  }
+
+  /* 顶栏内容要跟着一起收，否则标题和菜单会探到胶囊外面。
+     这里两处 max-width 是同一个算式，容器才会和胶囊严丝合缝地叠在一起；
+     留白也一并从 wrapper 挪到 container 上，两层的 padding 才不会叠加 */
+  .VPNavBar .container {
+    transition:
+      max-width 0.4s var(--fx-ease),
+      padding 0.4s var(--fx-ease);
+  }
+
+  .VPNavBar:not(.top) .wrapper {
+    padding: 0;
+  }
+
+  .VPNavBar:not(.top) .container {
+    max-width: min(var(--fx-nav-float-max), 100% - var(--fx-nav-float-inset) * 2);
+    padding: 0 var(--fx-nav-float-pad);
+  }
+
+  /* 标题列一律按自然宽度走。主题把非首页的标题列撑到与侧边栏同宽
+     （min-width / max-width 都是 sidebar-width − 2rem），本意是让搜索框在每个
+     doc 页都落在同一个位置；代价是站点标题被拉成一列、看着像侧边栏的一部分，
+     顶栏也被这条列宽切开。放开之后站点标题和搜索框贴在一起，全站位置一致 */
+  .VPNavBar.VPNavBar:not(.home) .title {
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* logo 和菜单项这两个点击区默认被撑到整条高度（4rem），按内容收窄之后
+     它们的焦点圈才不会画到胶囊外面去。文字本来就在盒子里居中，收窄之后
+     落点分毫不变，所以这个变化是看不见的 */
+  .VPNavBar:not(.top) .VPNavBarMenuLink {
+    height: auto;
+    min-height: 0;
+    margin-block: auto;
+    padding-block: 0.5rem;
+  }
+
+  /* 标题的 DOM 是三层同名结构（div.title > div.VPNavBarTitle > a.title），
+     所以这里按标签名精确指到那个 <a>，两个外层 div 保持原样拉伸——
+     它们没有焦点圈，撑满也不会露出来。中间两层必须改成 flex 居中：
+     <a> 一旦不再撑满高度，块级排列会把它顶到上边去，logo 就离开中线了 */
+  .VPNavBar:not(.top) .title,
+  .VPNavBar:not(.top) .VPNavBarTitle {
+    display: flex;
+    align-items: center;
+  }
+
+  .VPNavBar:not(.top) a.title {
+    height: auto;
+    min-height: 0;
+    padding-block: 0.5rem;
+  }
+
+  /* 悬浮的胶囊底下不该再压一条贯穿整屏的分隔线；顶部状态下内页也统一
+     不画线（首页本来就没有）。类名重复写一次是为了凑够特异性盖住主题的
+     .VPNavBar:not(.home.top) .divider-line */
+  .VPNavBar.VPNavBar:not(.top) .divider .divider-line,
+  .VPNavBar.VPNavBar:not(.home).top .divider .divider-line {
+    background-color: transparent;
+  }
+}
+
+/* ---- 侧边栏退回自己那一列，并做成一块悬浮卡片 ----
+   主题的安排是「侧边栏从视口顶一直铺到页尾，顶栏让出左侧那一列」——
+   .VPNavBar::before 的 left 也从侧边栏右缘起算（--vp-nav-col-offset）。
+   代价是顶栏被侧边栏的宽度切开，站点标题那一列还和侧边栏同宽，看着像是
+   侧边栏的一部分。
+   这里反过来：顶栏从最左铺到最右、自成一条；侧边栏不再是一块铺满整列的
+   灰面板，而是收成一块悬浮的圆角卡片——和顶栏胶囊同一套语言（半透明底、
+   一圈发丝描边、柔和投影），四周留出气口。列表在卡片里滚动，滚动条也不会
+   顶到圆角上。 */
+@media (min-width: 60rem) {
+  .VPNavBar.has-sidebar.VPNavBar {
+    --vp-nav-col-offset: 0px;
+  }
+
+  .VPSidebar.VPSidebar {
+    top: calc(
+      var(--vp-layout-top-height, 0px) + var(--vp-nav-height) + var(--fx-sidebar-inset)
+    );
+    bottom: var(--fx-sidebar-inset);
+    left: var(--fx-sidebar-inset);
+    /* 在 17rem 的列里左右各留一道气口：卡片四周都有留白，才浮得起来 */
+    width: calc(var(--vp-sidebar-width) - var(--fx-sidebar-inset) * 2);
+    max-width: none;
+    /* 原来的 2rem 左右内边距收到卡片里，4rem 的顶距改由 top 让出 */
+    padding: 1rem 1rem 3rem;
+    border-radius: 1.25rem;
+    background-color: var(--fx-sidebar-card-bg);
+    background-image: linear-gradient(
+      155deg,
+      var(--fx-sidebar-card-sheen) 0%,
+      transparent 42%
+    );
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    /* 一圈发丝描边 + 顶边一道内高光，两个 inset 叠出玻璃的厚度 */
+    box-shadow:
+      var(--fx-sidebar-card-shadow),
+      inset 0 0 0 1px var(--fx-nav-float-ring),
+      inset 0 1px 0 var(--fx-sidebar-card-top);
+  }
+
+  /* 主题在侧边栏里放了一块 sticky 的「幕布」：原本侧边栏从视口顶开始铺，
+     滚上来的内容会从顶栏后面露出来，得靠这块一顶栏高的色块挡住
+     （用的是 --vp-sidebar-bg-color，浅色是灰、暗色近黑）。
+     现在侧边栏是下方一块独立卡片，滚动内容由卡片自己的圆角裁切，
+     这块幕布就只剩一坨灰块盖在卡片顶上，去掉 */
+  .VPSidebar.VPSidebar .curtain {
+    display: none;
+  }
+
+  /* 卡片里的排版：分组名收成淡淡的小眉题，和站内其它小标签一个语言 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-0 > .item > .text {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--vp-c-text-3);
+  }
+
+  /* 当前这一篇：点亮主题留给深层的指示条，作为「你在这里」的锚点 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1.is-active > .item > .indicator {
+    background-color: var(--vp-c-brand-1);
+  }
+
+  /* 悬停整行右移一点，和首页索引行、文章列表是同一个反馈语言 */
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1 > .item > .link {
+    transition: transform var(--fx-dur-base) var(--fx-ease);
+  }
+
+  .VPSidebar.VPSidebar .VPSidebarItem.level-1 > .item > .link:hover {
+    transform: translateX(2px);
+  }
+
+  /* 顶栏那条分割线现在整条横跨，侧边栏列上方原有的那一小段短划线就不必画了
+     （col-offset 归零后它本来也会被推到视口外）。
+     以上几条的类名都重复写了一次：主题的组件样式的特异性与这里相同，
+     靠加载顺序定胜负不可靠（dev 下 SFC 样式是运行时追加到 head 末尾的） */
+  .VPNavBar.has-sidebar.VPNavBar .divider::before {
+    content: none;
+  }
+}
+
+/* 搜索按钮矮一档：主题默认上下各 0.5rem 内边距，落在 4rem 高的顶栏里偏厚。
+   按钮的高度其实由里面那枚快捷键胶囊撑出来，所以它也要一起收。
+   只改 ≥48rem 那种「图标 + 文字 + 快捷键」的形态；窄屏那枚撑满整条高度的
+   图标按钮不动（它靠 padding 撑宽，收了会缩点击区）。
+   类名写两遍是为了压过组件 scoped 样式带上的 [data-v-…] 属性 */
+@media (min-width: 48rem) {
+  .VPNavBar .VPNavBarSearchButton.VPNavBarSearchButton {
+    padding: 0.3rem 0.7rem;
+  }
+
+  .VPNavBar .VPNavBarSearchButton .keys {
+    padding: 0.15rem 0.35rem;
+  }
+}
+
+/* 减少动效时不用单独处理：base.css 已经用 `transition-duration: 0s !important`
+   把所有过渡压平了，胶囊就是直接切换 */
+

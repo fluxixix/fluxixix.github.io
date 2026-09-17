@@ -1,0 +1,144 @@
+/* --------------------------------------------------------------------------
+   6. 文章列表（首页「最新文章」与 /posts/ 共用）
+   -------------------------------------------------------------------------- */
+/* 这里的规则统一带 .vp-doc 前缀，是为了盖过 .vp-doc ul / .vp-doc li 自带的
+   圆点、缩进和间距（那些选择器权重比裸类名高） */
+.vp-doc .post-list {
+  margin: var(--fx-space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vp-doc .post-list .post-item {
+  margin: 0;
+}
+
+/* 用分隔线代替圆点，条目之间才有分组感 */
+.vp-doc .post-list .post-item + .post-item {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc .post-entry {
+  position: relative;
+  display: grid;
+  /* 日期列固定宽度，标题与摘要的左边缘才能对齐成一条竖线 */
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.3rem 1.25rem;
+  /* 左侧留出品牌色竖条的位置 */
+  padding: 0.9rem 0.75rem 0.9rem 1rem;
+  border-radius: 8px;
+  transition:
+    background-color var(--fx-dur-base),
+    transform var(--fx-dur-base) var(--fx-ease);
+}
+
+/* 悬停时从左侧滑出的品牌色竖条：常驻占位、只做 scaleY，
+   既不会触发重排，动画也留在合成层上 */
+.vp-doc .post-entry::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 1.6rem;
+  border-radius: 2px;
+  background: var(--vp-c-brand-1);
+  transform: translateY(-50%) scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.vp-doc .post-entry:hover::before {
+  transform: translateY(-50%) scaleY(1);
+}
+
+.vp-doc .post-entry:hover {
+  background-color: var(--vp-c-bg-soft);
+  transform: translateX(3px);
+}
+
+/* 覆盖 .vp-doc a:hover 给整条链接加的下划线——条目整体已有反馈，不需要它 */
+.vp-doc a.post-entry,
+.vp-doc a.post-entry:hover {
+  text-decoration: none;
+}
+
+.vp-doc .post-date {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  /* 用 text-2 而不是 text-3：日期是有信息量的正文内容，
+     text-3 在白底/深底上分别只有 3.0:1 和 3.2:1，过不了 AA。
+     靠更小的字号和等宽字体把它和摘要区分开，而不是靠降低对比度 */
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fx-dur-base);
+}
+
+.vp-doc .post-main {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.vp-doc .post-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--vp-c-text-1);
+  transition: color var(--fx-dur-base);
+}
+
+/* 摘要压到最多两行：条目高度接近，列表节奏更整齐 */
+.vp-doc .post-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: var(--fx-text-md);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+.vp-doc .post-entry:hover .post-title,
+.vp-doc .post-entry:hover .post-date {
+  color: var(--vp-c-brand-1);
+}
+
+/* 窄屏下日期换到标题上方，否则固定列宽会把标题挤成一条 */
+@media (max-width: 40rem) {
+  .vp-doc .post-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .vp-doc .post-date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vp-doc .post-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-doc .post-entry,
+  .vp-doc .post-entry::before,
+  .vp-doc .post-date,
+  .vp-doc .post-title {
+    transition: none;
+  }
+
+  .vp-doc .post-entry:hover {
+    transform: none;
+  }
+}
+

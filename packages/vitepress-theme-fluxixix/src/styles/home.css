@@ -1,0 +1,198 @@
+/* --------------------------------------------------------------------------
+   3. 首页刊头（结构来自 theme/home/HomeCover.vue）
+
+   首页不再用默认 hero：没有渐变大字、光晕和 emoji 卡片。刊头是一页「目次」——
+   眉题一行、衬线陈述一段、四条索引，零件全部与内页同语言（发丝线、编号、竖线）。
+   -------------------------------------------------------------------------- */
+
+.home-cover {
+  width: 100%;
+  max-width: 80rem; /* 与 VPHomeContent.container 同一根宽度标尺 */
+  margin: 0 auto;
+  padding: clamp(2.25rem, 5.5vw, 4rem) 1.5rem 0;
+}
+
+@media (min-width: 40rem) {
+  .home-cover {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  .home-cover {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* 眉题：左右两端各一枚等宽小标签，下面一条发丝线收口 */
+.home-cover-kicker {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fx-space-4);
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-2);
+}
+
+/* 陈述：衬线大字，是整页唯一「大声」的元素 */
+.home-cover-statement {
+  margin: 0 0 clamp(1.75rem, 4vw, 2.75rem);
+  max-width: 22em;
+  font-family: var(--fx-font-serif);
+  font-weight: 700;
+  font-size: clamp(1.75rem, 3.6vw, 2.625rem);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--vp-c-text-1);
+  animation: fx-rise 0.7s var(--fx-ease) both;
+}
+
+/* 索引四行：编号 / 标题 / 注脚 / 箭头，语言与作品页 .folio 一致——
+   整块只由开头那条发丝线起头，行间靠留白，悬停时行首竖线亮起、整行右移 */
+.home-index {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.home-index-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3rem auto minmax(0, 1fr) auto;
+  gap: 0 var(--fx-space-4);
+  align-items: baseline;
+  padding: 0.7rem 0 0.7rem var(--fx-space-3);
+  color: var(--vp-c-text-1);
+  text-decoration: none;
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.home-index-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65rem;
+  bottom: 0.65rem;
+  width: 2px;
+  border-radius: 1px;
+  background-color: var(--vp-c-brand-1);
+  transform: scaleY(0);
+  transition: transform var(--fx-dur-base) var(--fx-ease);
+}
+
+.home-index-row:hover,
+.home-index-row:focus-visible {
+  transform: translateX(3px);
+}
+
+.home-index-row:hover::before,
+.home-index-row:focus-visible::before {
+  transform: scaleY(1);
+}
+
+.home-index-num {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  color: var(--vp-c-text-2);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--fx-dur-base);
+}
+
+.home-index-row:hover .home-index-num {
+  color: var(--vp-c-brand-1);
+}
+
+.home-index-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.home-index-meta {
+  font-size: var(--fx-text-md);
+  color: var(--vp-c-text-2);
+}
+
+.home-index-arrow {
+  font-family: var(--vp-font-family-mono);
+  color: var(--vp-c-text-3);
+  transition:
+    transform var(--fx-dur-base) var(--fx-ease),
+    color var(--fx-dur-base);
+}
+
+.home-index-row:hover .home-index-arrow {
+  color: var(--vp-c-brand-1);
+  transform: translateX(3px);
+}
+
+/* 逐行错开进场。用 nth-child 而不是脚本写延迟：组件静态、永远跑得完 */
+@media (prefers-reduced-motion: no-preference) {
+  .home-index-row {
+    animation: folio-in var(--fx-dur-slow) var(--fx-ease) both;
+  }
+
+  .home-index-row:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+
+  .home-index-row:nth-child(2) {
+    animation-delay: 0.11s;
+  }
+
+  .home-index-row:nth-child(3) {
+    animation-delay: 0.17s;
+  }
+
+  .home-index-row:nth-child(4) {
+    animation-delay: 0.23s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-cover-statement,
+  .home-index-row {
+    animation: none;
+  }
+}
+
+/* 窄屏：注脚换行到标题下面，箭头不参与挤压 */
+@media (max-width: 40rem) {
+  .home-index-row {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  }
+
+  .home-index-meta {
+    grid-column: 2;
+  }
+}
+
+/* 首页正文（最新文章）与刊头之间的留白。VPHomeContent 默认上下留白是按
+   hero + features 的节奏给的，刊头自己收了尾，这里重新定；
+   主题还给 .vp-doc 垫了同样一档 padding，首页清掉，避免两层叠着 */
+.VPHome.VPHome .VPHomeContent {
+  padding-top: clamp(2rem, 4.5vw, 3rem);
+}
+
+.VPHome.VPHome .vp-doc {
+  padding-top: 0;
+}
+
+/* h2 默认 margin-top 是给正文长文分章用的；首页只有这一个标题，
+   上方 VPHomeContent 的 padding 已经是间隔，margin 清零 */
+.VPHome.VPHome .vp-doc h2 {
+  margin-top: 0;
+}
+
+/* 主题给 .VPHome 留了 128px 下外边距（hero 页节奏），首页不需要，
+   列表与 footer 之间只留 footer 自己的 margin */
+.VPHome.VPHome {
+  margin-bottom: 0;
+}
+

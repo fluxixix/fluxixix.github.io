@@ -1,0 +1,248 @@
+/* --------------------------------------------------------------------------
+   15. 关于页杂志化区块
+
+   about 正文的后半原本全是同一种「粗体 + 破折号」列表：信条、技能、玩具、
+   联系方式被排成一种节奏。这一节把四组内容各自换成符合其性质的形态：
+   信条走编号大字的双栏，技能走标签表，玩 AI 走左名右注的索引行，
+   教育与联系合成版权页式页尾。仍然只靠尺度、留白和发丝线。
+   -------------------------------------------------------------------------- */
+
+/* ---- 章节自动编号 ----
+   计数器由 CSS 维护，加删章节不用改数字；编号排在标题右侧（# 锚点在左侧外）。
+   h2 变 flex 只影响内部排版，发丝线在背景上、锚点绝对定位，都不参与 */
+
+.about .vp-doc {
+  counter-reset: fx-section;
+}
+
+.about .vp-doc h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  counter-increment: fx-section;
+}
+
+.about .vp-doc h2::after {
+  content: counter(fx-section, decimal-leading-zero);
+  margin-left: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* 手写的 dl / dd 在浏览器默认样式里带外边距，先清掉再由各组自己定 */
+.about .vp-doc dl,
+.about .vp-doc dl dd {
+  margin: 0;
+}
+
+/* ---- 信条：编号格言格 ----
+   一条一条往下读：编号悬在左列，品牌色竖线起头，标题与解释都挂在竖线上。
+   不做成卡片——四条格言本来就是一组连读的话，拆开会把语气切断 */
+
+.about-creed {
+  margin-top: var(--fx-space-5);
+  counter-reset: creed;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.creed-item {
+  counter-increment: creed;
+  position: relative;
+  padding-left: 3rem;
+}
+
+/* 编号绝对定位到左列，标题与解释整块让出位置 */
+.creed-item dt::before {
+  content: counter(creed, decimal-leading-zero);
+  position: absolute;
+  top: 0.15rem;
+  left: 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.creed-item dt {
+  margin: 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--vp-c-brand-1);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+}
+
+.creed-item dd {
+  margin-top: 0.4rem;
+  padding-left: calc(0.85rem + 2px);
+  color: var(--vp-c-text-2);
+  font-size: var(--fx-text-sm);
+  line-height: 1.85;
+}
+
+/* ---- 技能：行式标签表 ----
+   分类名占左列（像表头），标签在右列自动换行；行间发丝线，整块上下收口。
+   标签含中文，用 sans 而不是 mono；浅色无框标签表示「看得懂、写得少」 */
+
+.skill-list {
+  margin-top: var(--fx-space-5);
+  border-top: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 0.35rem 1.5rem;
+  align-items: baseline;
+  padding: 0.85rem 0;
+}
+
+.skill-row + .skill-row {
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.skill-row dt {
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  color: var(--vp-c-text-2);
+}
+
+.skill-row dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+}
+
+.skill-tag {
+  padding: 2px 8px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 2px;
+  font-size: var(--fx-text-sm);
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
+
+/* ---- 玩 AI：两列小卡 ----
+   名字走衬线标题，评价跟在下面；卡片只留一圈发丝边和半档底色，颜色不参与——
+   这一节的主角是名字和那句评价 */
+
+.ai-list {
+  margin-top: var(--fx-space-5);
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 48rem) {
+  .ai-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ai-row {
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.875rem;
+  background-color: var(--vp-c-bg-alt);
+}
+
+.ai-row dt {
+  font-family: var(--fx-font-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--vp-c-text-1);
+}
+
+.ai-row dd {
+  margin-top: 0.5rem;
+  color: var(--vp-c-text-2);
+  font-size: var(--fx-text-sm);
+  line-height: 1.8;
+}
+
+/* ---- 页尾版权页：教育与联系双栏 ----
+   章节标题（教育与联系）已经有发丝线起头，这里再收一条细线做版权页框。
+   每栏是「栏目眉题 + 键值表」：眉题等宽小字带一串字距，下面自己收一条细线；
+   栏内字段名与值分两列，值全部从同一条左边缘起 —— 这块存在的意义就是这个对齐。
+   选择器都带 .col-block 前缀：VP 的 .vp-doc p / dl 是 (0,1,1)，单类比不过它 */
+
+.about-colophon {
+  margin-top: var(--fx-space-5);
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: var(--fx-space-5);
+  display: grid;
+  gap: var(--fx-space-5);
+}
+
+@media (min-width: 48rem) {
+  .about-colophon {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rem;
+  }
+}
+
+.col-block .col-label {
+  margin: 0 0 0.7rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+.col-block .col-facts {
+  margin: 0;
+  font-size: var(--fx-text-base);
+  line-height: 1.7;
+}
+
+/* 一行一组「字段名 + 值」；列宽写死，每个小网格才落在同一条竖线上 */
+.col-facts > div {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.col-facts > div + div {
+  margin-top: 0.3rem;
+}
+
+.col-facts dt {
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-3);
+}
+
+.col-facts dd {
+  margin: 0;
+  color: var(--vp-c-text-1);
+}
+
+/* ---- 窄屏：标签表堆叠 ----
+   组名收成区块眉题，标签整行铺开。creed 是单列的编号格、ai-list 是卡片网格，
+   窄屏都自动落成一列，不用额外处理 */
+
+@media (max-width: 40rem) {
+  .skill-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about .vp-doc h2::after {
+    transition: none;
+  }
+}
+

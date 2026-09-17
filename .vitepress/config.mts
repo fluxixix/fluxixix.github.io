@@ -1,5 +1,6 @@
 import { defineConfig, type HeadConfig } from 'vitepress'
-import { generateRssFeed } from './rss.ts'
+import { fluxixixSite } from 'vitepress-theme-fluxixix/site'
+import { rss } from 'vitepress-theme-fluxixix/rss'
 
 // 本地 dev 请求 /_vercel/insights/script.js 会被 SPA 兜底成 HTML 返回，浏览器按 JS
 // 解析就会报 "SyntaxError: Unexpected token '<'"。这个脚本只有 Vercel 上有，所以只在
@@ -9,11 +10,15 @@ const isBuild =
   (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV ===
   'production'
 
+// 站点线上地址：RSS 的绝对链接要用，也是站点身份的单一来源
+const SITE_URL = 'https://fluxixix.github.io'
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: "fluxixix",
   description: "less is more",
-  srcExclude: ['**/README.md'],
+  // packages/ 是主题插件源码，别当成页面渲染
+  srcExclude: ['**/README.md', 'packages/**', 'examples/**'],
   // 独立页面统一放在 pages/ 下，通过 rewrite 去掉 URL 里的目录前缀
   rewrites: {
     'pages/:page': ':page',
@@ -29,9 +34,14 @@ export default defineConfig({
       ? ([['script', { defer: '', src: '/_vercel/insights/script.js' }]] as HeadConfig[])
       : [])
   ],
-  buildEnd: generateRssFeed,
-  themeConfig: {
-    // https://vitepress.dev/reference/default-theme-config
+  // 构建结束后生成 feed.xml，产物随站点一起发布
+  buildEnd: rss({
+    siteUrl: SITE_URL,
+    title: 'fluxixix',
+    description: 'less is more'
+  }),
+  // fluxixixSite 补上主题自带的界面文案与本地搜索翻译，nav / sidebar 这类内容仍写在下面
+  themeConfig: fluxixixSite({
     nav: [
       { text: '首页', link: '/' },
       { text: '文章', link: '/posts/' },
@@ -41,15 +51,6 @@ export default defineConfig({
       { text: '关于', link: '/about' }
     ],
 
-    // 默认主题的界面文案是写死的英文，这几处会显示给读者，单独覆盖
-    outline: { label: '本页目录' },
-    returnToTopLabel: '回到顶部',
-    // 窄屏下打开侧边栏的那个按钮
-    sidebarMenuLabel: '菜单',
-    // 窄屏菜单里的亮暗主题切换
-    darkModeSwitchLabel: '外观',
-    docFooter: { prev: '上一篇', next: '下一篇' },
-
     // 只在文章区显示侧边栏，按目录分主题；base 用来省掉组内链接的重复前缀
     sidebar: {
       '/posts/': [
@@ -58,7 +59,9 @@ export default defineConfig({
           base: '/posts/tech/',
           items: [
             { text: '从零搭建个人站', link: 'vitepress-blog-experience' },
-            { text: 'dotfiles 操作指南', link: 'dotfiles-setup-guide' }
+            { text: 'dotfiles 操作指南', link: 'dotfiles-setup-guide' },
+            // 本站最早的一篇，按日期倒序排在组内末尾
+            { text: 'Markdown 全格式总览', link: 'markdown-showcase' }
           ]
         },
         {
@@ -75,26 +78,6 @@ export default defineConfig({
 
     socialLinks: [
       { icon: 'github', link: 'https://github.com/fluxixix/fluxixix.github.io', ariaLabel: 'GitHub 仓库' }
-    ],
-
-    search: {
-      provider: 'local',
-      options: {
-        translations: {
-          button: { buttonText: '搜索', buttonAriaLabel: '搜索' },
-          modal: {
-            displayDetails: '显示详情',
-            resetButtonTitle: '清除搜索',
-            backButtonTitle: '返回',
-            noResultsText: '没有找到结果',
-            footer: {
-              selectText: '选择',
-              navigateText: '切换',
-              closeText: '关闭'
-            }
-          }
-        }
-      }
-    }
-  }
+    ]
+  })
 })

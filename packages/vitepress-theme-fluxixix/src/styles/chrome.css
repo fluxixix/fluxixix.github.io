@@ -1,0 +1,133 @@
+/* --------------------------------------------------------------------------
+   4. 全站页脚与阅读进度
+   -------------------------------------------------------------------------- */
+
+/* 文章页顶部那根 2px：宽度写死 100%，进度只动 transform，不触发布局。
+   脚本在 /posts/ 之外把进度压到 0，回顶后整根淡出（见 index.ts） */
+.fx-reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: calc(var(--vp-z-index-nav, 30) + 1);
+  width: 100%;
+  height: 2px;
+  background-image: linear-gradient(90deg, var(--fx-brand-a), var(--fx-brand-b));
+  transform: scaleX(0);
+  transform-origin: 0 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s var(--fx-ease);
+}
+
+.fx-reading-progress.is-on {
+  opacity: 1;
+}
+
+/* ≥60rem 顶栏是固定悬浮的胶囊，进度交给环（见下），这根横向细线退场 */
+@media (min-width: 60rem) {
+  .fx-reading-progress {
+    display: none;
+  }
+}
+
+/* ---- 胶囊外圈的阅读进度环 ----
+   一个 SVG 圆角矩形描边，套在收缩后的导航胶囊外圈上：颜色沿宽度方向从品牌紫
+   渐变到品牌青，读到哪画到哪。尺寸由 index.ts 按元素实际像素喂给 viewBox，
+   所以圆角在任意宽度下都不会被拉成椭圆；进度用 pathLength="1" 归一化，
+   dashoffset 直接就是「还剩多少没读」 */
+.fx-nav-ring {
+  /* 窄屏没有胶囊，环无处可画；到 ≥60rem 才由下面的媒体查询放出来 */
+  display: none;
+  position: absolute;
+  /* SVG 是替换元素：只给 left/right 是不会被拉宽的，它会退回 300×150 的固有
+     尺寸，所以宽度必须显式给，居中改用 left + translateX */
+  top: calc((var(--vp-nav-height) - var(--fx-nav-float-height)) / 2);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(var(--fx-nav-float-max), calc(100% - var(--fx-nav-float-inset) * 2));
+  height: var(--fx-nav-float-height);
+  /* 描边画在盒子边界上，overflow 要放开，否则圆角外侧会被裁掉 */
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--fx-dur-base) var(--fx-ease);
+  z-index: 2;
+}
+
+.fx-nav-ring.is-on {
+  opacity: 1;
+}
+
+/* 放到基类之后：媒体查询不增加特异性，写在前面会被上面的 display: none 盖掉 */
+@media (min-width: 60rem) {
+  .fx-nav-ring {
+    display: block;
+  }
+}
+
+/* 未读部分：极淡的一圈，让"环"的形状完整，也读出还剩多长 */
+.fx-nav-ring-track {
+  fill: none;
+  stroke: var(--vp-c-divider);
+  stroke-width: 1.5;
+}
+
+.fx-nav-ring-bar {
+  fill: none;
+  stroke: url(#fx-nav-ring-grad);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  /* 进度是逐帧算出来的，这里不插值，免得滚动时刻在追 */
+  transition: none;
+}
+
+/* 刊物的版权页：一条发丝线 + 一行等宽小字 */
+.site-footer {
+  border-top: 1px solid var(--vp-c-divider);
+  margin-top: 3rem;
+}
+
+.site-footer-inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 2.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fx-space-4);
+  flex-wrap: wrap;
+  font-family: var(--vp-font-family-mono);
+  font-size: var(--fx-text-sm);
+  color: var(--vp-c-text-3);
+}
+
+@media (min-width: 40rem) {
+  .site-footer-inner {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  .site-footer-inner {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+.site-footer-links {
+  display: flex;
+  gap: var(--fx-space-5);
+}
+
+.site-footer a {
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: color var(--fx-dur-base);
+}
+
+.site-footer a:hover {
+  color: var(--vp-c-brand-1);
+}
+
+

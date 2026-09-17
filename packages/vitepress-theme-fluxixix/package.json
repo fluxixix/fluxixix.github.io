@@ -1,0 +1,61 @@
+{
+  "name": "vitepress-theme-fluxixix",
+  "version": "0.2.0",
+  "description": "编辑部式排版的 VitePress 主题：衬线字体栈、悬浮胶囊导航、滚动揭示、阅读进度环与作品版画；样式刻意不分层，排在默认主题之后生效，不污染宿主站点。",
+  "type": "module",
+  "keywords": [
+    "vitepress",
+    "vitepress-theme",
+    "blog",
+    "theme"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fluxixix/fluxixix.github.io.git",
+    "directory": "packages/vitepress-theme-fluxixix"
+  },
+  "homepage": "https://fluxixix.github.io",
+  "files": [
+    "src",
+    "client.d.ts",
+    "site.d.ts",
+    "styles.d.ts",
+    "vue-shim.d.ts",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./client.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./theme": {
+      "default": "./src/theme/index.ts"
+    },
+    "./fonts": {
+      "default": "./src/fonts.ts"
+    },
+    "./styles/*": "./src/styles/*",
+    "./site": {
+      "types": "./site.d.ts",
+      "default": "./src/site.ts"
+    },
+    "./rss": {
+      "types": "./src/rss.d.ts",
+      "default": "./src/rss.ts"
+    },
+    "./components/*": "./src/components/*"
+  },
+  "peerDependencies": {
+    "vitepress": ">=2.0.0-alpha.20 <3.0.0",
+    "vue": "^3.5.0"
+  },
+  "peerDependenciesMeta": {
+    "@fontsource/ibm-plex-mono": {
+      "optional": true
+    },
+    "@fontsource/noto-serif-sc": {
+      "optional": true
+    }
+  }
+}
