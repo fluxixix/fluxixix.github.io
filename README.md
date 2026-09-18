@@ -42,27 +42,23 @@
 ```bash
 npm install
 
-# 本站（内容 + 主题的活体 demo）
+# 本站
 npm run docs:dev          # 默认 http://localhost:5173
 npm run docs:build        # 构建到 .vitepress/dist
 npm run docs:preview      # 预览构建产物
-
-# 主题的示例站（packages/vitepress-theme-fluxixix/examples/native-demo：只装主题、什么都不配）
-npm run example:dev       # http://localhost:5175
-npm run example:build
-npm run example:preview
 ```
 
-**改了主题包（`packages/vitepress-theme-fluxixix`）后，dev server 会自动热更新**——
-包是以符号链接装进 `node_modules` 的，改源码即生效，不用重启。改了
-`.vitepress/config.mts` 才需要重启。
+主题是**独立仓库** [fluxixix/vitepress-theme-fluxixix](https://github.com/fluxixix/vitepress-theme-fluxixix)，
+本站按 tag 依赖它（`git+https://…git#v0.3.0`）。它不在 npm registry 上，所以
+项目根有一个 `.npmrc` 写着 `allow-git=root` —— npm 12 起非 registry 来源的依赖默认被拦，
+这一行是放行本项目的 git 依赖用的（细节见主题仓库 README 的「安装」一节）。
 
-看两个站的区别：本站是"主题被用到极致"的样子（首页刊头、作品墙、Now 月度留档、
-杂志化关于页），示例站是"一个普通博客装了这个主题"的样子——**只有文章列表、
-文章页、归档页**，2 篇虚构文章，没有作品墙也没有 Now、没有自定义组件。
-技术那篇《Markdown 全格式总览》把标题、列表、表格、代码块（行高亮 / 差分 / 代码组 /
-行号）、七种提示容器、脚注、任务列表都演示了一遍，是"只写 Markdown 会得到什么"
-最直接的答案；随笔那篇演示普通正文的排版。
+改主题要走主题仓库：在那边 `npm run demo:dev` 看演示站，改完发新 tag，本站把依赖里的
+tag 往前挪一位。想在本地联调未发布的主题，把本站依赖临时换成
+`file:../vitepress-theme-fluxixix`（npm 会做符号链接，改源码即热更新），提交前换回来。
+
+示例站长什么样：它是"一个普通博客装了这个主题"的样子——**只有文章列表、文章页、
+归档页**，2 篇虚构文章，没有作品墙也没有 Now、没有自定义组件。
 
 Node 24，与 CI 保持一致。
 
@@ -80,40 +76,9 @@ Node 24，与 CI 保持一致。
 │   └── now/
 │       ├── now.data.ts       月度留档的数据源（构建期读取各期 frontmatter）
 │       └── 2026-09.md        当月一页
-├── packages/
-│   └── vitepress-theme-fluxixix/   主题包（本站通过 npm workspaces 消费它）
-│       ├── README.md         安装 / 接入 / 参数 / 覆盖主题的说明
-│       ├── LICENSE           MIT
-│       ├── bin/cli.js        起站脚手架：npx github:fluxixix/vitepress-theme-fluxixix init
-│       ├── template/         脚手架生成的站点骨架
-│       ├── scripts/          层约定检查 / 示例站隔离检查 / 打包冒烟
-│       ├── .github/workflows/ 拆仓后就是主题仓库的 CI 与 Release
-│       ├── .gitignore
-│       ├── src/
-│       │   ├── index.ts      主题入口：fluxixixTheme()、交互挂载、组件注册
-│       │   ├── options.ts    站点参数与默认值（本站现值）
-│       │   ├── site.js       fluxixixSite()：补齐界面文案与搜索翻译
-│       │   ├── rss.js        rss()：buildEnd 钩子，生成 feed.xml
-│       │   ├── Layout.vue    布局扩展：首页刊头、全站页脚，按 frontmatter 挂载页头
-│       │   ├── components/   HomeCover / WorkPlate / NowHeader / PageMasthead / SiteFooter
-│       │   ├── cursor.ts     点击迸发的粒子
-│       │   ├── reveal.ts     滚动揭示
-│       │   ├── theme-transition.ts  明暗切换扩散
-│       │   ├── work-posters.ts      作品墙展开
-│       │   ├── reading-progress.ts  阅读进度条与进度环
-│       │   ├── theme/index.ts 推荐入口：主题本体 + 样式总表，顺序由包固定
-│       │   └── styles/       17 册样式（不写 @layer，靠排在默认主题之后取胜）
-│       └── examples/native-demo/  主题示例站（虚构内容）：装好主题的普通博客
-│           ├── index.md      首页（layout: home + 最新文章）
-│           ├── archive.md    归档页（archive-timeline 时间轴）
-│           ├── about.md      关于页（pageClass: about + masthead 页头）
-│           └── posts/
-│               ├── posts.data.ts 列表数据源
-│               ├── index.md  文章列表页
-│               ├── tech/     技术 1 篇：《Markdown 全格式总览》
-│               └── notes/    随笔 1 篇：《笔记写给三个月后的自己》
-├── scripts/                  站点专属脚本：真实渲染对比（主题侧检查随包走）
+├── scripts/                  站点专属脚本：真实渲染对比（主题侧检查在主题仓库里）
 ├── public/robots.txt
+├── .npmrc                    allow-git=root：放行主题这条 git 依赖（npm 12 起必需）
 ├── tsconfig.json             只给编辑器做类型检查（noEmit，不参与构建）
 ├── .vitepress/
 │   ├── config.mts            站点配置
@@ -129,53 +94,48 @@ Node 24，与 CI 保持一致。
 
 ## 主题插件
 
-主题（样式、交互、组件、页面形态）都在 `packages/vitepress-theme-fluxixix`，
-本站是它的第一个使用者，通过 npm workspaces 依赖（`npm install` 后以符号链接
-出现在 `node_modules` 下）。
+主题（样式、交互、组件、页面形态）是**独立仓库**
+[fluxixix/vitepress-theme-fluxixix](https://github.com/fluxixix/vitepress-theme-fluxixix)，
+本站是它的第一个使用者：按 git tag 依赖，装下来是 `node_modules` 里的一个真目录
+（不再是符号链接——这正是 `.js` 入口那条约束的由来）。
 
-它**不在 npm registry 上**，给别人用的是 GitHub 的 git tag：
+它**不在 npm registry 上**。装法（细节与踩坑都写在主题仓库 README 的「安装」一节）：
 
 ```bash
-npm i -D github:fluxixix/vitepress-theme-fluxixix#v0.3.0
+npm i -D --allow-git=root "git+https://github.com/fluxixix/vitepress-theme-fluxixix.git#v0.3.0"
 ```
 
-包正在从本站仓库抽成独立仓库 `fluxixix/vitepress-theme-fluxixix`：`git subtree split`
-保留历史，`packages/vitepress-theme-fluxixix` 的**整个目录就是新仓库的根**（所以
-`examples/`、`scripts/`、`.github/workflows/` 都放在这个目录里面）。拆完之前本站
-仍走 workspaces，改主题源码照旧热更新。
+三条实测出来的约束，改依赖时要记住：
 
-- 换站要改的品牌色与功能色：包的 `src/styles/palette.css`；第三方站点在**主题样式之后**
-  写自己的 CSS 覆盖即可（见包内 README 的「样式与层」）。
+| 约束 | 原因 |
+| --- | --- |
+| 用 `git+https://…`，不要 `github:` 简写 | 简写会解析成 `git+ssh://` 写进 lockfile，CI 没有 SSH 私钥会直接失败 |
+| 项目根要有 `.npmrc` 写 `allow-git=root` | npm 12 起非 registry 来源的依赖默认被拦（`EALLOWGIT`） |
+| lockfile 里别混 registry | 非默认 registry 的 URL 会被 npm 12 当成 remote 依赖拦下（`EALLOWREMOTE`） |
+
+- 换站要改的品牌色与功能色：主题的 `src/styles/palette.css`；第三方站点在**主题样式之后**
+  写自己的 CSS 覆盖即可（见主题仓库 README 的「样式与层」）。
 - 站点差异（站名、首页索引、页脚、目录约定）：`fluxixixTheme({...})` 的参数，
   默认值就是本站现值，所以本站的 `.vitepress/theme/index.ts` 只引包入口 + 字体。
 - 加新样式时注意：**主题样式不能写 @layer**。VitePress 默认主题的 vars.css 与组件
   样式都是未分层的，而未分层胜过任何命名层——主题一进层就会被默认主题反压
-  （品牌色、导航胶囊、进度环、作品卡会同时失效且不报错）。`npm run check:layers`
-  会挡住这个退化。
+  （品牌色、导航胶囊、进度环、作品卡会同时失效且不报错）。主题仓库的
+  `npm run check:layers` 会挡住这个退化。
 - 动 config 侧入口时注意：`/site` 与 `/rss` 的实现必须是 `.js`。它们由站点的
   `.vitepress/config.mts` 引，运行时由 Node 加载，而 Node 不对 `node_modules` 里的
-  文件做类型剥离——指向 `.ts` 会让**所有真实安装的站点**在构建第一步失败（在
-  workspaces 符号链接布局里却看不出来）。`npm run check:pack` 是这条的哨兵。
+  文件做类型剥离——指向 `.ts` 会让**所有真实安装的站点**在构建第一步失败。
+  主题仓库的 `npm run check:pack` 是这条的哨兵。
 
-验证：
+验证（本站只剩构建与渲染对比；主题自己的四道检查在主题仓库跑）：
 
 ```bash
-npm run check:layers     # 样式层约定（主题包里的脚本，本站与示例站都查）
-npm run check:isolation  # 示例站 A/B 隔离检查（摘主题 / 装主题两次构建逐字比 DOM）
-npm run check:pack       # 打包冒烟：tgz 解成真目录再建站（唯一能测出真实安装的）
-npm run verify           # 构建本站 + 上面三道
+npm run verify           # 构建本站（CI 的部署路径就是它）
 npm run verify:rendered  # 最强的一道：真实渲染对比（需要无头 Chromium）
-npm run typecheck        # tsc --noEmit（typescript 是传递依赖，在 node_modules/.bin 里）
+npm run typecheck        # tsc --noEmit（没把 typescript 写进依赖，环境里有 tsc 才跑得起来）
 ```
 
-`check:isolation` 会对 `packages/vitepress-theme-fluxixix/examples/native-demo`
-做两次构建（摘掉主题 / 装上主题），逐字比较页面 DOM。主题只被允许加四种节点，
-且都必须由页面主动触发或属于全站部件：页脚（总在）、首页刊头（`layout: home`）、
-编辑体页头（`masthead: true`）、Now 页头（`now: true`）。除此之外多一个类名都算失败——
-示例站现在有 7 个页面（首页 / 文章列表 / 2 篇文章 / 归档 / 关于 / 404）。
-
-`check:rendered` 才是抽包这件事的验收标准：它用无头 Chromium（CDP 直连）把
-「改造前 / 改造后」两套产物在 3 个视口宽度下逐页对比**计算样式与元素几何**，
+`check:rendered` 是「主题还能不能保持原样」的验收标准：它用无头 Chromium（CDP 直连）
+把「改造前 / 改造后」两套产物在 3 个视口宽度下逐页对比**计算样式与元素几何**，
 而不是只比 HTML。因为 HTML 逐字一致并不能说明还原度——被默认主题反压时 HTML
 一模一样、页面却是坏的。这件事真的发生过：主题样式一旦进 `@layer`，悬浮导航胶囊、
 阅读进度环、侧边栏卡片与作品卡尺寸会同时失守，而且不报任何错。用法：

@@ -1,27 +1,19 @@
 {
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "^5.3.0",
     "@fontsource/noto-serif-sc": "^5.3.0",
     "@iconify-json/mdi": "^1.2.3",
-    "vitepress": "^2.0.0-alpha.20"
+    "vitepress": "^2.0.0-alpha.20",
+    "vitepress-theme-fluxixix": "git+https://github.com/fluxixix/vitepress-theme-fluxixix.git#v0.3.0"
   },
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
     "docs:preview": "vitepress preview",
-    "example:dev": "vitepress dev packages/vitepress-theme-fluxixix/examples/native-demo --port 5175",
-    "example:build": "vitepress build packages/vitepress-theme-fluxixix/examples/native-demo",
-    "example:preview": "vitepress preview packages/vitepress-theme-fluxixix/examples/native-demo --port 4174",
-    "check:layers": "node packages/vitepress-theme-fluxixix/scripts/check-theme-layers.mjs",
-    "check:isolation": "node packages/vitepress-theme-fluxixix/scripts/check-example-isolation.mjs",
-    "check:pack": "node packages/vitepress-theme-fluxixix/scripts/check-pack-smoke.mjs",
     "check:rendered": "node scripts/check-rendered-parity.mjs",
     "baseline:make": "bash scripts/make-baseline.sh",
-    "verify": "npm run docs:build && npm run check:layers && npm run check:isolation && npm run check:pack",
+    "verify": "npm run docs:build",
     "verify:rendered": "npm run baseline:make && npm run docs:build && npm run check:rendered",
     "typecheck": "tsc --noEmit"
   }

@@ -1,11 +1,9 @@
 {
   // 只给编辑器用的类型配置：noEmit，不产出、不参与构建。
   //
-  // include 里只放 .ts：主题包那两个构建期入口（src/site.js、src/rss.js）改成
-  // .js 是刻意的（Node 不对 node_modules 里的文件做类型剥离，指向 .ts 会让
-  // 真实安装的站点构建失败，见包内 scripts/check-pack-smoke.mjs），它们的类型
-  // 由旁边的 .d.ts 提供；纯 .js 里用了 node: 内置模块，而项目没装 @types/node，
-  // 纳入检查只会多出一批「找不到模块 node:fs/promises」的噪声。
+  // 主题（vitepress-theme-fluxixix）已经拆到独立仓库、以依赖形式装在 node_modules 下，
+  // 不在本仓库的 include 里：它的类型随包发布（client.d.ts / site.d.ts / rss.d.ts），
+  // 编辑器读包里的声明就够了。
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -18,11 +16,6 @@
   "include": [
     // 站点主题入口
     ".vitepress/theme/**/*.ts",
-    // 示例站的主题入口
-    "examples/**/*.ts",
-    // 主题包的客户端脚本、选项与随包发布的类型声明
-    "packages/vitepress-theme-fluxixix/src/**/*.ts",
-    "packages/vitepress-theme-fluxixix/*.d.ts",
     // 构建期数据加载器
     "pages/**/*.ts",
     "posts/**/*.ts"

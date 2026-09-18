@@ -17,8 +17,8 @@ const SITE_URL = 'https://fluxixix.github.io'
 export default defineConfig({
   title: "fluxixix",
   description: "less is more",
-  // packages/ 是主题插件源码，别当成页面渲染
-  srcExclude: ['**/README.md', 'packages/**', 'examples/**'],
+  // README 是仓库文档，别当成页面渲染（主题源码已拆到独立仓库，不在本仓库里）
+  srcExclude: ['**/README.md'],
   // 独立页面统一放在 pages/ 下，通过 rewrite 去掉 URL 里的目录前缀
   rewrites: {
     'pages/:page': ':page',

@@ -1,7 +1,0 @@
-node_modules/
-
-# VitePress 的构建产物与缓存
-.vitepress/dist/
-.vitepress/cache/
-
-.DS_Store
