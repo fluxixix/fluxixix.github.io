@@ -266,3 +266,33 @@ meta: 工具链 · 个人项目
 </div>
 </div>
 </article>
+
+<article class="work-poster">
+<p class="poster-kind">个人项目 · SIDE PROJECT</p>
+<h3 id="vitepress-theme" class="poster-title">vitepress-theme-fluxixix<span class="poster-sub">VitePress 编辑部式主题</span></h3>
+<p class="entry-meta">技术栈 —— Vue 3 · TypeScript · 纯 CSS · VitePress 2 alpha · Node 24</p>
+<p class="entry-meta">状态 —— v0.3.0 · MIT · 不上 npm registry</p>
+<p class="entry-meta">链接 —— <a href="https://github.com/fluxixix/vitepress-theme-fluxixix">github.com/fluxixix/vitepress-theme-fluxixix</a></p>
+<div class="poster-body">
+<WorkPlate variant="stack" tone="cyan" code="10" note="17 STYLE SHEETS" label="层叠：十七册样式叠在默认主题之上，顺序不能反" />
+<div class="poster-main">
+<dl class="poster-metrics">
+<div><dt>样式</dt><dd>17<span>册</span></dd></div>
+<div><dt>组件</dt><dd>6<span>个</span></dd></div>
+<div><dt>检查</dt><dd>4<span>道</span></dd></div>
+<div><dt>分发</dt><dd>纯源码</dd></div>
+</dl>
+<p class="poster-lead">本站用的版式抽成了一个独立的主题包，从 GitHub 装到别的 VitePress 站上。它只在默认主题上叠一层，不替换它：没启用的页面形态一个节点都不产出，宿主站自己的 CSS 照样压得住。</p>
+<div class="poster-more">
+<ul>
+<li>形态都由页面自己触发。<code>pageClass</code> 写 archive / now-index / works / about 才长出对应的版式，frontmatter 写 <code>masthead: true</code> 才多出编辑体页头。不写就什么也不多。</li>
+<li>样式不写 <code>@layer</code>，是试出来的。默认主题的 <code>vars.css</code> 和组件的 <code>&lt;style scoped&gt;</code> 都没分层，主题一旦进层就被反压，品牌色、悬浮导航胶囊、阅读进度环会同时失守，还不报错。所以它靠排在默认主题之后取胜。</li>
+<li>只发 GitHub，不上 npm registry，git tag 就是版本。安装的坑有三条，都写进文档了：必须写 <code>git+https://</code>，<code>github:</code> 简写会被解析成 ssh 写进 lockfile，CI 上没有私钥直接失败；npm 12 起 git 依赖默认被拦，要放行一次；没装 git 的机器只能走 Release 挂的 tgz。</li>
+<li>有个坑只在别人机器上炸。<code>/site</code> 和 <code>/rss</code> 由站点配置文件引入，运行时归 Node 加载，而 Node 不对 <code>node_modules</code> 做类型剥离，入口指向 <code>.ts</code> 时外部用户 <code>vitepress build</code> 第一步就抛 <code>ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING</code>。仓库里是符号链接布局，看不见这个问题，于是加了一道打包冒烟：把 <code>npm pack</code> 出的 tgz 解成真目录，再建一个最小站点装上去。CI 跑完四道检查才发版。</li>
+<li>另带一个零依赖脚手架，一条 <code>npx … init my-blog</code> 就能生成能跑的站点，站里带 <code>.npmrc</code>，之后的 <code>npm install</code> 不用再带 flag。</li>
+</ul>
+</div>
+</div>
+</div>
+<button class="poster-toggle" type="button" aria-expanded="false"><span>展开 5 条详情</span></button>
+</article>
