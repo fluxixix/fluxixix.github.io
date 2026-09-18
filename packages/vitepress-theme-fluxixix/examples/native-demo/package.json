@@ -1,0 +1,15 @@
+{
+  "name": "native-demo",
+  "private": true,
+  "type": "module",
+  "description": "主题示例站：装好主题的普通博客，也是隔离检查的被测宿主",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.20",
+    "vitepress-theme-fluxixix": "file:../.."
+  }
+}

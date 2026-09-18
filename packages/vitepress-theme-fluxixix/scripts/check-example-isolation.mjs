@@ -13,7 +13,9 @@
  *
  * 同时核对主题的通用外壳确实渲染了、主题样式确实在产物里且排在默认主题之后。
  *
- * 用法（在仓库根目录）：
+ * 脚本随主题包走，两种布局都能跑：
+ *   主题独立仓库（包在仓库根）  → 演示站就在包的 examples/native-demo
+ *   主站 monorepo（包在 packages/ 下）→ 演示站在仓库根的 examples/native-demo
  *
  *   node scripts/check-example-isolation.mjs
  */
@@ -22,8 +24,11 @@ import { execFileSync } from 'node:child_process'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const exampleDir = join(root, 'examples', 'native-demo')
+const pkgRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
+// 两种布局下演示站都是 <repo>/examples/native-demo，只是 repo 的层级不同
+const exampleDir = existsSync(join(pkgRoot, 'examples', 'native-demo'))
+  ? join(pkgRoot, 'examples', 'native-demo')
+  : join(pkgRoot, '..', '..', 'examples', 'native-demo')
 const distDir = join(exampleDir, '.vitepress', 'dist')
 const themeDir = join(exampleDir, '.vitepress', 'theme')
 const themeOffDir = join(exampleDir, '.vitepress', 'theme-off')

@@ -8,16 +8,61 @@
 `scripts/check-example-isolation.mjs` 会对产物做 A/B 校验。
 
 - 要求 VitePress `>=2.0.0-alpha.20 <3.0.0`（主题用到 VitePress 2 的 client API）
-- 纯 CSS + Vue，无预处理器；直接发布 TS/Vue 源码，由使用方的 Vite 编译
+- 纯 CSS + Vue，无预处理器；客户端入口直接发布 TS/Vue 源码，由使用方的 Vite 编译
+- 两个**构建期**入口（`/site`、`/rss`）是 `.js`：它们由站点的配置文件引入，运行时
+  由 Node 直接加载，而 Node 不对 `node_modules` 里的文件做类型剥离（原因见包内
+  `scripts/check-pack-smoke.mjs`，那条闸就是为这个规则留的）
 - 不内置字体；字体栈有系统回退，不装 `@fontsource/*` 也能跑
+- **不在 npm registry 上**，从 GitHub 装，git tag 就是版本；`examples/native-demo`
+  是装了这个主题的普通博客长什么样
 
 ## 安装
 
-```bash
-npm i -D vitepress-theme-fluxixix
-# 想要主题自带的那套排版（思源宋体 + IBM Plex Mono）再装字体
-npm i -D @fontsource/ibm-plex-mono @fontsource/noto-serif-sc
+包不在 npm registry 上，装的是 GitHub 仓库。写进 `package.json` 把 tag 钉住：
+
+```jsonc
+"devDependencies": {
+  "vitepress": "^2.0.0-alpha.20",
+  "vitepress-theme-fluxixix": "github:fluxixix/vitepress-theme-fluxixix#v0.3.0"
+}
 ```
+
+命令行的等价写法：
+
+```bash
+# 主路径：从 git 装（lockfile 会把解析到的 commit 钉住，升级就是改这个 tag）
+npm i -D github:fluxixix/vitepress-theme-fluxixix#v0.3.0
+
+# 机器上没有 git：用 Release 里挂的 tgz，每个 tag 都会产一个
+npm i -D https://github.com/fluxixix/vitepress-theme-fluxixix/releases/download/v0.3.0/vitepress-theme-fluxixix-0.3.0.tgz
+```
+
+- 也可以写分支（`#main`），但拿到的版本会跟着上游漂，不建议写进依赖。
+- 包不产构建物，所以 git 安装**不跑 `prepare`**、不装 devDependencies，装得很快。
+- 想要主题自带的那套排版（思源宋体 + IBM Plex Mono）再装字体：
+  `npm i -D @fontsource/ibm-plex-mono @fontsource/noto-serif-sc`
+
+## 起一个新站（npx）
+
+包里带一个零依赖脚手架，把 `template/` 拷成一份能直接跑的站点：
+
+```bash
+npx github:fluxixix/vitepress-theme-fluxixix init my-blog
+cd my-blog && npm run dev
+```
+
+可选参数：`--name`（站名，默认取目录名）、`--tagline`、`--statement`、
+`--url`（RSS 用的绝对地址）、`--ref`（依赖钉在哪个 tag，默认本包版本）、
+`--no-install`（只生成文件）、`--force`（目标目录非空也写）。
+
+不想用脚手架也行——`examples/native-demo` 就是一份完整演示站，直接拷：
+
+```bash
+npx degit fluxixix/vitepress-theme-fluxixix/examples/native-demo my-blog
+# degit 不写 package.json 里的依赖，拷完照上面「安装」一节补上
+```
+
+> npx 只负责**起一个新站**，它不负责"安装主题"——主题是站点的 devDependency。
 
 ## 接入
 
@@ -67,8 +112,9 @@ export default defineConfig({
 })
 ```
 
-字体入口会 `import` 两个 `@fontsource` 包（思源宋体 + IBM Plex Mono）；没装就落到
-系统衬线/等宽字体，不会构建失败。
+字体入口会 `import` 两个 `@fontsource` 包（思源宋体 + IBM Plex Mono）。它们是
+**可选 peer**：不用 `/fonts` 入口就不必装，主题照常跑（字体栈回落到系统衬线/等宽字体）；
+一旦引了这个入口，这两个包就必须在依赖里——解析不到会直接构建失败，不会静默降级。
 
 ## 字体
 
@@ -141,9 +187,9 @@ CSS 规定「未分层的样式永远胜过任何命名层」。所以主题一�
 默认主题就会反过来盖住它——品牌色、悬浮导航胶囊、阅读进度环、作品卡尺寸会同时
 失守，且**不报任何错**。
 
-主题因此保持未分层，靠「排在默认主题之后」取胜。这条约束由
-`scripts/check-theme-layers.mjs` 与真实渲染对比（`scripts/check-rendered-parity.mjs`）
-双重把关。
+主题因此保持未分层，靠「排在默认主题之后」取胜。这条约束由两道闸把着：
+本仓库的 `scripts/check-theme-layers.mjs`（源码层面）与主站仓库
+`fluxixix.github.io` 的 `scripts/check-rendered-parity.mjs`（无头浏览器实测计算样式）。
 
 于是覆盖主题的写法就是普通的"后写者胜出"：
 
@@ -230,5 +276,11 @@ export default createContentLoader('posts/**/*.md', {
   组件样式尽量通过主题自己的 CSS 变量（`--vp-*`）调整，避免与默认主题的状态机打架。
 - **样式必须排在默认主题之后**：这是主题不写 @layer 的代价（原因见上面「样式与层」）。
   用 `vitepress-theme-fluxixix/theme` 这个入口就不会踩到；自己拆成两次导入时顺序不能反。
-- **不要给主题样式加 @layer**：同上。仓库里有 `check-theme-layers` 与真实渲染对比
-  （`check-rendered`）两道闸挡这个退化。
+- **不要给主题样式加 @layer**：同上。仓库里有 `check:layers` 与真实渲染对比
+  （`check:rendered`，在主站仓库）两道闸挡这个退化。
+- **不从 npm registry 装**：包只发 GitHub。代价是没有 registry 的版本页面与搜索，
+  版本靠 git tag + Release 表达；好处是不需要 npm 账号，安装链路只有 git 一跳。
+- **config 侧入口只能是 .js**：`/site` 与 `/rss` 由站点的配置文件引入，运行时由
+  Node 加载，而 Node 不对 `node_modules` 里的文件做类型剥离。往这两个入口加
+  `.ts` 会让所有真实安装的站点在构建第一步失败——`scripts/check-pack-smoke.mjs`
+  就是这条规则的哨兵（它把 tgz 解成真目录再构建，符号链接布局测不出来）。

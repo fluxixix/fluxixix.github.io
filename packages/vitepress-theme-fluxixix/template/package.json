@@ -1,0 +1,14 @@
+{
+  "name": "fluxixix-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.20",
+    "vitepress-theme-fluxixix": "__THEME_SPEC__"
+  }
+}

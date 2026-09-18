@@ -1,0 +1,64 @@
+# 发版：打 vX.Y.Z tag 就出 Release，并把 npm pack 出的 tgz 挂上去。
+#
+# 为什么挂在 Release 上：这个包不在 npm registry 上，「安装」有两条路——
+#   npm i -D github:fluxixix/vitepress-theme-fluxixix#vX.Y.Z      （需要 git）
+#   npm i -D https://github.com/.../releases/download/vX.Y.Z/....tgz （不需要 git）
+# tgz 是按 files 字段打出来的，比 GitHub 的源码归档小得多，也不含仓库里的脚本与 CI。
+#
+# 只用到 GITHUB_TOKEN，不需要任何 npm 凭据。想要构建证明可以打开最后那段注释，
+# 它用的是 GitHub 自己的 Artifact Attestation（npm provenance 的等价物）。
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: tag 与 package.json 的版本必须一致
+        run: |
+          node -e '
+            const pkg = require("./package.json")
+            const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "")
+            if (pkg.version !== tag) {
+              console.error(`✗ package.json 是 ${pkg.version}，tag 是 ${process.env.GITHUB_REF_NAME}`)
+              process.exit(1)
+            }
+            console.log(`✓ ${pkg.name}@${pkg.version}`)
+          '
+
+      # 发版前跑一遍完整检查，避免把坏的 tarball 挂出去
+      - run: npm ci
+      - run: npm ci --prefix examples/native-demo
+      - run: npm run verify
+
+      - name: 打包
+        run: npm pack --pack-destination dist
+
+      - name: 建 Release 并挂上 tgz
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.tgz \
+            --title "$GITHUB_REF_NAME" --generate-notes
+
+      # 可选：给 tgz 出一份 GitHub 构建证明（需要上面的 permissions 里加
+      # id-token: write 与 attestations: write）。版本号会随官方 action 走，
+      # 打开前先看一眼 actions/attest-build-provenance 的当前主版本。
+      #
+      # - name: 构建证明
+      #   uses: actions/attest-build-provenance@v2
+      #   with:
+      #     subject-path: dist/*.tgz

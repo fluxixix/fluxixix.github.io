@@ -1,0 +1,15 @@
+# 依赖
+node_modules/
+
+# 演示站（examples/native-demo）与任何租本站点的构建产物
+examples/*/.vitepress/dist/
+examples/*/.vitepress/cache/
+# 隔离检查会临时把 .vitepress/theme 改名成 theme-off 做基线构建
+examples/*/.vitepress/theme-off/
+.vitepress/dist/
+.vitepress/cache/
+
+# 编辑器与系统文件
+.DS_Store
+*.swp
+*~

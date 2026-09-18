@@ -1,6 +1,6 @@
 {
   "name": "vitepress-theme-fluxixix",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "编辑部式排版的 VitePress 主题：衬线字体栈、悬浮胶囊导航、滚动揭示、阅读进度环与作品版画；样式刻意不分层，排在默认主题之后生效，不污染宿主站点。",
   "type": "module",
   "keywords": [
@@ -12,17 +12,22 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fluxixix/fluxixix.github.io.git",
-    "directory": "packages/vitepress-theme-fluxixix"
+    "url": "https://github.com/fluxixix/vitepress-theme-fluxixix.git"
   },
-  "homepage": "https://fluxixix.github.io",
+  "homepage": "https://github.com/fluxixix/vitepress-theme-fluxixix",
+  "bin": {
+    "fluxixix-theme": "./bin/cli.js"
+  },
   "files": [
     "src",
+    "bin",
+    "template",
     "client.d.ts",
     "site.d.ts",
     "styles.d.ts",
     "vue-shim.d.ts",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "exports": {
     ".": {
@@ -38,17 +43,32 @@
     "./styles/*": "./src/styles/*",
     "./site": {
       "types": "./site.d.ts",
-      "default": "./src/site.ts"
+      "default": "./src/site.js"
     },
     "./rss": {
       "types": "./src/rss.d.ts",
-      "default": "./src/rss.ts"
+      "default": "./src/rss.js"
     },
-    "./components/*": "./src/components/*"
+    "./components/*": "./src/components/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "demo:dev": "vitepress dev examples/native-demo --port 5175",
+    "demo:build": "vitepress build examples/native-demo",
+    "demo:preview": "vitepress preview examples/native-demo --port 4174",
+    "check:layers": "node scripts/check-theme-layers.mjs",
+    "check:isolation": "node scripts/check-example-isolation.mjs",
+    "check:pack": "node scripts/check-pack-smoke.mjs",
+    "verify": "npm run demo:build && npm run check:layers && npm run check:isolation && npm run check:pack"
+  },
+  "devDependencies": {
+    "vitepress": "^2.0.0-alpha.20"
   },
   "peerDependencies": {
     "vitepress": ">=2.0.0-alpha.20 <3.0.0",
-    "vue": "^3.5.0"
+    "vue": "^3.5.0",
+    "@fontsource/ibm-plex-mono": "*",
+    "@fontsource/noto-serif-sc": "*"
   },
   "peerDependenciesMeta": {
     "@fontsource/ibm-plex-mono": {

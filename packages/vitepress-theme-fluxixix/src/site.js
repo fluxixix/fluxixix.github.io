@@ -3,6 +3,14 @@
  *
  * 这里只给「文案」——nav / sidebar / socialLinks 属于内容，永远由站点自己写；
  * 传进来的同名字段优先，缺省项才由本函数补上。
+ *
+ * 为什么这份实现是 .js 而不是 .ts（别顺手改回去）：
+ * 这个入口由**站点的 .vitepress/config.mts** 引入，也就是由 Vite 的配置加载器
+ * 打包，而它把裸导入一律标成 external（见 vite 的 bundleConfigFile /
+ * externalize-deps），运行时由 Node 直接加载。Node 的类型剥离明确跳过
+ * node_modules 里的文件，所以包一旦被真实安装（不是 workspace 符号链接），
+ * 指向 .ts 的入口会直接抛 ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING。
+ * 类型由旁边的 site.d.ts 提供，与本文件一一对应。
  */
 
 /** 主题自带的默认界面文案（默认主题的界面文案是写死的英文，这几处会显示给读者） */
@@ -33,19 +41,19 @@ export const defaultThemeConfig = {
       }
     }
   }
-} as const
+}
 
 /**
  * 把站点自己的 themeConfig 与主题默认文案合并。
  *
  *   themeConfig: fluxixixSite({ nav: [...], sidebar: {...} })
  *
- * 站点的整段配置被原样保留，返回类型也跟它一致，所以 VitePress 的类型检查
- * 仍然按站点写的内容来。
+ * 站点的整段配置被原样保留，返回类型也跟它一致（见 site.d.ts），所以 VitePress
+ * 的类型检查仍然按站点写的内容来。
  */
-export function fluxixixSite<T extends Record<string, unknown>>(config: T): T {
+export function fluxixixSite(config) {
   return {
     ...defaultThemeConfig,
     ...config
-  } as T
+  }
 }

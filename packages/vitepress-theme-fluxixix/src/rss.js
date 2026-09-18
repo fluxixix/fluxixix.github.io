@@ -1,46 +1,31 @@
+/**
+ * 构建期生成 RSS feed 的 buildEnd 钩子。
+ *
+ * 为什么这份实现是 .js 而不是 .ts（别顺手改回去）：
+ * 这个入口由**站点的 .vitepress/config.mts** 引入，也就是由 Vite 的配置加载器
+ * 打包，而它把裸导入一律标成 external（见 vite 的 bundleConfigFile /
+ * externalize-deps），运行时由 Node 直接加载。Node 的类型剥离明确跳过
+ * node_modules 里的文件，所以包一旦被真实安装（不是 workspace 符号链接），
+ * 指向 .ts 的入口会直接抛 ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING。
+ * 类型由旁边的 rss.d.ts 提供，与本文件一一对应。
+ */
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import type { SiteConfig } from 'vitepress'
-
-/** 生成 RSS 需要的站点信息。除 siteUrl 外都给了与 fluxixix 本站一致的默认值 */
-export interface RssOptions {
-  /** 站点线上地址（RSS 规范要求绝对 URL），必填 */
-  siteUrl: string
-  /** feed 文件名，默认 feed.xml */
-  feedFile?: string
-  /** 文章目录（相对 srcDir），默认 posts */
-  postDir?: string
-  /** 频道标题，默认取 VitePress 的 site.title */
-  title?: string
-  /** 频道描述，默认取 VitePress 的 site.description */
-  description?: string
-  /** 站点语言，默认 zh-CN */
-  language?: string
-  /** 最多收录几篇，默认 20 */
-  maxItems?: number
-}
 
 const DEFAULT_FEED_FILE = 'feed.xml'
 const DEFAULT_POST_DIR = 'posts'
 const DEFAULT_LANGUAGE = 'zh-CN'
 const DEFAULT_MAX_ITEMS = 20
 
-interface FeedItem {
-  title: string
-  link: string
-  date: Date
-  description: string
-}
-
 /**
  * 只读取约定使用的 title / date / description 三个字段，
  * 避免为构建脚本额外引入 frontmatter 解析依赖。
  */
-function readFrontmatter(source: string): Record<string, string> {
+function readFrontmatter(source) {
   const block = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)
   if (!block) return {}
 
-  const fields: Record<string, string> = {}
+  const fields = {}
   for (const line of block[1].split(/\r?\n/)) {
     const pair = line.match(/^([A-Za-z_][\w-]*)\s*:\s*(.*)$/)
     if (!pair || !pair[2]) continue
@@ -49,7 +34,7 @@ function readFrontmatter(source: string): Record<string, string> {
   return fields
 }
 
-function escapeXml(value: string): string {
+function escapeXml(value) {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -58,9 +43,9 @@ function escapeXml(value: string): string {
 }
 
 /** 递归收集 posts/ 下的文章，子目录同样计入；index.md 属于列表页，排除 */
-async function collectMarkdownFiles(dir: string): Promise<string[]> {
+async function collectMarkdownFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
-  const files: string[] = []
+  const files = []
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name)
@@ -74,14 +59,9 @@ async function collectMarkdownFiles(dir: string): Promise<string[]> {
   return files
 }
 
-async function collectItems(
-  srcDir: string,
-  siteUrl: string,
-  postDir: string,
-  maxItems: number
-): Promise<FeedItem[]> {
+async function collectItems(srcDir, siteUrl, postDir, maxItems) {
   const files = await collectMarkdownFiles(path.join(srcDir, postDir))
-  const items: FeedItem[] = []
+  const items = []
 
   for (const file of files) {
     const fields = readFrontmatter(await readFile(file, 'utf-8'))
@@ -110,15 +90,7 @@ async function collectItems(
     .slice(0, maxItems)
 }
 
-interface RssChannel {
-  siteUrl: string
-  feedFile: string
-  title: string
-  description: string
-  language: string
-}
-
-function renderFeed(items: FeedItem[], channel: RssChannel): string {
+function renderFeed(items, channel) {
   const updated = items[0]?.date ?? new Date()
   const entries = items
     .map(
@@ -153,13 +125,13 @@ ${entries}
  *
  *   buildEnd: rss({ siteUrl: 'https://example.com' })
  */
-export function rss(options: RssOptions) {
+export function rss(options) {
   const feedFile = options.feedFile ?? DEFAULT_FEED_FILE
   const postDir = options.postDir ?? DEFAULT_POST_DIR
   const maxItems = options.maxItems ?? DEFAULT_MAX_ITEMS
 
-  return async (siteConfig: SiteConfig): Promise<void> => {
-    const channel: RssChannel = {
+  return async (siteConfig) => {
+    const channel = {
       siteUrl: options.siteUrl.replace(/\/$/, ''),
       feedFile,
       title: options.title ?? siteConfig.site.title,

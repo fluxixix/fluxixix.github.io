@@ -1,0 +1,46 @@
+# 主题仓库的 CI（拆仓后这份就在仓库根）。
+#
+# 四道检查，缺一不可：
+#   1. 演示站能构建
+#   2. 样式层约定（主题样式未分层、产物顺序在默认主题之后）
+#   3. A/B 隔离检查（装上主题后宿主站 DOM 逐字一致）
+#   4. 打包冒烟 —— npm pack 出的 tgz 解成真目录再建站
+#
+# 第 4 条是关键：前三条走的是 file: / workspace 的**符号链接**布局，
+# 而外部用户装下来是 node_modules 里的真目录，两者的差别恰恰会让
+# “config 侧入口指向 .ts”这种问题只在别人机器上炸（见 scripts/check-pack-smoke.mjs）。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 装依赖（主题包）
+        run: npm ci
+
+      - name: 装依赖（演示站，file:../.. 链到本仓库）
+        run: npm ci --prefix examples/native-demo
+
+      - name: 构建演示站
+        run: npm run demo:build
+
+      - name: 样式层约定
+        run: npm run check:layers
+
+      - name: A/B 隔离检查
+        run: npm run check:isolation
+
+      - name: 打包冒烟（真实安装路径）
+        run: npm run check:pack

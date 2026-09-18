@@ -1,5 +1,49 @@
 # 更新日志
 
+## 0.3.0
+
+主题拆成独立仓库 `fluxixix/vitepress-theme-fluxixix`，并且改为**只发 GitHub**。
+公共 API（`fluxixixTheme` / `fluxixixSite` / `rss` / `<WorkPlate>` / `exports` 的
+路径名）一个没动，变的是装法。
+
+### 破坏性变更（安装方式）
+
+- **不再从 npm registry 装**，也不打算发布上去。改成 git tag：
+
+  ```jsonc
+  "vitepress-theme-fluxixix": "github:fluxixix/vitepress-theme-fluxixix#v0.3.0"
+  ```
+
+  命令行等价写法 `npm i -D github:fluxixix/vitepress-theme-fluxixix#v0.3.0`；
+  没装 git 的机器用每个 tag 挂出来的 Release tgz。
+- 包必须放在仓库根（npm 不支持从 git 仓库的子目录装包），所以主题从主站仓库的
+  `packages/` 下搬了出来，历史用 `git subtree split` 保留。
+
+### 修复
+
+- **真实安装下构建失败**：`/site` 与 `/rss` 的入口指向 `.ts`。Vite 的配置加载器
+  把裸导入一律标成 external，运行时由 Node 加载，而 Node 的类型剥离明确跳过
+  `node_modules` 里的文件，于是外部用户 `vitepress build` 第一步就抛
+  `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`。两个入口改成 `.js`（类型仍由
+  `site.d.ts` / `src/rss.d.ts` 提供）。
+  在 workspace 符号链接布局里这个坑看不见——`node_modules/vitepress-theme-fluxixix`
+  是链接，Node 解析到 `packages/...` 的 `.ts` 时类型剥离是生效的。
+- 新增 `scripts/check-pack-smoke.mjs`：`npm pack` 出的 tgz 解成**真目录**再建一个
+  最小站点，把这条规则钉成 CI 断言（用符号链接的演示站测不出来）。
+- `peerDependenciesMeta` 里那两条 `@fontsource/*` 之前是空转（没有对应的
+  `peerDependencies` 条目），现在补进 `peerDependencies` 并标 optional。
+- README 里「没装字体就不会构建失败」的说法不准确：`/fonts` 入口 import 这两个包，
+  引了它就必须装。已改成可选 peer 的准确说法。
+
+### 新增
+
+- `bin/cli.js` + `template/`：零依赖脚手架，`npx github:fluxixix/vitepress-theme-fluxixix
+  init my-blog` 直接生成一份能跑的站点。
+- `LICENSE`（MIT）。
+- 仓库自带 CI 与 Release 工作流：tag `v*` 触发检查并把 tgz 挂进 Release。
+- `scripts/check-theme-layers.mjs`、`scripts/check-example-isolation.mjs` 随包走
+  （两种布局都能跑），演示站 `examples/native-demo` 一起搬进新仓库。
+
 ## 0.2.0
 
 ### 破坏性变更（仅样式层面）

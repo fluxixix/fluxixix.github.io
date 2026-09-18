@@ -1,10 +1,11 @@
 {
   // 只给编辑器用的类型配置：noEmit，不产出、不参与构建。
   //
-  // 这里刻意没有 include 整个仓库：`packages/vitepress-theme-fluxixix/src/rss.ts`
-  // 用了 `node:` 内置模块，而项目没装 `@types/node`（依赖清单只留必要项是刻意的），
-  // 把它纳进来会立刻多出一批「找不到模块 node:fs/promises」的新报错。
-  // 哪天要覆盖它，先装 @types/node，再把 rss.ts 加进 include。
+  // include 里只放 .ts：主题包那两个构建期入口（src/site.js、src/rss.js）改成
+  // .js 是刻意的（Node 不对 node_modules 里的文件做类型剥离，指向 .ts 会让
+  // 真实安装的站点构建失败，见包内 scripts/check-pack-smoke.mjs），它们的类型
+  // 由旁边的 .d.ts 提供；纯 .js 里用了 node: 内置模块，而项目没装 @types/node，
+  // 纳入检查只会多出一批「找不到模块 node:fs/promises」的噪声。
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -25,9 +26,5 @@
     // 构建期数据加载器
     "pages/**/*.ts",
     "posts/**/*.ts"
-  ],
-  // rss.ts 是唯一依赖 node: 内置模块的文件（构建期用），项目没装 @types/node，
-  // 纳入检查会稳定报两条「找不到 node:fs/promises / node:path」。构建不受影响，
-  // 所以这里显式排除，并把「本仓库类型检查干净」作为可断言的状态。
-  "exclude": ["packages/vitepress-theme-fluxixix/src/rss.ts"]
+  ]
 }

@@ -5,10 +5,7 @@ node_modules/
 .vitepress/dist/
 .vitepress/cache/
 
-# 示例站（最小宿主站，用来验证主题不污染原生样式）
-examples/*/.vitepress/dist/
-examples/*/.vitepress/cache/
-examples/*/.vitepress/theme-off/
+# 示例站的产物由主题包自己的 .gitignore 管（它随包一起拆到新仓库）
 
 # Obsidian
 .obsidian/
