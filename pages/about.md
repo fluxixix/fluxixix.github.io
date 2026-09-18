@@ -256,18 +256,9 @@ async function copyEmail() {
   </div>
 </dl>
 
-## 教育与联系
+## 联系
 
 <div class="about-colophon">
-  <section class="col-block">
-    <p class="col-label">教育</p>
-    <dl class="col-facts">
-      <div><dt>学校</dt><dd>湖南工业大学</dd></div>
-      <div><dt>专业</dt><dd>电子科学与技术 · 工学学士</dd></div>
-      <div><dt>时间</dt><dd>2015.09 — 2019.07</dd></div>
-      <div><dt>语言</dt><dd>英语 CET-6 / 日语 JLPT-N2</dd></div>
-    </dl>
-  </section>
   <section class="col-block">
     <p class="col-label">联系</p>
     <dl class="col-facts">
