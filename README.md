@@ -105,19 +105,12 @@ npm run check:rendered   # 8 个页面 × 3 个视口，差异数必须为 0
 
 样式、交互、组件、页面形态都在**独立仓库**
 [fluxixix/vitepress-theme-fluxixix](https://github.com/fluxixix/vitepress-theme-fluxixix)，
-本站是它的第一个使用者。它做了什么、各组件怎么用，看那边的 README。
+本站是它的第一个使用者。它做了什么、各组件怎么用，看那边的 README；本站只按 git tag
+依赖它，站点差异（站名、首页索引、页脚、目录约定）走 `fluxixixTheme({...})` 的参数，
+默认值就是本站现值。
 
-本站按 git tag 依赖它：
-
-```bash
-npm i -D --allow-git=root "git+https://github.com/fluxixix/vitepress-theme-fluxixix.git#v0.4.0"
-```
-
-改主题要走主题仓库：在那边 `npm run demo:dev` 看演示站，改完发新 tag，本站把依赖里的
-tag 往前挪一位。想在本地联调未发布的主题，把本站依赖临时换成
-`file:../vitepress-theme-fluxixix`（npm 会做符号链接，改源码即热更新），提交前换回来。
-站点差异（站名、首页索引、页脚、目录约定）走 `fluxixixTheme({...})` 的参数，默认值就是
-本站现值，所以本站的 `.vitepress/theme/index.ts` 只引包入口 + 字体。
+改主题要走主题仓库：那边 `npm run demo:dev` 看演示站，改完发新 tag，本站把依赖里的 tag
+往前挪一位。
 
 它**不在 npm registry 上**，三条实测出来的约束，改依赖时要记住：
 
@@ -170,9 +163,8 @@ line: 这个月想说的话   # 可选，渲染在页头下方
 
 ## 部署
 
-推送到 `main` 即触发 `.github/workflows/deploy.yml`，构建产物发布到 GitHub Pages。
+推送到 `main` 即触发 `.github/workflows/deploy.yml` 发布到 GitHub Pages；Vercel 用同一份
+`vercel.json` 构建，两边同一套产物。
 
-Vercel 用同一份 `vercel.json`（`buildCommand: npm run docs:build`，
-`outputDirectory: .vitepress/dist`）。Vercel Web Analytics 的脚本只在 production
-构建时注入 —— 本地 dev 下 `/_vercel/insights/script.js` 会被 SPA 兜底成 HTML，
-浏览器按 JS 解析就会报 `SyntaxError: Unexpected token '<'`。
+Vercel Web Analytics 的脚本只在 production 构建时注入 —— 本地 dev 下它会被 SPA 兜底成
+HTML，控制台报 `SyntaxError: Unexpected token '<'` 是正常的。
