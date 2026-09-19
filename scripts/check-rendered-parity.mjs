@@ -55,7 +55,10 @@ function serve(dir, port) {
 }
 
 const PAGES = process.argv.slice(2)
-if (!PAGES.length) PAGES.push('/', '/works', '/about', '/archive', '/now', '/posts/')
+// /works 不在默认清单里：它已经从主题那套海报卡改成了「太阳系」（十节各占一屏 +
+// 一张 WebGL 画的太阳系），与改造前的基线本来就该不一样，拿它比是白报差异。
+// 要单测别的页面就传参，例如 node scripts/check-rendered-parity.mjs / /about
+if (!PAGES.length) PAGES.push('/', '/about', '/archive', '/now', '/posts/')
 
 /**
  * 每个探测点各自该在哪些页面出现。探测点不存在时 pick() 会返回 null，
@@ -76,9 +79,13 @@ const EXPECTED = {
   homeCover: (page) => page === '/',
   postEntry: (page) => page === '/' || page === '/posts/',
   sidebar: (page) => page.startsWith('/posts/'),
-  workPoster: (page) => page === '/works' || page === '/about',
-  workPlate: (page) => page === '/works',
-  posterBody: (page) => page === '/works',
+  // 海报卡与版画：/works 改成太阳系之后这三项只剩 /about 还在用海报卡，
+  // 版画与卡面正文则两页都不再有（写死 false 是为了挡住无意中把它们带回来）。
+  // 注意 /works 的 DOM 里其实还留着 .work-plate——太阳系跑起来时它被视觉隐藏、
+  // 留给读屏，降级时又变回可见的静态版画；所以这一页不进对比清单
+  workPoster: (page) => page === '/about',
+  workPlate: () => false,
+  posterBody: () => false,
   masthead: (page) => page === '/works' || page === '/about',
   nowHead: (page) => page.startsWith('/now/'),
   nowLead: (page) => page === '/now',

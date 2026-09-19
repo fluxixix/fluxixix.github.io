@@ -1,0 +1,288 @@
+/* --------------------------------------------------------------------------
+   作品页：太阳系
+
+   中心是本站，十件作品是绕它运行的行星。系统固定在屏幕右侧，正文在左边一栏
+   滚动；滚到哪一件，系统就转到哪一颗、哪一颗被拎到近点。点某颗行星、按随机，
+   是把正文滚过去——两路输入都只落在同一个「当前」上。
+
+   画布是 fixed 的、垫在内容底下；DOM 仍然是普通文档流——十节文字各占一屏。
+   左右各占一半：正文收在左半边，太阳系由 WebGL 画在右半边，两者在屏幕上不重叠，
+   所以画布可以安安稳稳地待在最底层。
+
+   没有 JS / 没有 WebGL / 减弱动效 / 窄屏时，画布根本不会挂上来，页面就是
+   十节普通文档，主题给的那张静态 SVG 版画照常显示。
+   -------------------------------------------------------------------------- */
+
+/* ---- 画布 ---- */
+
+.plate-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 内容整体抬到画布之上。这一条不能省：body 的背景色画在画布下面，
+   画布要露得出来就不能用 z-index: -1，只能反过来把内容抬上去 */
+.Layout.works {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- 点击区 ----
+   画布本身 pointer-events: none（不然整页的文字选择与滚动都会被挡住），
+   点行星靠这一层透明浮层接。它只盖住右半边——正文整个在它左边，
+   所以文字该怎么选还怎么选 */
+
+.system-stage {
+  position: fixed;
+  /* 从导航栏下面起。这一层是 fixed 盖在整页之上的，且它由脚本追加在 .Layout
+     之后——同 z-index 下后写的压住先写的，顶到 0 就把导航栏右侧那排按钮
+     （搜索、明暗、GitHub）压在底下点不动 */
+  top: var(--vp-nav-height, 64px);
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 50%;
+  cursor: default;
+}
+
+.system-stage.is-over {
+  cursor: pointer;
+}
+
+/* ---- 版面：正文收进左栏 ----
+   默认主题把正文列居中（.VPDoc .container 是 flex + justify-content: center），
+   这里改成左对齐、不设上限，右边整片让给那副牌 */
+
+.works.works .VPDoc {
+  padding-inline: 0;
+}
+
+.works.works .VPDoc .container.container {
+  max-width: none;
+  justify-content: flex-start;
+  margin: 0;
+  padding-inline: clamp(1.25rem, 5.5vw, 6.5rem);
+}
+
+/* 正文列不再收窄——收窄交给下面那条 width（主题给的是 44rem） */
+.works .vp-doc.vp-doc {
+  --fx-measure: 100%;
+}
+
+/* 主题在作品页铺了一张两列的卡片墙。这里是单栏文档流，一节一屏 */
+.works .vp-doc > div {
+  display: block;
+}
+
+/* 左半边整块给正文，右半边整块给太阳系——两边各占一半。
+   文字本身不铺满这半边：容器让出 50%，下面那条 padding 再把行宽收回来。
+   中文长文一行三十来字最舒服，铺到 700px 会读得费劲。
+   只在太阳系真的跑起来时才这么分——降级态是普通长页，正文该占满它本来那一列 */
+html.fx-plate-ready .works.works .VPDoc .content.content {
+  max-width: none;
+  /* flex 项的 min-width 默认是 auto，会按内容的最小宽度把 width 顶开——
+     实测这里被顶到 640px，收窄就完全失效了。归零才是真的收窄 */
+  min-width: 0;
+  flex: 0 0 auto;
+  width: 50%;
+  padding-right: clamp(2.5rem, 11vw, 9rem);
+  margin: 0;
+}
+
+/* ---- 页首索引 ----
+   十件一行一件：编号 / 名字 / 分类。三件事一起干了——进页面就知道有几件、
+   每件叫什么（这一页最可能的读者是筛简历的人，给一页的时间以秒计）；
+   右侧十颗球能点，但那是 canvas 上的 raycast、键盘够不着，这一列 <a>
+   就是键盘走得通的等价路径。
+
+   网格三列：编号固定宽（tabular-nums 用不着，但十行对齐后数字列不晃），
+   名字吃掉剩下的，分类贴右。 */
+
+.works .plate-index {
+  display: grid;
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.works .plate-index .index-item {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr auto;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.3rem 0;
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+  transition: color var(--fx-dur-base) var(--fx-ease);
+}
+
+.works .plate-index .index-item:hover {
+  color: var(--vp-c-text-1);
+}
+
+/* VitePress 给 .vp-doc a 挂了品牌色与下划线，这里要的是「一行目录」而不是链接 */
+.works .plate-index .index-item:hover .index-name {
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-brand-1);
+  text-underline-offset: 0.25em;
+}
+
+.works .plate-index .index-no {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--vp-c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.works .plate-index .index-name {
+  font-family: var(--fx-font-serif);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--vp-c-text-1);
+}
+
+.works .plate-index .index-kind {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  color: var(--vp-c-text-3);
+  white-space: nowrap;
+}
+
+/* ---- 每一节 ----
+   降级态（没 JS / 没 WebGL / 减弱动效）下这十节就是连续的普通文档，
+   只需要给彼此留个气口 */
+.works .plate-scene {
+  padding-block: 2.5rem;
+}
+
+/* 从页首索引跳到某一节时，浏览器会把焦点落到那个 <section> 上——这是锚点导航
+   的副作用，不是用户在操作它。它于是带上了 :focus，在部分浏览器里被判成
+   :focus-visible，外面就画出一圈蓝框。
+   section 不是可操作元素，焦点环在这儿没有意义：「跳到了哪里」由页面滚过去
+   这件事本身就说明了。只撤这一处，键盘 Tab 的焦点指示不受影响 */
+.works .plate-scene:focus,
+.works .plate-scene:focus-visible {
+  outline: none;
+}
+
+/* 一屏一节、内容垂直居中——这是「一副牌转一圈的行程」，只有牌环真的跑起来时才需要。
+   少了这层门控，降级态里 .plate-scene 会是 flex 容器，主题给 .work-plate 的
+   float: right 直接失效，静态版画会掉到左上角而不是浮在文字右侧 */
+html.fx-plate-ready .works .plate-scene {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-block: 4rem;
+}
+
+/* 眉题：与主题的 .poster-kind 同一套语言，但这里在卡片之外，得自己写一份 */
+.works .plate-scene .scene-kind {
+  margin: 0 0 1.1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.16em;
+  color: var(--vp-c-text-3);
+}
+
+/* 展品名牌。主题给 h2 的发丝线与章节编号在这里没有意义——撤掉 */
+.works .plate-scene .scene-title {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background-image: none;
+  counter-increment: none;
+  font-family: var(--fx-font-serif);
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  /* 正文列只有 30 来字宽，不匀一下会把「高速行车 3D 可视化系统」拆成
+     「…可视化系 / 统」——末行孤零零一个字 */
+  text-wrap: balance;
+}
+
+/* VitePress 给 .vp-doc h2 挂了一条 ::before 渐变分隔线（1px 高、block、宽度跟随标题）。
+   眉题已经有一条下边框了，加上这条就是标题上方两根线，相隔不到 20px。
+   两条伪元素都撤掉：真要看图的是眉题那条，它有「标签 + 分隔」的结构意义 */
+.works .plate-scene .scene-title::before,
+.works .plate-scene .scene-title::after {
+  content: none;
+}
+
+/* VitePress 给 h2 挂的锚点 #：这一页不需要，牌环与正文已经绑在一起了 */
+.works .plate-scene .scene-title .header-anchor {
+  display: none;
+}
+
+/* 指标从「竖排五行带分隔线」改成一条横排的规格条：一节一屏，纵向的每一寸
+   都要省。标签在上、数字在下，仍旧是等宽小字配衬线数字 */
+.works .plate-scene .poster-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+}
+
+.works .plate-scene .poster-metrics > div {
+  display: block;
+  padding: 0;
+  border: 0;
+}
+
+/* 导语：这一页真正的正文，比主题给 0.8125rem 再大一号、提到 text-1 */
+.works .plate-scene .poster-lead {
+  margin-top: 1.75rem;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+  color: var(--vp-c-text-1);
+}
+
+/* 详情：环形标记与缩进由主题的 .works .vp-doc ul 那套给，这里只管密度 */
+.works .plate-scene .scene-notes {
+  margin-top: 1.75rem;
+}
+
+.works .plate-scene .scene-notes > li {
+  margin-top: 0.7rem;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  color: var(--vp-c-text-2);
+}
+
+/* ---- 版画的静态 SVG ----
+   牌环跑起来之后它退居幕后：不是删掉，而是视觉隐藏——读屏仍然读得到那句
+   aria-label，WebGL 画的只是它的一个视觉副本。脚本没跑就没有这个类，
+   版画按主题原本的样子浮在文字右侧 */
+
+html.fx-plate-ready .works .plate-scene .work-plate {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---- 窄屏 ----
+   与 index.ts 的 MIN_WIDTH 同一个断点：这边正文铺满整列，那边不跑牌环 */
+
+@media (max-width: 64rem) {
+  .works.works .VPDoc .container.container {
+    padding-inline: 1.25rem;
+  }
+}
