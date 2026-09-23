@@ -34,6 +34,17 @@ export default defineConfig({
       ? ([['script', { defer: '', src: '/_vercel/insights/script.js' }]] as HeadConfig[])
       : [])
   ],
+  vite: {
+    build: {
+      // rolldown 默认的 500KB 警告是针对首屏载荷的，而最大的那个 chunk 恰恰不是首屏：
+      // 作品页太阳系用的 three.js 被 works-scene/index.ts 动态 import，只有作品页会拉它，
+      // 也没有 modulepreload——别的页面根本不会下载这 500 多 KB。
+      // 它已经拆过一次，再拆（按模块）只会让 three 单独成一个一样大的 chunk，警告照旧。
+      // 所以这里放到 600：既不用每次构建都看这条无用的警告，其余 chunk 一旦真的膨胀
+      // （现在第二大的 framework 才一百出头）仍然会报出来。
+      chunkSizeWarningLimit: 600
+    }
+  },
   // 构建结束后生成 feed.xml，产物随站点一起发布
   buildEnd: rss({
     siteUrl: SITE_URL,
