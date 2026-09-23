@@ -5,8 +5,11 @@
  * 外圈四件个人项目。光从中心来——每颗球的亮面自动朝向太阳，不需要为光照
  * 做任何朝向处理，也不需要把明暗烤进贴图。
  *
- * 只有一个状态：current。滚动、点某颗行星、随机三路输入都只改它，
+ * 只有一个状态：current。滚动与点某颗行星两路输入都只改它，
  * 系统的转动由它推出来，系统不会反过来驱动滚动。
+ *
+ * 除了这路转动，系统还自己转：公转常年在走，每颗球各自自转。相机交给
+ * OrbitControls，拖右半边能换角度看；它只管相机，不碰上面那套聚焦。
  *
  * 只依赖 three.js，不碰 VitePress —— 挂载、能力检测、路由清理都在 index.ts。
  */
@@ -37,6 +40,7 @@ import {
   Vector3,
   WebGLRenderer
 } from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
   BODY_R,
   CENTER_X,
@@ -49,16 +53,22 @@ import {
 /* ---------- 构图 ---------- */
 
 /**
- * 相机略高于系统平面俯看。30° 俯角把圆轨道在屏幕上压成约 2:1 的扁椭圆——
- * 这既是「一眼看出是太阳系」要的样子，也顺带把纵向占用压下来。
+ * 拖拽旋转的靶心——也就是相机绕之旋转的点，取系统中心（恒星所在处）。
+ * 绕它转，整副系统才是在原地打转；绕原点转等于绕着系统左边外侧的一个点转，
+ * 一拖就整片往旁边甩。
+ *
+ * y 留 0.05 是原来那条视线的落点高度：相机相对靶心的偏移和它同向同长，
+ * 构图因此一分不差。0.05 对轨道平面来说可以忽略（外圈半径的 5%）。
  */
-const CAM = new Vector3(0, 3.0, 5.2)
-const LOOK = new Vector3(0, 0.05, 0)
+const PIVOT = new Vector3(CENTER_X, 0.05, 0)
+/** 相机相对靶心的偏移。和原来 CAM → LOOK 的那条视线一致，俯角仍是 30° */
+const CAM = PIVOT.clone().add(new Vector3(0, 2.95, 5.2))
 
 /**
  * 焦点处的横向半宽（世界单位）。钉死它，视口比例变了也只改 fov，不改构图——
  * 太阳系在屏幕上的落点才不会随窗口变形。
- * 屏幕中线对应世界 x = 0，所以右半边就是 [0, HALF_W]，太阳系中心取其中点。
+ * 画布横跨的世界宽度是 2×HALF_W，右半边正好是 [CENTER_X, CENTER_X + HALF_W]，
+ * 太阳系中心落在其中点——见下面 setViewOffset 那处错位。
  */
 const HALF_W = 2.68
 
@@ -68,8 +78,25 @@ const GROW = 1.7
 /** 当前那颗沿半径向外移多少（离开轨道线，一眼看出它被单独拎出来） */
 const PULL = 0.09
 
+/** 无操作时系统的公转角速度（弧度/秒）。约两分钟一圈：看得见在动，又不至于把当前那颗甩走 */
+const REVOLVE_SPEED = 0.05
+
 /** 其余九颗压到多少 */
 const DIM = 0.5
+
+/**
+ * 行星拾取热区相对球半径的倍数。
+ * 球在屏幕上只有二三十像素，热区放大到 1.5 倍才点得中；
+ * 再大就会咬到相邻那颗——相邻两颗只差 36°，见下面角度分配的注释
+ */
+const PICK_K = 1.5
+
+/**
+ * 恒星拾取代理相对恒星半径的倍数。
+ * 「点恒星回顶部」是这一页除滚动外唯一的出口，代理得比球大一圈才点得中；
+ * 但也不能更大——见下面 sunPickGeo 处的注释
+ */
+const SUN_PICK_K = 1.35
 
 /** 太阳光晕的直径 */
 const GLOW = 0.62
@@ -101,8 +128,6 @@ export const SUN_INDEX = -1
 export interface WorksScene {
   /** 把系统转到第 index 颗 */
   setCurrent(index: number): void
-  /** 归一化到 [-1, 1] 的指针位置，用来做一点点视差 */
-  setPointer(x: number, y: number): void
   /** 点在某处命中的是第几颗行星、还是恒星（SUN_INDEX）；什么都没命中返回 null */
   pick(clientX: number, clientY: number): number | null
   /** 明暗主题切换后重上一遍颜色 */
@@ -118,11 +143,17 @@ export interface WorksScene {
 interface Body {
   mesh: Mesh
   mat: MeshLambertMaterial
+  /** 拾取热区，挂在行星底下的不可见球 */
+  pick: Mesh
   /** 朝外的水平单位向量 */
   out: Vector3
   /** 0 → 在轨道上，1 → 被拎到焦点 */
   focus: number
   ring: number
+  /** 自转角速度（弧度/秒），方向与快慢逐颗不同 */
+  spin: number
+  /** 自转轴倾角。绕正立的 Y 轴转，色带是纬线、转起来看不出来，得先歪一点 */
+  tilt: number
 }
 
 /**
@@ -298,14 +329,47 @@ function orbitLine(radius: number, color: Color): LineLoop {
   return new LineLoop(geo, mat)
 }
 
-export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[]): WorksScene {
+export function createWorksScene(canvas: HTMLCanvasElement, stage: HTMLElement, bodies: SolarBody[]): WorksScene {
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true })
   renderer.setClearAlpha(0)
 
   const scene = new Scene()
   const camera = new PerspectiveCamera(30, 1, 0.1, 40)
   camera.position.copy(CAM)
-  camera.lookAt(LOOK)
+  camera.lookAt(PIVOT)
+
+  // 拖拽旋转：OrbitControls 接管相机，让用户能换角度看。靶心是系统中心，
+  // 所以整副系统是在原地打转，不是被甩到旁边去。
+  // 挂在 stage（右半透明浮层）上——画布本身 pointer-events: none，收不到事件。
+  // 缩放与平移都关掉：这一页的滚动是滚正文，不该被抢走。
+  const controls = new OrbitControls(camera, stage)
+  controls.target.copy(PIVOT)
+  controls.enableZoom = false
+  controls.enablePan = false
+  controls.enableDamping = true
+  controls.dampingFactor = 0.08
+  // 俯仰限在「几乎俯视」到「贴近轨道平面」之间。再往下就翻到系统背后了，
+  // 轨道会退成一条线
+  controls.minPolarAngle = Math.PI * 0.15
+  controls.maxPolarAngle = Math.PI * 0.46
+  /**
+   * 水平给到 ±90°。靶心在系统中心，转多少系统都还在右半边那一格里——
+   * 正是绕球心转才敢放开这个范围（绕原点时 ±45° 就到边了，再转压正文）。
+   */
+  controls.minAzimuthAngle = -Math.PI * 0.5
+  controls.maxAzimuthAngle = Math.PI * 0.5
+  controls.update()
+  /**
+   * OrbitControls 接管时会把这个元素的 touch-action 设成 none（它假定画布就是全部内容）。
+   * 这一层只盖住右半边，纵向滚动还得能穿过它——留 pan-y，横向手势才交给旋转。
+   */
+  stage.style.touchAction = 'pan-y'
+  /**
+   * connect() 里会顺手往元素上写一条 inline 的 cursor: auto——它当自己独占整块画布，
+   * 光标归它管。这里把这条清掉，光标交回样式表：「可拖」的抓手与悬停到行星上的
+   * 「可点」都挂在类上，inline 那条会全盖掉。
+   */
+  stage.style.cursor = ''
 
   let colors = readColors()
 
@@ -361,16 +425,24 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
   })
 
   /* ---------- 十颗行星 ----------
-     圈内均分角度，圈内第一颗都落在近点（a = 0，位置是 (0, 0, R)） */
+     每颗占整圈 36° 网格的一格：圈内相邻差 72°，跨圈相邻差 36°，
+     十颗把整圈一格一格填满，任何两颗都不会落在同一条半径上。
 
-  const counts = [0, 0, 0]
-  for (const b of bodies) counts[b.ring]++
+     原先三圈各自圈内均分、又都从近点起，于是内 01、中 07、外 08
+     三颗叠在同一直径上：看着像贴在一处，拾取热区也互相抢，
+     点不中、转不过去。约束是「共十件、分布 1/5/4」，件数变了要重排这些格 */
+
+  const GRID = Math.PI / 5
+  /** 三圈各自占第一格（0°、36°、72°），圈内往后各隔一格 */
+  const RING_SLOT = [0, 1, 2]
+  const SLOTS = 10
+
   const seen = [0, 0, 0]
-  const angles = bodies.map((b) => (seen[b.ring]++ / counts[b.ring]) * Math.PI * 2)
+  const angles = bodies.map((b) => ((RING_SLOT[b.ring] + seen[b.ring]++ * 2) % SLOTS) * GRID)
 
   // 十颗共用一份几何，大小差别全交给 scale
   const bodyGeo = new SphereGeometry(1, 32, 24)
-  // 拾取代理：行星在屏幕上只有二三十像素，热区得放大
+  // 拾取代理：行星在屏幕上只有二三十像素，热区得放大（倍数见 PICK_K）
   const pickGeo = new SphereGeometry(1, 12, 8)
   const pickMat = new MeshBasicMaterial({ visible: false })
 
@@ -395,20 +467,30 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
     mesh.position.copy(out).multiplyScalar(RING_R[b.ring])
     mesh.scale.setScalar(BODY_R[b.ring])
 
-    // 代理挂在行星底下，位置和缩放自动跟着走
+    // 代理挂在行星底下，位置和缩放自动跟着走。
+    // 倍率跟着 36° 网格走——原先是 2.2，那时格子还有空隙，放大到 2.2
+    // 不打架；现在十颗把整圈一格一格填满，相邻只差 36°，2.2 倍的热区会互吃，
+    // 点一颗会命中旁边那颗。它每帧都会被 apply() 重设（要抵消选中放大），
+    // 这里只给一个初始值
     const pick = new Mesh(pickGeo, pickMat)
-    pick.scale.setScalar(2.2)
+    pick.scale.setScalar(PICK_K)
     mesh.add(pick)
 
     group.add(mesh)
-    return { mesh, mat, out, focus: 0, ring: b.ring }
+    // 自转：公转统一、自转各转各的，方向与快慢逐颗错开；轴再歪几度，色带才扫得出来
+    const spin = (0.3 + (i % 3) * 0.15) * (i % 2 ? -1 : 1)
+    const tilt = (0.16 + (i % 4) * 0.06) * (i % 3 ? 1 : -1)
+    return { mesh, mat, pick, out, focus: 0, ring: b.ring, spin, tilt }
   })
 
-  const picks = list.map((b) => b.mesh.children[0] as Mesh)
+  const picks = list.map((b) => b.pick)
 
   // 恒星也挂一个拾取代理，比它自己大一圈——「点恒星回顶部」是这一页
-  // 除了滚动之外的唯一出口，目标太小就不好点
-  const sunPickGeo = new SphereGeometry(SUN_R * 1.7, 12, 8)
+  // 除了滚动之外的唯一出口，目标太小就不好点。
+  // 但不能再大：pick() 里恒星先测，它和内圈那颗在近点时的热区一旦叠上，
+  // 01 号就整段点不着了。原来 1.7 倍正好吃掉内圈近点那一侧，收到 1.35，
+  // 再加上内圈轨道抬到 0.5，两边才各自留得出热区
+  const sunPickGeo = new SphereGeometry(SUN_R * SUN_PICK_K, 12, 8)
   const sunPick = new Mesh(sunPickGeo, pickMat)
   sunPick.visible = false
   group.add(sunPick)
@@ -464,12 +546,12 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
     /** 目标角度与缓动中的角度（弧度，都是「转了多少」） */
     targetA: 0,
     curA: 0,
-    pointerX: 0,
-    pointerY: 0,
+    /** 无操作时累积的公转角度（弧度），与聚焦角度叠在同一根 Y 轴上 */
+    revolveA: 0,
     running: false
   }
 
-  const viewDir = LOOK.clone().sub(CAM).normalize()
+  const viewDir = PIVOT.clone().sub(CAM).normalize()
   /** 相机到最外圈近点所在平面的距离（沿视轴），fov 由它反算 */
   const frontDist = new Vector3(CENTER_X, 0, RING_R[2]).sub(CAM).dot(viewDir)
 
@@ -489,12 +571,17 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
   /* ---------- 每帧 ---------- */
 
   function apply(dt = 1 / 60) {
+    // 无操作时系统缓慢公转；聚焦与公转都绕 Y 轴，叠加成同一个转角
+    state.revolveA += REVOLVE_SPEED * dt
     // 转系统。缓动而不是直接落位，滚动快了也不会甩
     state.curA += shortest(state.curA, state.targetA) * Math.min(1, dt * 7)
-    group.rotation.y = -state.curA
+    group.rotation.y = -state.curA + state.revolveA
 
     for (let i = 0; i < list.length; i++) {
       const b = list[i]
+      // 自转：先按 tilt 把轴歪一点，再绕 Y 转——色带于是从球面上扫过去
+      b.mesh.rotation.z = b.tilt
+      b.mesh.rotation.y += b.spin * dt
       b.focus += ((i === state.current ? 1 : 0) - b.focus) * Math.min(1, dt * 6)
       const f = b.focus
 
@@ -502,6 +589,16 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
       const radial = RING_R[b.ring] + f * PULL
       b.mesh.position.set(b.out.x * radial, 0, b.out.z * radial)
       b.mesh.scale.setScalar(BODY_R[b.ring] * (1 + f * (GROW - 1)))
+      /**
+       * 热区不跟着球一起胀。
+       *
+       * 代理挂在行星底下，球放大到 GROW 倍，热区会跟着放大到 1.7 倍——
+       * 于是当前那颗反而张得最大，把左右邻居各咬掉一块：想点旁边那颗，
+       * 手指落在视觉上明明空着的地方，命中的却是当前这颗。
+       * 这里除掉同一个倍数，让当前那颗的热区始终和没被选中时一样大。
+       * 它已经是「当前」了，点它不会跳到别处，本来就不需要大热区。
+       */
+      b.pick.scale.setScalar(PICK_K / (1 + f * (GROW - 1)))
       // 当前那颗最亮，其余压到 DIM。写反了这一页就不存在「当前」可言
       b.mat.opacity = DIM + f * (1 - DIM)
       /**
@@ -540,9 +637,6 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
         isCur ? (bodies[i].accent === 'cyan' ? colors.accentB : colors.accentA) : colors.muted
       )
     }
-
-    camera.position.set(CAM.x + state.pointerX * 0.1, CAM.y + state.pointerY * 0.08, CAM.z)
-    camera.lookAt(LOOK)
   }
 
   let raf = 0
@@ -557,6 +651,7 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
     const dt = Math.min((t0 - last) / 1000, 0.05)
     last = t0
     apply(dt)
+    controls.update()
     renderer.render(scene, camera)
     const cost = performance.now() - t0
     frames++
@@ -565,15 +660,31 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
   }
 
   /**
-   * 按视口宽高比反算垂直 fov，让焦点处的横向半宽钉死在 HALF_W：
+   * 定视锥。两件事：按画布宽高比反算垂直 fov，让焦点处的横向半宽钉死在 HALF_W；
+   * 再把投影中心往左偏，把靶心推到画布 75% 处。
+   *
    *   tan(fov / 2) = HALF_W / (aspect × frontDist)
-   * clamp 到 [28, 46]。若新数值顶到这个区间，说明该同时调 HALF_W 与相机距离，
-   * 而不是放宽 clamp——放宽就等于放弃「构图不随窗口变形」这条。
+   *
+   * 这里的 aspect 是**画布**的宽高比，不是相机的——相机画幅被 setViewOffset
+   * 撑成了两倍宽，见下。clamp 到 [28, 46]。若新数值顶到这个区间，说明该同时调
+   * HALF_W 与相机距离，而不是放宽 clamp——放宽就等于放弃「构图不随窗口变形」。
    */
-  function applyFov() {
-    const half = HALF_W / (camera.aspect * frontDist)
+  function applyView(w: number, h: number) {
+    const aspect = w / h
+    const half = HALF_W / (aspect * frontDist)
     camera.fov = Math.min(46, Math.max(28, (2 * Math.atan(half) * 180) / Math.PI))
-    camera.updateProjectionMatrix()
+    /**
+     * 相机画幅取两倍画布宽，只把右边一半当窗口渲染。
+     *
+     * 绕球心转的前提是相机盯着球心（target），可一旦盯着，系统就会落到画布正中、
+     * 压到左边正文那一栏上。偏一下投影中心就解了：靶心落到窗口的 75%，正是它
+     * 原来待的位置，构图一分不差。
+     *
+     * 错开的 0.25 画布宽，换算成世界单位是 HALF_W / 2——所以左右两半的分界
+     * 依旧对应世界 x = CENTER_X：屏幕中线落在系统中心的左边 HALF_W / 2 处，
+     * 与改之前同一条线。
+     */
+    camera.setViewOffset(w * 2, h, w * 0.25, 0, w, h)
   }
 
   function resize() {
@@ -581,8 +692,7 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
     const h = canvas.clientHeight || window.innerHeight
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(w, h, false)
-    camera.aspect = w / h
-    applyFov()
+    applyView(w, h)
     if (!state.running) apply()
   }
 
@@ -595,11 +705,6 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
 
   return {
     setCurrent: rotateTo,
-
-    setPointer(x, y) {
-      state.pointerX = x
-      state.pointerY = y
-    },
 
     pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect()
@@ -663,6 +768,7 @@ export function createWorksScene(canvas: HTMLCanvasElement, bodies: SolarBody[])
 
     dispose() {
       this.stop()
+      controls.dispose()
       sunGeo.dispose()
       sunPickGeo.dispose()
       sunTex.dispose()

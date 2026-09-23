@@ -129,13 +129,6 @@ export function setupWorksScene() {
       lock = null
     }
 
-    let px = 0
-    let py = 0
-    const onPointer = (e: PointerEvent) => {
-      px = (e.clientX / window.innerWidth) * 2 - 1
-      py = -((e.clientY / window.innerHeight) * 2 - 1)
-    }
-
     const onResize = () => {
       // 拖窄到门槛以下就地退回静态版画。不这么做的话牌环会继续跑，
       // 而正文此时已经铺满整列，牌会压在字上。
@@ -163,6 +156,15 @@ export function setupWorksScene() {
 
     // 悬停在哪颗行星上：光标是唯一能说明「这颗可以点」的东西
     let hoverRaf = 0
+    /** 按下时的位置。拖拽旋转之后也会收到一次 click，那不是「点选」 */
+    let downX = 0
+    let downY = 0
+
+    const onStageDown = (e: PointerEvent) => {
+      downX = e.clientX
+      downY = e.clientY
+    }
+
     const onStageMove = (e: PointerEvent) => {
       if (hoverRaf) return
       const x = e.clientX
@@ -176,6 +178,8 @@ export function setupWorksScene() {
     }
 
     const onStageClick = (e: MouseEvent) => {
+      // 拖拽旋转之后松手，浏览器照样补一次 click。位移超过几个像素就当它是拖拽
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 4) return
       const i = scene?.pick(e.clientX, e.clientY)
       if (i == null) return
       // 恒星是回顶部的出口：这一页九千多像素，读到底总得有个一键回去的地方
@@ -189,8 +193,6 @@ export function setupWorksScene() {
     const tick = () => {
       raf = requestAnimationFrame(tick)
       if (!scene) return
-      // 视差每帧都要推一次：scene 那边做的是朝目标值缓动，不是直接落位
-      scene.setPointer(px, py)
       if (!scrollDirty) return
       scrollDirty = false
       if (lock !== null) {
@@ -204,12 +206,12 @@ export function setupWorksScene() {
     window.addEventListener('scroll', () => {
       scrollDirty = true
     }, { passive: true })
-    window.addEventListener('pointermove', onPointer, { passive: true })
     window.addEventListener('wheel', release, { passive: true })
     window.addEventListener('touchstart', release, { passive: true })
     window.addEventListener('keydown', release)
     window.addEventListener('resize', onResize)
     document.addEventListener('visibilitychange', onVisibility)
+    stage.addEventListener('pointerdown', onStageDown, { passive: true })
     stage.addEventListener('pointermove', onStageMove, { passive: true })
     stage.addEventListener('click', onStageClick)
 
@@ -218,12 +220,12 @@ export function setupWorksScene() {
       disposed = true
       cancelAnimationFrame(raf)
       cancelAnimationFrame(hoverRaf)
-      window.removeEventListener('pointermove', onPointer)
       window.removeEventListener('wheel', release)
       window.removeEventListener('touchstart', release)
       window.removeEventListener('keydown', release)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
+      stage.removeEventListener('pointerdown', onStageDown)
       stage.removeEventListener('pointermove', onStageMove)
       stage.removeEventListener('click', onStageClick)
       themeWatcher.disconnect()
@@ -252,7 +254,7 @@ export function setupWorksScene() {
         }
         if (disposed) return
 
-        scene = createWorksScene(canvas, bodies)
+        scene = createWorksScene(canvas, stage, bodies)
         measure()
         scene.setCurrent(indexFromScroll())
         scene.start()

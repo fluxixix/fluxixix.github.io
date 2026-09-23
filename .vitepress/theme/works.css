@@ -47,9 +47,15 @@
   bottom: 0;
   z-index: 1;
   width: 50%;
-  cursor: default;
+  /* 拖拽旋转视角的抓手。这一层是 OrbitControls 的操作面，光标得这么说 */
+  cursor: grab;
 }
 
+.system-stage:active {
+  cursor: grabbing;
+}
+
+/* 悬停在可点的行星/恒星上时让位给「可点」——那比「可拖」更近一层 */
 .system-stage.is-over {
   cursor: pointer;
 }
