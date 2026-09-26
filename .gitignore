@@ -27,5 +27,8 @@ npm-debug.log*
 # 本地草稿与设计文档（不入库）
 .superpowers/
 
+# archify 架构图源规格（仅本地保留，交付产物在 public/arch/）
+archify/
+
 # 渲染对比用的"改造前"基线（scripts/make-baseline.sh 生成在 /tmp，这里兜一层）
 .fx-baseline/
