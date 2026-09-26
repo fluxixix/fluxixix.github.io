@@ -43,14 +43,13 @@ meta: 工具链 · 个人项目
 <div><dt>接口</dt><dd>255<span>个</span></dd></div>
 <div><dt>数据表</dt><dd>39<span>张</span></dd></div>
 </dl>
-<p class="poster-lead">Admin 后台与 Portal 门户共用一套后端：软件上架与授权分发一条线，AI 资产提交审核一条线，再加一张技能树把能力认领到团队——AI 化进度第一次有了统一口径。</p>
-<ul class="scene-notes">
-<li>255 个接口、39 张表按三域分层，跨域模型用类型前置引用拆掉循环导入</li>
-<li>权限不采信 token：每次请求从库里现查角色，改完立刻生效，不用等过期</li>
-<li>每个请求落两张审计表：操作日志与接口耗时，独立 session 提交，不污染主事务</li>
-<li>9 个 Celery 任务把提交、审核、发布、通知全部异步化，配 acks_late，worker 崩了能重投</li>
-<li>前端是 Next.js 15 双端单体：自建 12 个 UI 原语，技能树是一张 D3 力导向图</li>
-</ul>
+<p class="poster-lead">团队内部的软件分发与 AI 资产管理平台：管理后台负责软件上架、授权发放与 AI 资产审核，用户门户集中下载软件、安装技能并认领技能树，两套界面共用同一套后端、账号与权限。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/flux-studio.html?embed=1" loading="lazy" title="Flux Studio 架构图"></iframe>
+</div>
+<figcaption><a href="/arch/flux-studio.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="lowspeed-replay">
@@ -64,14 +63,13 @@ meta: 工具链 · 个人项目
 <div><dt>格式</dt><dd>4<span>类</span></dd></div>
 <div><dt>部署</dt><dd>单文件</dd></div>
 </dl>
-<p class="poster-lead">公司第一套自研的行泊数据回放工具。四个功能页签后来又扩出一个自由分析页，五个页签共用同一套数据层，曲线、俯视场景图与视频挂在同一条时间轴上。</p>
-<ul class="scene-notes">
-<li>文件加载、解析与图形初始化平均 0.3s，比供应商那套快一个量级</li>
-<li>读 mf4 时把用到的通道一次性常驻内存，回放只做查表切片；帧率不一的变量重采样到 20ms</li>
-<li>俯视图里的车位、超声波雷达点、视觉目标都是预建图元，回放只切可见性，不重建</li>
-<li>除 mf4/mdf 外还能读 blf 与 DBC/arxml，视频按时间戳直接跳帧，不逐帧解码</li>
-<li>用 PyInstaller 打成单个可执行文件，双击就跑，不要求装 Python</li>
-</ul>
+<p class="poster-lead">面向行泊功能的行车数据回放工具：把 mf4 里的 CAN/XCP 信号按 DBC 解码，与车位、超声波雷达点和视频对齐到同一条时间轴，按泊车场景分页签回放，另留一个自由分析页临时拖信号出曲线。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/alg-replay.html?embed=1" loading="lazy" title="低速行泊数据回放系统架构图"></iframe>
+</div>
+<figcaption><a href="/arch/alg-replay.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="driving-3d">
@@ -85,14 +83,13 @@ meta: 工具链 · 个人项目
 <div><dt>加载</dt><dd>2<span>倍</span></dd></div>
 <div><dt>EDR 变体</dt><dd>2<span>种</span></dd></div>
 </dl>
-<p class="poster-lead">从零开始写的行车数据分析工具。以前看一段数据是打开 csv 逐行翻，现在把数采包丢进去，多路 CSV 对齐成「一帧一行」，十一个面板跟着同一条时间轴走。</p>
-<ul class="scene-notes">
-<li>覆盖 ACC / LCA / HWA / P2P / AEB 等十种功能，HWA 与 P2P 另有 EDR 变体</li>
-<li>3D 场景用 pyqtgraph 的 OpenGL 画，车道线、规划路径、感知目标与高精地图共用一个坐标系</li>
-<li>视频不做解码：图像帧从 bin 里逐帧取出，OpenCV 叠上感知图元，按时间戳查字典取帧</li>
-<li>加载阶段线程池并行读 CSV、多进程处理图像；3D 图元启动时一次建好，回放只更新数据</li>
-<li>同等数据量下加载速度约为供应商工具的两倍；目标框绕底边旋转，虚线车道线也是自写图元</li>
-</ul>
+<p class="poster-lead">面向高阶行车功能的数据分析平台：登录后按 ACC、AEB、LCA、HWA、P2P 等功能进入，多路 CSV 与 bin 视频在加载阶段对齐成「一帧一行」，3D 场景、信号曲线、视频与目标列表等十余个面板沿同一条时间轴联动回放。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/adas-app.html?embed=1" loading="lazy" title="高速行车 3D 可视化系统架构图"></iframe>
+</div>
+<figcaption><a href="/arch/adas-app.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="multi-format-parser">
@@ -106,14 +103,13 @@ meta: 工具链 · 个人项目
 <div><dt>界面</dt><dd>双语</dd></div>
 <div><dt>分发</dt><dd>单文件</dd></div>
 </dl>
-<p class="poster-lead">各家供应商、各个项目导出的格式都不一样，最烦的是得先用不同工具把 mf4、blf、csv、pcap 分别打开。这里只做一个入口：读进来都进同一张表和一排曲线。</p>
-<ul class="scene-notes">
-<li>支持 mf4/mdf、blf/asc、csv、pcap、bin、设备日志、dbc/arxml 七类格式</li>
-<li>多路 DBC 并行解码、通道自动检测；信号表与曲线联动，基准线差分读数、Go To X 跳转</li>
-<li>顺手做成了格式转换入口：arxml ↔ dbc 互转、mf4 按时间裁剪、DBC 导出 Excel</li>
-<li>新项目的报文各写一份解析器接入，UDP 抓包、SOME/IP、C 结构体三种形态</li>
-<li>读 pcap 时先扫一遍包数再解析，用来推进度，同时检测时间戳倒流这类脏数据</li>
-</ul>
+<p class="poster-lead">车载总线数据的「瑞士军刀」：一个入口读 mf4、blf、csv、pcap、bin 等七类格式并联合 DBC 解码，另一组工具负责报文裁剪、arxml 与 DBC 互转、DBC 导出 Excel 和抓包 IP 配置，新项目的 UDP / SOME/IP 报文以插件方式接入。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/slingshot.html?embed=1" loading="lazy" title="多格式车载数据解析工具架构图"></iframe>
+</div>
+<figcaption><a href="/arch/slingshot.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="dssad-tool">
@@ -128,14 +124,13 @@ meta: 工具链 · 个人项目
 <div><dt>端</dt><dd>2<span>套</span></dd></div>
 <div><dt>留痕</dt><dd>本地 + 云</dd></div>
 </dl>
-<p class="poster-lead">按 GB 44497-2024 的要求取出记录设备里的事件数据。设备侧只留 DoIP/UDS 一条路，诊断链路自己实现，取回的事件、目标物、曲线与视频对着同一条时间轴。</p>
-<ul class="scene-notes">
-<li>实现的 UDS 服务：0x10 会话、0x3E 保活、0x31 例程、0x22 读 DID、0x27 安全访问、0x29 认证与文件传输</li>
-<li>0x29 认证走证书挑战加签名，传输层带 NRC 0x78 轮询，在线从设备下载事件数据与视频</li>
-<li>事件、目标物、信号曲线与视频共用一条时间轴，拖游标时四边同步</li>
-<li>操作留痕先写本地 SQLite，联网后补传云端，账号权限与云端共用一套</li>
-<li>上线前自己跑了一轮渗透测试，16 项逐条修完：硬编码密钥、调试器暴露、依赖 CVE 与越权</li>
-</ul>
+<p class="poster-lead">按国标 GB 44497-2024 从行车记录设备取证的桌面 + Web 工具：桌面端走自实现的 DoIP/UDS 链路（含 0x29 证书认证与文件下载）取出事件数据，事件列表、信号曲线、视频与基本信息沿一条时间轴对齐分析；操作先在本地留痕、联网补传，Web 后台统一管理账号、权限与审计。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/dssad.html?embed=1" loading="lazy" title="自动驾驶数据记录系统工具架构图"></iframe>
+</div>
+<figcaption><a href="/arch/dssad.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="radar-4d">
@@ -149,14 +144,13 @@ meta: 工具链 · 个人项目
 <div><dt>目标</dt><dd>200<span>个</span></dd></div>
 <div><dt>报文</dt><dd>4<span>类</span></dd></div>
 </dl>
-<p class="poster-lead">做 4D 毫米波雷达时，采下来的数据得当场看出问题：点云塌没塌、目标跳不跳、丢包丢在哪一帧。实时采集与离线回放做成了一套东西，共用一条渲染管线。</p>
-<ul class="scene-notes">
-<li>解析 UDP 载荷里的交互头与应用头，点云 / 目标 / 状态 / 车辆信息四类报文，做 CRC16 校验与分包重组</li>
-<li>落盘成定长 TLV 帧，1456 字节头加 3000 个点与 200 个目标，异步分片轮转写，另存时间戳文件</li>
-<li>回放时扫魔数建帧索引，与实时模式共用同一套渲染管线，20Hz 刷新</li>
-<li>丢包检测按 rolling counter 的连续性算：差值落在 2~10 之间计为丢包，更大的当作计数回绕放过</li>
-<li>带一套 CLI，不接界面也能采集和批量转 CSV；另有模拟数据源按原时间戳发包，不接硬件也能调界面</li>
-</ul>
+<p class="poster-lead">4D 毫米波雷达的数据采集与可视化工具：实时接收雷达 UDP 报文，边录边看点云与目标，也能把定长 TLV 记录离线回放，实时与离线共用同一条 20Hz 渲染管线；另带一套无头 CLI，不接界面也能采集、模拟发包和批量转 CSV。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.3846">
+<div class="arch-frame__wrap">
+<iframe src="/arch/radar-vision.html?embed=1" loading="lazy" title="4D 毫米波雷达可视化系统数据流图"></iframe>
+</div>
+<figcaption><a href="/arch/radar-vision.html" target="_blank" rel="noopener">完整数据流图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="bricks">
@@ -171,14 +165,13 @@ meta: 工具链 · 个人项目
 <div><dt>测试</dt><dd>2900<span>行</span></dd></div>
 <div><dt>用例</dt><dd>265<span>个</span></dd></div>
 </dl>
-<p class="poster-lead">像搭积木一样解析数据：每种格式一个解析器，装上就能自动认格式、按需装扩展、串成管道，也能直接被 AI Agent 调用。核心只有一个抽象 Brick 和一张注册表。</p>
-<ul class="scene-notes">
-<li>核心零依赖，八块解析器都在 extras 里：汽车、大数据、科学计算、序列化、文档、机器人、网络、AI</li>
-<li>格式嗅探分四级：显式指定 → 扩展名 → 魔数 → 内容探测；注册中心按名称、扩展名、MIME 查找</li>
-<li>解析之外另配清洗（DataCleaner 链式调用）、验证（规则引擎与 JSON Schema）与性能工具</li>
-<li>五个汽车解析器顺着工作来：MF4 把 XCP 标定信号与 CAN 报文拆开，BLF / ASC 能联合 DBC 解码</li>
-<li>CLI 在非 TTY 或带 --json 时输出统一信封：数据走 stdout、诊断走 stderr，错误码固定</li>
-</ul>
+<p class="poster-lead">一个可插拔的多格式数据解析框架：每种格式实现为一个 Brick，装上对应扩展即自动识别并解析，既能在 Python 里串成管道、链式清洗与校验，也能通过统一信封的命令行和 MCP 接口直接被 AI Agent 调用。</p>
+<figure class="arch-frame" style="--arch-ratio: 1.6">
+<div class="arch-frame__wrap">
+<iframe src="/arch/bricks.html?embed=1" loading="lazy" title="Bricks 多格式数据解析框架架构图"></iframe>
+</div>
+<figcaption><a href="/arch/bricks.html" target="_blank" rel="noopener">完整架构图（可缩放 / 搜索）↗</a></figcaption>
+</figure>
 </section>
 
 <section class="plate-scene" id="dotfiles">
@@ -194,14 +187,7 @@ meta: 工具链 · 个人项目
 <div><dt>CI</dt><dd>arm64</dd></div>
 <div><dt>状态</dt><dd>长期</dd></div>
 </dl>
-<p class="poster-lead">macOS 个人配置仓库。手写配置进仓库，插件、主题和补全交给各自的包管理器恢复；部署时每个工具目录软链接到 <code>~/.config</code>，换新电脑两条命令搬完。</p>
-<ul class="scene-notes">
-<li>核心约束是「仓库只放手写配置」：Neovim 插件、Yazi 风味、Fish 补全这类一律不入库</li>
-<li>代价是首次部署多几步，换来 <code>git log</code> 里只有自己的改动，翻历史不被插件更新淹掉</li>
-<li>四个工具目录各自软链接进 <code>~/.config</code>，部署脚本一条命令建链、一条命令回收</li>
-<li>Homebrew 用 Brewfile 管命令行工具，换机器一条 <code>brew bundle</code> 装齐，版本不靠记忆</li>
-<li>CI 在 arm64 runner 上跑静态检查与一致性校验，并用假 <code>HOME</code> 把部署脚本完整演一遍</li>
-</ul>
+<p class="poster-lead">一套 macOS 开发环境的声明式管理方案：只把手写配置纳入仓库，插件与补全交给各自的包管理器恢复；restore 脚本把工具目录软链接到 <code>~/.config</code>，配合 Brewfile 与 CI 一致性校验，换新机器两条命令搬完整个环境。</p>
 </section>
 
 <section class="plate-scene" id="this-site">
@@ -217,14 +203,7 @@ meta: 工具链 · 个人项目
 <div><dt>部署</dt><dd>推送即发布</dd></div>
 <div><dt>内容</dt><dd>全 Markdown</dd></div>
 </dl>
-<p class="poster-lead">这个站点本身也算一个项目：VitePress 加一套自研主题，文章全是 Markdown，推送到 GitHub 自动构建发布。栏目形态由主题提供，页面自己声明用哪种。</p>
-<ul class="scene-notes">
-<li>构建产物是纯静态文件，推到 main 由 GitHub Actions 发布到 Pages，没有服务器</li>
-<li>RSS 在构建结束那一刻生成，绝对链接取自站点地址那一个常量，改域名只改一处</li>
-<li>归档、Now、作品、关于四个栏目各有页面形态，不写 frontmatter 就什么也不多</li>
-<li>渲染一致性检查脚本用无头 Chromium 比对改造前后的几何与计算样式，三个视口各跑一遍</li>
-<li>主题源码拆在独立仓库，本站按 git tag 安装，主题升版本不改这里的一行代码</li>
-</ul>
+<p class="poster-lead">这个站点本身也是一件作品：基于 VitePress 的纯静态个人站，文章全部用 Markdown 写作，首页、文章、作品、归档、Now、关于六种版式由自研主题提供，构建时自动生成 RSS，推送到 main 即由 GitHub Actions 发布，全程没有服务器。</p>
 </section>
 
 <section class="plate-scene" id="vitepress-theme">
@@ -240,12 +219,5 @@ meta: 工具链 · 个人项目
 <div><dt>检查</dt><dd>4<span>道</span></dd></div>
 <div><dt>分发</dt><dd>纯源码</dd></div>
 </dl>
-<p class="poster-lead">本站的版式抽成了独立主题包，从 GitHub 装到别的 VitePress 站上。只在默认主题上叠一层、不替换：没启用的形态不产出节点，宿主站的 CSS 照样压得住。</p>
-<ul class="scene-notes">
-<li>形态由页面自己触发：pageClass 写 archive / works / about 才长出对应版式，masthead: true 才多出页头</li>
-<li>样式不写 @layer 是试出来的：默认主题与组件 scoped 样式都没分层，主题一进层就被反压，还不报错</li>
-<li>只发 GitHub，git tag 就是版本；必须写 git+https://，github: 简写会被解析成 ssh</li>
-<li>/site 与 /rss 归 Node 加载，入口指向 .ts 时外部用户第一步就抛类型剥离错误，于是加了打包冒烟</li>
-<li>另带一个零依赖脚手架，一条 npx … init my-blog 生成能跑的站点，.npmrc 已经配好</li>
-</ul>
+<p class="poster-lead">把本站版式抽成的可安装 VitePress 主题：不替换默认主题、只在其上层叠加，页面用 pageClass 声明形态才长出对应版式，并附带站点配置、RSS 生成、本地搜索与一条 <code>init</code> 命令生成整站的零依赖脚手架，按 git tag 从 GitHub 发版。</p>
 </section>

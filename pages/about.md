@@ -81,23 +81,23 @@ async function copyEmail() {
           <div class="career-tools">
             <div class="tool-row">
               <p class="tool-name">低速行泊数据回放系统</p>
-              <p class="tool-desc">行泊数据回放，替掉 CANoe Graphics 那部分</p>
+              <p class="tool-desc">mf4 信号按 DBC 解码，与车位、雷达点和视频对齐到一条时间轴回放</p>
             </div>
             <div class="tool-row">
               <p class="tool-name">高速行车 3D 可视化系统</p>
-              <p class="tool-desc">行车数据回放，六个面板同步</p>
+              <p class="tool-desc">按 ACC / LCA / HWA 等功能进入，十余面板沿一条时间轴联动回放 3D 场景与视频</p>
             </div>
             <div class="tool-row">
               <p class="tool-name">多格式车载数据解析工具</p>
-              <p class="tool-desc">mf4 / blf / csv / pcap / arxml 通吃的解析与图表分析</p>
+              <p class="tool-desc">七类总线格式一个入口读，另带报文裁剪、arxml / DBC 互转与 Excel 导出</p>
             </div>
             <div class="tool-row">
               <p class="tool-name">自动驾驶数据记录系统工具</p>
-              <p class="tool-desc">按标准走 DoIP/UDS 从设备取数，事件与视频一起回放，另配了 Web 管理端</p>
+              <p class="tool-desc">按 GB 44497 走 DoIP/UDS 从设备取证，事件、曲线与视频同步分析，配 Web 管理端</p>
             </div>
             <div class="tool-row">
               <p class="tool-name">4D 毫米波雷达 · 点云 / 目标 · 实时 / 离线 · 三维可视化</p>
-              <p class="tool-desc">实时与离线共用一条渲染管线</p>
+              <p class="tool-desc">UDP 实时采集与 TLV 离线回放共用一条 20Hz 点云管线，另带无头 CLI</p>
             </div>
           </div>
         </div>
@@ -106,7 +106,12 @@ async function copyEmail() {
         <h4 class="phase-title">软件与 AI 资产平台</h4>
         <p class="phase-meta"><span>Next.js · React · Python · Flask · PostgreSQL · Redis · Celery</span><span class="phase-year">2026 — 至今</span></p>
         <div class="phase-body">
-          <p>企业级的软件与 AI 资产平台。Admin 后台与 Portal 门户两套前端跑在同一套后端上：后端按 admin / dev / portal 三域分层，路由只管参数与鉴权，业务在 service、数据在 model；权限、审计、通知做成三条横切能力，三十九张表和两百多个接口都挂在这套结构上。部署是一个 docker compose 起七个服务：nginx 统一入口，前端、后端、Celery worker 与 beat、PostgreSQL 16、Redis 各管一段。</p>
+          <div class="career-tools">
+            <div class="tool-row">
+              <p class="tool-name">Flux Studio</p>
+              <p class="tool-desc">团队内部的软件分发与 AI 资产管理平台：后台管软件上架、授权与资产审核，门户集中下载软件、安装技能并认领技能树，双端共用一套后端与权限，docker compose 一键部署</p>
+            </div>
+          </div>
           <p>详情见 <a href="/works">作品</a> 页。</p>
         </div>
       </section>

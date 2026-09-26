@@ -284,11 +284,64 @@ html.fx-plate-ready .works .plate-scene .work-plate {
   white-space: nowrap;
 }
 
+/* ---- 架构图嵌入（archify 单文件 HTML）----
+   七件带代码的作品各在要点之后挂一张可交互架构图。图是独立 HTML、用 iframe
+   嵌进来，所以自成一块：边框、圆角与标题墨色都收着，不抢版画的位置。
+   高度按各图 viewBox 的宽高比走（由 --arch-ratio 内联给），不写死像素。 */
+
+.works .arch-frame {
+  margin: 1.75rem 0 0;
+}
+
+.works .arch-frame__wrap {
+  position: relative;
+  aspect-ratio: var(--arch-ratio, 1.6);
+  overflow: hidden;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+}
+
+.works .arch-frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.works .arch-frame figcaption {
+  margin-top: 0.5rem;
+  text-align: right;
+  font-family: var(--vp-font-family-mono, monospace);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+
+.works .arch-frame figcaption a {
+  color: var(--vp-c-text-2);
+  text-decoration: none;
+}
+
+.works .arch-frame figcaption a:hover {
+  color: var(--vp-c-text-1);
+  text-decoration: underline;
+}
+
 /* ---- 窄屏 ----
    与 index.ts 的 MIN_WIDTH 同一个断点：这边正文铺满整列，那边不跑牌环 */
 
 @media (max-width: 64rem) {
   .works.works .VPDoc .container.container {
     padding-inline: 1.25rem;
+  }
+
+  /* 窄栏下图已经缩得偏小，上下留白收紧，图注改为左对齐方便就近点开完整版 */
+  .works .arch-frame {
+    margin-top: 1.5rem;
+  }
+
+  .works .arch-frame figcaption {
+    text-align: left;
   }
 }

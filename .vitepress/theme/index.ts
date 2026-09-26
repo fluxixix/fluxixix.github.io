@@ -13,6 +13,7 @@ import '@fontsource/ibm-plex-mono/500.css'
 import './works.css'
 
 import { setupWorksScene } from './works-scene'
+import { setupArchFrames } from './arch-frames'
 
 export default {
   ...theme,
@@ -20,5 +21,7 @@ export default {
     theme.enhanceApp?.(ctx)
     // 作品页的版画走廊。能力检测与清理都在里面，别的页面进来什么也不做
     setupWorksScene()
+    // 作品页七张 archify 架构图：把站点明暗同步给 iframe
+    setupArchFrames()
   }
 }
