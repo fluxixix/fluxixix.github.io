@@ -5,7 +5,6 @@ pageClass: about
 masthead: true
 name: fluxixix
 tag: 关于 · ABOUT
-meta: 工具链研发 · 玩AI · 广东
 ---
 
 <script setup lang="ts">
