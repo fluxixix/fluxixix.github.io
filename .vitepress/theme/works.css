@@ -162,6 +162,23 @@ html.fx-plate-ready .works.works .VPDoc .content.content {
   white-space: nowrap;
 }
 
+/* 太阳系交互提示。默认藏死：SSR 与降级态里右侧没有可玩的东西，
+   只有牌环真的跑起来（fx-plate-ready）才亮出来。
+   用 text-2 而不是索引同款 text-3：10px 配 3:1 对比度已经发虚，
+   这句是功能性说明，得让人真的读得到 */
+.works .plate-hint {
+  display: none;
+}
+
+html.fx-plate-ready .works .plate-hint {
+  display: block;
+  margin: 0.75rem 0 0;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  color: var(--vp-c-text-2);
+}
+
 /* ---- 每一节 ----
    降级态（没 JS / 没 WebGL / 减弱动效）下这十节就是连续的普通文档，
    只需要给彼此留个气口 */
@@ -334,6 +351,22 @@ html.fx-plate-ready .works .plate-scene .work-plate {
 @media (max-width: 64rem) {
   .works.works .VPDoc .container.container {
     padding-inline: 1.25rem;
+  }
+
+  /* 窄屏不跑太阳系（见 works-scene/index.ts 的 MIN_WIDTH），于是这十节里
+     各挂一张静态 SVG 版画。主题把它排成居中的小卡片（about.css 的 48rem
+     断点），十节十张、又小又占版面——它本来的身份是太阳系的静态替身，
+     替身不在了就该收起来。
+     用视觉隐藏而不是 display:none：那张 SVG 带 aria-label，是对图的
+     文字说明，读屏仍然需要它 */
+  .works .plate-scene .work-plate {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   /* 窄栏下图已经缩得偏小，上下留白收紧，图注改为左对齐方便就近点开完整版 */

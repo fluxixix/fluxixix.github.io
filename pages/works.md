@@ -30,6 +30,13 @@ meta: 工具链 · 个人项目
 <a class="index-item" href="#vitepress-theme"><span class="index-no">10</span><span class="index-name">vitepress-theme-fluxixix</span><span class="index-kind">个人项目</span></a>
 </nav>
 
+<!-- 太阳系的可交互说明。行星能点、画布能拖，但线索只有光标变化——筛简历的人
+     给这一页的时间以秒计，不该靠猜。降级态（无 JS / 无 WebGL / 窄屏 / 减弱动效）
+     没有太阳系可玩，这句话就是谎言，所以由 fx-plate-ready 门控（见 works.css）。
+     用 div 不用 p：主题给「.vp-doc > div > p:first-of-type」挂了 1.125rem 的导语字号，
+     这一带原本没有直接子级 p，用 p 会被误当导语放大 -->
+<div class="plate-hint" role="note">右侧太阳系：拖拽旋转 · 点击行星直达 · 点击恒星回顶</div>
+
 <section class="plate-scene" id="flux-studio">
 <p class="scene-kind">平台 · PLATFORM</p>
 <WorkPlate variant="nodes" tone="violet" code="01" note="ADMIN / PORTAL" label="节点网络：平台里的资产、权限与技能树如何互相挂上" />
