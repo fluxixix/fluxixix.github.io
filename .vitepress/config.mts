@@ -79,6 +79,7 @@ export default defineConfig({
           text: '随笔',
           base: '/posts/notes/',
           items: [
+            { text: '超门淡学·完整立学纲领', link: 'danxue-manifesto' },
             { text: '关于「less is more」', link: 'less-is-more' },
             { text: '笔记是写给未来的自己的', link: 'note-taking' },
             { text: '写下来才算想清楚', link: 'writing' },
