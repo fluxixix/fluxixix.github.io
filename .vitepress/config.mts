@@ -81,7 +81,9 @@ export default defineConfig({
           items: [
             { text: '关于「less is more」', link: 'less-is-more' },
             { text: '笔记是写给未来的自己的', link: 'note-taking' },
-            { text: '写下来才算想清楚', link: 'writing' }
+            { text: '写下来才算想清楚', link: 'writing' },
+            // 本站最早的一篇，按日期倒序排在组内末尾
+            { text: '致三十岁的自己', link: 'letter-to-thirty' }
           ]
         }
       ]
